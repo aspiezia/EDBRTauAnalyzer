@@ -38,6 +38,10 @@ Implementation:
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/MuonReco/interface/MuonCocktails.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "Math/VectorUtil.h"
 #include "TMath.h"
 #include "TLorentzVector.h"
@@ -97,6 +101,10 @@ private:
   float m_DRLepMet2EleEle;               float m_DRLepMet2EleMuo;             float m_DRLepMet2MuoMuo;
   float m_DPhiLepMet2EleEle;     	 float m_DPhiLepMet2EleMuo;           float m_DPhiLepMet2MuoMuo;
   float m_dRLepLepEleEle;                float m_dRLepLepEleMuo;              float m_dRLepLepMuoMuo;
+  float m_dRZZVisEleEle;                 float m_dRZZVisEleMuo;		      float m_dRZZVisMuoMuo;
+  float m_dRZZEffEleEle;		 float m_dRZZEffEleMuo;		      float m_dRZZEffMuoMuo;
+  float m_dRZZSvFitEleEle;		 float m_dRZZSvFitEleMuo;	      float m_dRZZSvFitMuoMuo;
+  float m_dRZZCAEleEle;                  float m_dRZZCAEleMuo;                float m_dRZZCAMuoMuo;
   float m_LepPt1EleEle;	        	 float m_LepPt1EleMuo;	              float m_LepPt1MuoMuo;
   float m_LepEta1EleEle;		 float m_LepEta1EleMuo;	              float m_LepEta1MuoMuo;
   float m_LepPFIso1EleEle;		 float m_LepPFIso1EleMuo;	      float m_LepPFIso1MuoMuo;
@@ -117,6 +125,27 @@ private:
   int m_nbtagsLEleEle;			 int m_nbtagsLEleMuo;		      int m_nbtagsLMuoMuo;
   int m_nbtagsMEleEle;			 int m_nbtagsMEleMuo;		      int m_nbtagsMMuoMuo;
   int m_nbtagsTEleEle;                   int m_nbtagsTEleMuo;                 int m_nbtagsTMuoMuo;
+  int m_trigger650EleEle;                int m_trigger650EleMuo;              int m_trigger650MuoMuo;
+  int m_trigger320EleEle;                int m_trigger320EleMuo;              int m_trigger320MuoMuo;
+  int m_NVerticesEleEle;                 int m_NVerticesEleMuo;		      int m_NVerticesMuoMuo;
+  float m_PUWeightEleEle;		 float m_PUWeightEleMuo;	      float m_PUWeightMuoMuo;
+  float m_metPtEleEle;			 float m_metPtEleMuo;		      float m_metPtMuoMuo;
+  float m_metPxEleEle;			 float m_metPxEleMuo;		      float m_metPxMuoMuo;
+  float m_metPyEleEle;			 float m_metPyEleMuo;		      float m_metPyMuoMuo;
+  float m_metEtaEleEle;			 float m_metEtaEleMuo;		      float m_metEtaMuoMuo;
+  float m_metPhiEleEle;                  float m_metPhiEleMuo;                float m_metPhiMuoMuo;
+  
+  edm::LumiReWeighting LumiWeights_;
+  bool isData; 
+  bool sideband; 
+  edm::InputTag vtxColl;
+  edm::InputTag jetColl;
+  edm::InputTag jetPrunedColl;
+  edm::InputTag metColl;
+  edm::InputTag electronColl;
+  edm::InputTag muonColl;
+  edm::InputTag metRawColl;
+  edm::InputTag ak5JetColl;
 
   // ----------member data ---------------------------
 };
@@ -143,6 +172,36 @@ FullyLeptonicAnalyzer::FullyLeptonicAnalyzer(const edm::ParameterSet& iConfig)
 
 {
   //now do what ever initialization is needed
+  isData = iConfig.getUntrackedParameter<bool>("isData_");
+  sideband = iConfig.getUntrackedParameter<bool>("sideband_");
+  vtxColl_ = iConfig.getParameter<edm::InputTag>("vtxColl"); 
+  jetColl_ = iConfig.getParameter<edm::InputTag>("jetColl"); 
+  jetPrunedColl_ = iConfig.getParameter<edm::InputTag>("jetPrunedColl"); 
+  metColl_ = iConfig.getParameter<edm::InputTag>("metColl"); 
+  electronColl_ = iConfig.getParameter<edm::InputTag>("electronColl"); 
+  muonColl_ = iConfig.getParameter<edm::InputTag>("muonColl"); 
+  metRawColl_ = iConfig.getParameter<edm::InputTag>("metRawColl"); 
+  ak5JetColl_ = iConfig.getParameter<edm::InputTag>("ak5JetColl"); 
+
+
+  // True number of interaction for data produced as in: https://twiki.cern.ch/twiki/bin/view/CMS/PileupJSONFileforData
+  TFile *da_=new TFile ("/shome/aspiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/MyDataPileupHistogram_True.root");
+  TH1F *da = (TH1F*) da_->Get("pileup");
+  
+  // MC distribution of true number of interactions as in: https://twiki.cern.ch/twiki/bin/view/CMS/Pileup_MC_Gen_Scenarios
+  Double_t dat[60] = {2.560E-06, 5.239E-06, 1.420E-05, 5.005E-05, 1.001E-04, 2.705E-04, 1.999E-03, 6.097E-03, 1.046E-02, 1.383E-02, 1.685E-02, 2.055E-02, 2.572E-02, 3.262E-02, 4.121E-02, 4.977E-02, 5.539E-02, 5.725E-02, 5.607E-02, 5.312E-02, 5.008E-02, 4.763E-02, 4.558E-02, 4.363E-02, 4.159E-02, 3.933E-02, 3.681E-02, 3.406E-02, 3.116E-02, 2.818E-02, 2.519E-02, 2.226E-02, 1.946E-02, 1.682E-02, 1.437E-02, 1.215E-02, 1.016E-02, 8.400E-03, 6.873E-03, 5.564E-03, 4.457E-03, 3.533E-03, 2.772E-03, 2.154E-03, 1.656E-03, 1.261E-03, 9.513E-04, 7.107E-04, 5.259E-04, 3.856E-04, 2.801E-04, 2.017E-04, 1.439E-04, 1.017E-04, 7.126E-05, 4.948E-05, 3.405E-05, 2.322E-05, 1.570E-05, 5.005E-06 };
+  
+  //PileUp weights calculation
+  double d,m;
+  std::vector< float > mcNum; 
+  std::vector< float > dataNum;
+  for (Int_t i=1; i< 50; i++){
+    m=dat[i-1];
+    d=da->GetBinContent(i);
+    mcNum.push_back(m);
+    dataNum.push_back(d); 
+  }
+  LumiWeights_=edm::LumiReWeighting(mcNum, dataNum);
 
 }
 
@@ -167,34 +226,89 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   Nevents->Fill(1);
   edm::Handle<reco::VertexCollection> vertices;
-  iEvent.getByLabel("primaryVertexFilter", vertices);
+  iEvent.getByLabel(vtxColl, vertices);
   reco::Vertex primaryVertex;
   primaryVertex = vertices->at(0);
 
   edm::Handle<pat::JetCollection> CA8JetswithQjets;
-  iEvent.getByLabel("selectedPatJetsCA8CHSwithQJetsForBoostedTaus", CA8JetswithQjets);
+  iEvent.getByLabel(jetColl, CA8JetswithQjets);
   edm::Handle<pat::JetCollection> CA8JetsPruned;
-  iEvent.getByLabel("selectedPatJetsCA8CHSprunedForBoostedTaus", CA8JetsPruned);
+  iEvent.getByLabel(jetPrunedColl, CA8JetsPruned);
 
   edm::Handle<pat::METCollection> met;
-  iEvent.getByLabel("patMETs", met);
+  iEvent.getByLabel(metColl, met);
 
   edm::Handle<pat::ElectronCollection> eleH;
-  iEvent.getByLabel("patElectronsWithTrigger", eleH);
+  iEvent.getByLabel(electronColl, eleH);
 
   edm::Handle<pat::MuonCollection> muoH;
-  iEvent.getByLabel("patMuonsWithTrigger", muoH);
+  iEvent.getByLabel(muonColl, muoH);
 
   edm::Handle<pat::METCollection> metRaw;
-  iEvent.getByLabel("patMETsRaw", metRaw);
+  iEvent.getByLabel(metRawColl, metRaw);
+
+  edm::Handle<pat::JetCollection> ak5jetCands;
+  iEvent.getByLabel(ak5JetColl,ak5jetCands);
 
   edm::Handle<double> rhoHandle;
   iEvent.getByLabel("kt6PFJets", "rho", rhoHandle);
   float rho = *(rhoHandle.product());
 
-  edm::Handle<pat::JetCollection> ak5jetCands;
-  iEvent.getByLabel("patJetsWithVarCHS",ak5jetCands); 
 
+
+  //TRIGGER
+  bool isFired_HLT_HT650 = false;
+  bool isFired_HLT_PFJet320 = false;
+  edm::Handle<edm::TriggerResults> trigResults;
+  edm::InputTag trigResultsTag("TriggerResults","","HLT");  
+  iEvent.getByLabel(trigResultsTag,trigResults);
+  const edm::TriggerNames& trigNames = iEvent.triggerNames(*trigResults);
+  unsigned int TrggIndex_PFHT650_v5( trigNames.triggerIndex("HLT_PFHT650_v5"));
+  unsigned int TrggIndex_PFHT650_v6( trigNames.triggerIndex("HLT_PFHT650_v6"));
+  unsigned int TrggIndex_PFHT650_v7( trigNames.triggerIndex("HLT_PFHT650_v7"));
+  unsigned int TrggIndex_PFHT650_v8( trigNames.triggerIndex("HLT_PFHT650_v8"));
+  unsigned int TrggIndex_PFHT650_v9( trigNames.triggerIndex("HLT_PFHT650_v9"));
+  unsigned int TrggIndex_PFNoPUHT650_v1( trigNames.triggerIndex("HLT_PFNoPUHT650_v1"));
+  unsigned int TrggIndex_PFNoPUHT650_v3( trigNames.triggerIndex("HLT_PFNoPUHT650_v3"));
+  unsigned int TrggIndex_PFNoPUHT650_v4( trigNames.triggerIndex("HLT_PFNoPUHT650_v4"));
+  unsigned int TrggIndex_PFJet320_v3( trigNames.triggerIndex("HLT_PFJet320_v3"));
+  unsigned int TrggIndex_PFJet320_v4( trigNames.triggerIndex("HLT_PFJet320_v4"));
+  unsigned int TrggIndex_PFJet320_v5( trigNames.triggerIndex("HLT_PFJet320_v5"));
+  unsigned int TrggIndex_PFJet320_v6( trigNames.triggerIndex("HLT_PFJet320_v6"));
+  unsigned int TrggIndex_PFJet320_v8( trigNames.triggerIndex("HLT_PFJet320_v8"));
+  unsigned int TrggIndex_PFJet320_v9( trigNames.triggerIndex("HLT_PFJet320_v9"));
+  if(TrggIndex_PFHT650_v5 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFHT650_v5);
+  if(TrggIndex_PFHT650_v6 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFHT650_v6);
+  if(TrggIndex_PFHT650_v7 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFHT650_v7);
+  if(TrggIndex_PFHT650_v8 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFHT650_v8);
+  if(TrggIndex_PFHT650_v9 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFHT650_v9);
+  if(TrggIndex_PFNoPUHT650_v1 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFNoPUHT650_v1);
+  if(TrggIndex_PFNoPUHT650_v3 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFNoPUHT650_v3);
+  if(TrggIndex_PFNoPUHT650_v4 < trigResults->size()) isFired_HLT_HT650 = trigResults->accept(TrggIndex_PFNoPUHT650_v4);
+  if(TrggIndex_PFJet320_v3 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v3);
+  if(TrggIndex_PFJet320_v4 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v4);
+  if(TrggIndex_PFJet320_v5 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v5);
+  if(TrggIndex_PFJet320_v6 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v6);
+  if(TrggIndex_PFJet320_v8 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v8);
+  if(TrggIndex_PFJet320_v9 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v9); 
+
+  //PILEUP WEIGHT
+  double MyWeight = 1;
+  if(!isData){
+    //edm::EventBase* iEventB = dynamic_cast<edm::EventBase*>(&iEvent);
+    Handle<std::vector< PileupSummaryInfo > >  PupInfo;
+    iEvent.getByLabel(edm::InputTag("addPileupInfo"), PupInfo);
+    std::vector<PileupSummaryInfo>::const_iterator PVI;
+    float Tnpv = -1;
+    for(PVI = PupInfo->begin(); PVI != PupInfo->end(); ++PVI) {
+      int BX = PVI->getBunchCrossing();
+      if(BX == 0) { 
+	Tnpv = PVI->getTrueNumInteractions();
+	continue;
+      }
+    }
+    MyWeight = LumiWeights_.weight( Tnpv );
+  }
 
   //SELECT THE FAT JET WITH THE HIGHTEST pt 
   int Njet = 0;
@@ -252,17 +366,18 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     TLorentzVector SVFitTauTau;
     float MassSVFit = SVFitMass(met, metRaw, SVFitTauTau, SelectedEle[0]->p4(), SelectedEle[1]->p4());
     float XMassSVFit = (SVFitTauTau+PrunedJet).M();
+    float dRJetZSVFit = ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,PrunedJet);
  
     //COLLINEAR APPROXIMATION
     TLorentzVector CATauTau; bool CA = false;
     CollinearApproximation(met, CATauTau, PrunedJet, SelectedEle[0]->p4(), SelectedEle[1]->p4(), CA);
     float MassCA = 0;
     float XmassCA = 0.;
-    float dRJetZ = 0.;
+    float dRJetZCA = 0.;
     if(CA){
       MassCA = CATauTau.M();
       XmassCA = (CATauTau+PrunedJet).M();
-      dRJetZ = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
     }
 
     pat::ElectronCollection::const_iterator SelectedLep1;
@@ -293,6 +408,10 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     m_DRLepMet2EleEle=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedLep2->p4());
     m_DPhiLepMet2EleEle=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedLep2->p4());
     m_dRLepLepEleEle=ROOT::Math::VectorUtil::DeltaR(SelectedLep1->p4(),SelectedLep2->p4());
+    m_dRZZVisEleEle=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEffEleEle=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFitEleEle=dRJetZSVFit;
+    m_dRZZCAEleEle=dRJetZCA;
     m_LepPt1EleEle=SelectedLep1->pt();
     m_LepEta1EleEle=SelectedLep1->eta();
     m_LepPFIso1EleEle=ElectronPFIso(SelectedLep1,rho);
@@ -313,6 +432,15 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     m_nbtagsLEleEle=nbtagsL;
     m_nbtagsMEleEle=nbtagsM;
     m_nbtagsTEleEle=nbtagsT;
+    m_trigger320EleEle=(int)isFired_HLT_PFJet320;
+    m_trigger650EleEle=(int)isFired_HLT_HT650; 
+    m_NVerticesEleEle=vertices->size();
+    m_PUWeightEleEle=MyWeight;
+    m_metPtEleEle=met->begin()->pt();
+    m_metPxEleEle=met->begin()->px();
+    m_metPyEleEle=met->begin()->py();
+    m_metEtaEleEle=met->begin()->eta();
+    m_metPhiEleEle=met->begin()->phi();
     TreeEleEle->Fill();
   }
 
@@ -327,17 +455,18 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     TLorentzVector SVFitTauTau;
     float MassSVFit = SVFitMass(met, metRaw, SVFitTauTau, SelectedMuo[0]->p4(), SelectedMuo[1]->p4());
     float XMassSVFit = (SVFitTauTau+PrunedJet).M();
+    float dRJetZSVFit = ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,PrunedJet);
 
     //COLLINEAR APPROXIMATION
     TLorentzVector CATauTau; bool CA = false;
     CollinearApproximation(met, CATauTau, PrunedJet, SelectedMuo[0]->p4(), SelectedMuo[1]->p4(), CA);
     float MassCA = 0;
     float XmassCA = 0.;
-    float dRJetZ = 0.;
+    float dRJetZCA = 0.;
     if(CA){
       MassCA = CATauTau.M();
       XmassCA = (CATauTau+PrunedJet).M();
-      dRJetZ = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
     }
 
     pat::MuonCollection::const_iterator SelectedLep1;
@@ -368,6 +497,10 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     m_DRLepMet2MuoMuo=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedLep2->p4());
     m_DPhiLepMet2MuoMuo=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedLep2->p4());
     m_dRLepLepMuoMuo=ROOT::Math::VectorUtil::DeltaR(SelectedLep1->p4(),SelectedLep2->p4());
+    m_dRZZVisMuoMuo=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEffMuoMuo=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFitMuoMuo=dRJetZSVFit;
+    m_dRZZCAMuoMuo=dRJetZCA;
     m_LepPt1MuoMuo=SelectedLep1->pt();
     m_LepEta1MuoMuo=SelectedLep1->eta();
     m_LepPFIso1MuoMuo=MuonPFIso(SelectedLep1,false);
@@ -388,6 +521,15 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     m_nbtagsLMuoMuo=nbtagsL;
     m_nbtagsMMuoMuo=nbtagsM;
     m_nbtagsTMuoMuo=nbtagsT;
+    m_trigger320MuoMuo=(int)isFired_HLT_PFJet320;
+    m_trigger650MuoMuo=(int)isFired_HLT_HT650;
+    m_NVerticesMuoMuo=vertices->size();
+    m_PUWeightMuoMuo=MyWeight;
+    m_metPtMuoMuo=met->begin()->pt();
+    m_metPxMuoMuo=met->begin()->px();
+    m_metPyMuoMuo=met->begin()->py();
+    m_metEtaMuoMuo=met->begin()->eta();
+    m_metPhiMuoMuo=met->begin()->phi();
     TreeMuoMuo->Fill();
   }
 
@@ -418,17 +560,18 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     TLorentzVector SVFitTauTau;
     float MassSVFit = SVFitMass(met, metRaw, SVFitTauTau, SelectedEle[0]->p4(), SelectedMuo[0]->p4());
     float XMassSVFit = (SVFitTauTau+PrunedJet).M();
+    float dRJetZSVFit = ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,PrunedJet);
 
     //COLLINEAR APPROXIMATION
     TLorentzVector CATauTau; bool CA = false;
     CollinearApproximation(met, CATauTau, PrunedJet, SelectedEle[0]->p4(), SelectedMuo[0]->p4(), CA);
     float MassCA = 0;
     float XmassCA = 0.;
-    float dRJetZ = 0.;
+    float dRJetZCA = 0.;
     if(CA){
       MassCA = CATauTau.M();
       XmassCA = (CATauTau+PrunedJet).M();
-      dRJetZ = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
     }
 
     pat::ElectronCollection::const_iterator SelectedLep1;
@@ -454,6 +597,10 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     m_DRLepMet2EleMuo=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedLep2->p4());
     m_DPhiLepMet2EleMuo=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedLep2->p4());
     m_dRLepLepEleMuo=ROOT::Math::VectorUtil::DeltaR(SelectedLep1->p4(),SelectedLep2->p4());
+    m_dRZZVisEleMuo=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEffEleMuo=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFitEleMuo=dRJetZSVFit;
+    m_dRZZCAEleMuo=dRJetZCA;
     m_LepPt1EleMuo=SelectedLep1->pt();
     m_LepEta1EleMuo=SelectedLep1->eta();
     m_LepPFIso1EleMuo=ElectronPFIso(SelectedLep1,rho);
@@ -474,6 +621,15 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     m_nbtagsLEleMuo=nbtagsL;
     m_nbtagsMEleMuo=nbtagsM;
     m_nbtagsTEleMuo=nbtagsT;
+    m_trigger320EleMuo=(int)isFired_HLT_PFJet320;
+    m_trigger650EleMuo=(int)isFired_HLT_HT650;
+    m_NVerticesEleMuo=vertices->size();
+    m_PUWeightEleMuo=MyWeight;
+    m_metPtEleMuo=met->begin()->pt();
+    m_metPxEleMuo=met->begin()->px();
+    m_metPyEleMuo=met->begin()->py();
+    m_metEtaEleMuo=met->begin()->eta();
+    m_metPhiEleMuo=met->begin()->phi();
     TreeEleMuo->Fill();
   }
 
@@ -525,10 +681,22 @@ FullyLeptonicAnalyzer::beginJob()
   TreeEleEle->Branch("XMassEffEleEle", &m_XMassEffEleEle, "XMassEffEleEle/f");
   TreeEleEle->Branch("XMassSVFitEleEle", &m_XMassSVFitEleEle, "XMassSVFitEleEle/f");
   TreeEleEle->Branch("XMassCAEleEle", &m_XMassCAEleEle, "XMassCAEleEle/f");
+  TreeEleEle->Branch("dRZZVisEleEle", &m_dRZZVisEleEle, "dRZZVisEleEle/f");
+  TreeEleEle->Branch("dRZZEffEleEle", &m_dRZZEffEleEle, "dRZZEffEleEle/f");
+  TreeEleEle->Branch("dRZZSvFitEleEle", &m_dRZZSvFitEleEle, "dRZZSvFitEleEle/f");
+  TreeEleEle->Branch("dRZZCAEleEle", &m_dRZZCAEleEle, "dRZZCAEleEle/f");
   TreeEleEle->Branch("metEleEle", &m_metEleEle, "metEleEle/f");
   TreeEleEle->Branch("nbtagsLEleEle", &m_nbtagsLEleEle, "nbtagsLEleEle/i");
   TreeEleEle->Branch("nbtagsMEleEle", &m_nbtagsMEleEle, "nbtagsMEleEle/i");
   TreeEleEle->Branch("nbtagsTEleEle", &m_nbtagsTEleEle, "nbtagsTEleEle/i");
+  TreeEleEle->Branch("trigger320EleEle", &m_trigger320EleEle, "trigger320EleEle/i");
+  TreeEleEle->Branch("NVerticesEleEle", &m_NVerticesEleEle, "NVerticesEleEle/i");
+  TreeEleEle->Branch("PUWeightEleEle", &m_PUWeightEleEle, "PUWeightEleEle/f");
+  TreeEleEle->Branch("metPtEleEle", &m_metPtEleEle, "metPtEleEle/f");
+  TreeEleEle->Branch("metPxEleEle", &m_metPxEleEle, "metPxEleEle/f");
+  TreeEleEle->Branch("metPyEleEle", &m_metPyEleEle, "metPyEleEle/f");
+  TreeEleEle->Branch("metEtaEleEle", &m_metEtaEleEle, "metEtaEleEle/f");
+  TreeEleEle->Branch("metPhiEleEle", &m_metPhiEleEle, "metPhiEleEle/f");
 
   TreeMuoMuo = fs->make<TTree>("TreeMuoMuo", "TreeMuoMuo");
   TreeMuoMuo->Branch("jetPtMuoMuo", &m_jetPtMuoMuo, "jetPtMuoMuo/f");
@@ -560,10 +728,22 @@ FullyLeptonicAnalyzer::beginJob()
   TreeMuoMuo->Branch("XMassEffMuoMuo", &m_XMassEffMuoMuo, "XMassEffMuoMuo/f");
   TreeMuoMuo->Branch("XMassSVFitMuoMuo", &m_XMassSVFitMuoMuo, "XMassSVFitMuoMuo/f");
   TreeMuoMuo->Branch("XMassCAMuoMuo", &m_XMassCAMuoMuo, "XMassCAMuoMuo/f");
+  TreeMuoMuo->Branch("dRZZVisMuoMuo", &m_dRZZVisMuoMuo, "dRZZVisMuoMuo/f");
+  TreeMuoMuo->Branch("dRZZEffMuoMuo", &m_dRZZEffMuoMuo, "dRZZEffMuoMuo/f");
+  TreeMuoMuo->Branch("dRZZSvFitMuoMuo", &m_dRZZSvFitMuoMuo, "dRZZSvFitMuoMuo/f");
+  TreeMuoMuo->Branch("dRZZCAMuoMuo", &m_dRZZCAMuoMuo, "dRZZCAMuoMuo/f");
   TreeMuoMuo->Branch("metMuoMuo", &m_metMuoMuo, "metMuoMuo/f");
   TreeMuoMuo->Branch("nbtagsLMuoMuo", &m_nbtagsLMuoMuo, "nbtagsLMuoMuo/i");
   TreeMuoMuo->Branch("nbtagsMMuoMuo", &m_nbtagsMMuoMuo, "nbtagsMMuoMuo/i");
   TreeMuoMuo->Branch("nbtagsTMuoMuo", &m_nbtagsTMuoMuo, "nbtagsTMuoMuo/i");
+  TreeMuoMuo->Branch("trigger320MuoMuo", &m_trigger320MuoMuo, "trigger320MuoMuo/i");
+  TreeMuoMuo->Branch("NVerticesMuoMuo", &m_NVerticesMuoMuo, "NVerticesMuoMuo/i");
+  TreeMuoMuo->Branch("PUWeightMuoMuo", &m_PUWeightMuoMuo, "PUWeightMuoMuo/f");
+  TreeMuoMuo->Branch("metPtMuoMuo", &m_metPtMuoMuo, "metPtMuoMuo/f");
+  TreeMuoMuo->Branch("metPxMuoMuo", &m_metPxMuoMuo, "metPxMuoMuo/f");
+  TreeMuoMuo->Branch("metPyMuoMuo", &m_metPyMuoMuo, "metPyMuoMuo/f");
+  TreeMuoMuo->Branch("metEtaMuoMuo", &m_metEtaMuoMuo, "metEtaMuoMuo/f");
+  TreeMuoMuo->Branch("metPhiMuoMuo", &m_metPhiMuoMuo, "metPhiMuoMuo/f");
 
   TreeEleMuo = fs->make<TTree>("TreeEleMuo", "TreeEleMuo");
   TreeEleMuo->Branch("jetPtEleMuo", &m_jetPtEleMuo, "jetPtEleMuo/f");
@@ -595,10 +775,22 @@ FullyLeptonicAnalyzer::beginJob()
   TreeEleMuo->Branch("XMassEffEleMuo", &m_XMassEffEleMuo, "XMassEffEleMuo/f");
   TreeEleMuo->Branch("XMassSVFitEleMuo", &m_XMassSVFitEleMuo, "XMassSVFitEleMuo/f");
   TreeEleMuo->Branch("XMassCAEleMuo", &m_XMassCAEleMuo, "XMassCAEleMuo/f");
+  TreeEleMuo->Branch("dRZZVisEleMuo", &m_dRZZVisEleMuo, "dRZZVisEleMuo/f");
+  TreeEleMuo->Branch("dRZZEffEleMuo", &m_dRZZEffEleMuo, "dRZZEffEleMuo/f");
+  TreeEleMuo->Branch("dRZZSvFitEleMuo", &m_dRZZSvFitEleMuo, "dRZZSvFitEleMuo/f");
+  TreeEleMuo->Branch("dRZZCAEleMuo", &m_dRZZCAEleMuo, "dRZZCAEleMuo/f");
   TreeEleMuo->Branch("metEleMuo", &m_metEleMuo, "metEleMuo/f");
   TreeEleMuo->Branch("nbtagsLEleMuo", &m_nbtagsLEleMuo, "nbtagsLEleMuo/i");
   TreeEleMuo->Branch("nbtagsMEleMuo", &m_nbtagsMEleMuo, "nbtagsMEleMuo/i");
   TreeEleMuo->Branch("nbtagsTEleMuo", &m_nbtagsTEleMuo, "nbtagsTEleMuo/i");
+  TreeEleMuo->Branch("trigger320EleMuo", &m_trigger320EleMuo, "trigger320EleMuo/i");
+  TreeEleMuo->Branch("NVerticesEleMuo", &m_NVerticesEleMuo, "NVerticesEleMuo/i");
+  TreeEleMuo->Branch("PUWeightEleMuo", &m_PUWeightEleMuo, "PUWeightEleMuo/f");
+  TreeEleMuo->Branch("metPtEleMuo", &m_metPtEleMuo, "metPtEleMuo/f");
+  TreeEleMuo->Branch("metPxEleMuo", &m_metPxEleMuo, "metPxEleMuo/f");
+  TreeEleMuo->Branch("metPyEleMuo", &m_metPyEleMuo, "metPyEleMuo/f");
+  TreeEleMuo->Branch("metEtaEleMuo", &m_metEtaEleMuo, "metEtaEleMuo/f");
+  TreeEleMuo->Branch("metPhiEleMuo", &m_metPhiEleMuo, "metPhiEleMuo/f");
 }
 
 // ------------ method called once each job just after ending the event loop ------------
@@ -651,7 +843,7 @@ void FullyLeptonicAnalyzer::SelectJet(edm::Handle<pat::JetCollection> CA8Jetswit
     float dRmin = 9999.; float mass = 0.;
     for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
       float dRtmp = ROOT::Math::VectorUtil::DeltaR(jet->p4(),jetPruned->p4());
-      if(dRtmp<dRmin && dRtmp<0.7 ){//matching failed if greater than jet radius
+      if(dRtmp<dRmin && dRtmp<0.8 ){//matching failed if greater than jet radius
         dRmin=dRtmp;
         mass=jetPruned->mass();
       }
@@ -663,7 +855,8 @@ void FullyLeptonicAnalyzer::SelectJet(edm::Handle<pat::JetCollection> CA8Jetswit
     if(jet->chargedHadronEnergyFraction()<=0.00) continue;
     if(jet->pt()<400) continue;
     if(abs(jet->eta())>2.4) continue;
-    if(!(mass>70 && mass<110)) continue;
+    if(sideband) {if(!(mass>20 && mass<70))  continue;}
+    else         {if(!(mass>70 && mass<110)) continue;}
     if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;
     Njet = Njet + 1;
     SelectedJet.push_back(jet);

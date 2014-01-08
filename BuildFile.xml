@@ -3,6 +3,7 @@
 <use name="FWCore/ParameterSet"/>
 <use name="CommonTools/UtilAlgos"/>
 <use name="TauAnalysis/CandidateTools"/>
+<use name="PhysicsTools/Utilities"/>
 <flags EDM_PLUGIN="1"/>
 <export>
    <lib name="1"/>

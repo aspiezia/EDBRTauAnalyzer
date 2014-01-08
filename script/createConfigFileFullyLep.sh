@@ -4,6 +4,9 @@ index_min=$1
 index_max=$2
 index_OutputFile=$3
 dataset=$4
+sample=$5
+sideband=$6
+
 index=0
 
 echo "import FWCore.ParameterSet.Config as cms"
@@ -34,7 +37,27 @@ done < $dataset\_fileList.txt
 echo "    )"
 echo ")"
 echo ""
-echo "process.demo = cms.EDAnalyzer('FullyLeptonicAnalyzer'"
+echo "process.demo = cms.EDAnalyzer('FullyLeptonicAnalyzer',"
+if [ "$sample" == "data" ]; then
+    echo "                              isData_ = cms.untracked.bool(True),"
+fi
+if [ "$sample" == "MC" ]; then
+    echo "                              isData_ = cms.untracked.bool(False),"
+fi
+if [ "$sideband" == "sideband" ]; then
+    echo "                              sideband_ = cms.untracked.bool(True)"
+fi
+if [ "$sideband" == "SR" ]; then
+    echo "                              sideband_ = cms.untracked.bool(False),"
+fi
+echo '                              vtxColl_ = cms.InputTag("primaryVertexFilter"),'
+echo '                              jetColl_ = cms.InputTag("selectedPatJetsCA8CHSwithQJetsForBoostedTaus"),'
+echo '                              jetPrunedColl_ = cms.InputTag("selectedPatJetsCA8CHSprunedForBoostedTaus"),'
+echo '                              metColl_ = cms.InputTag("patMetShiftCorrected"),'
+echo '                              electronColl_ = cms.InputTag("patElectronsWithTrigger"),'
+echo '                              muonColl_ = cms.InputTag("patMuonsWithTrigger"),'
+echo '                              metRawColl_ = cms.InputTag("patMETsRaw"),'
+echo '                              ak5JetColl_ = cms.InputTag("patJetsWithVarCHS"),'
 echo ")"
 echo ""
 echo 'process.badEventFilter = cms.EDFilter("HLTHighLevel",'
@@ -59,6 +82,15 @@ echo 'process.TFileService = cms.Service("TFileService",'
 echo "        fileName = cms.string('output$index_OutputFile.root')"
 echo ")"
 echo ""
-echo "#process.p = cms.Path(process.badEventFilter + process.demo)"
-echo "process.p = cms.Path(process.demo)"
+if [ "$sample" == "data" ]; then
+    echo "import FWCore.PythonUtilities.LumiList as LumiList"
+    echo "import FWCore.ParameterSet.Types as CfgTypes"
+    echo "process.source.lumisToProcess = CfgTypes.untracked(CfgTypes.VLuminosityBlockRange())"
+    echo "JSONfile = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions12/8TeV/Reprocessing/Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt'"
+    echo "myLumis = LumiList.LumiList(filename = JSONfile).getCMSSWString().split(',')"
+    echo "process.source.lumisToProcess.extend(myLumis)"
+    echo ""
+fi
+echo "process.p = cms.Path(process.badEventFilter + process.demo)"
+echo "#process.p = cms.Path(process.demo)"
 echo "process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )"
