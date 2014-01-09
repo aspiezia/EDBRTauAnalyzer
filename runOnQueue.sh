@@ -12,7 +12,7 @@ sideband=$8
 
 mkdir $folder
 cd $folder
-cp ../script/createConfigFileFullyLep.sh .
+cp ../script/createConfigFile.sh .
 cp ../script/createRunFileCERN.sh .
 cp ../script/createRunFileZURICH.sh .
 cp ../data/$dataset\_fileList.txt .
@@ -27,19 +27,17 @@ do
     min=$(($i*$numJob));
     max=$(($(($i+1))*$numJob));
     if [ "$min" -lt "$x" ]; then
-        if [ "$analysis" == "fullyLeptonic" ]; then
-	    if [ "$sample" == "data" ] && [ "$sideband" == "sideband" ]; then
-		./createConfigFileFullyLep.sh $min $max $i $dataset data sideband &> $dataset\_$i\_cfg.py
-	    fi
-	    if [ "$sample" == "MC" ] && [ "$sideband" == "sideband" ]; then
-		./createConfigFileFullyLep.sh $min $max $i $dataset MC sideband &> $dataset\_$i\_cfg.py
-	    fi
-	    if [ "$sample" == "data" ] && [ "$sideband" == "SR" ]; then
-		./createConfigFileFullyLep.sh $min $max $i $dataset data SR &> $dataset\_$i\_cfg.py
-	    fi
-	    if [ "$sample" == "MC" ] && [ "$sideband" == "SR" ]; then
-		./createConfigFileFullyLep.sh $min $max $i $dataset MC SR &> $dataset\_$i\_cfg.py
-	    fi
+	if [ "$sample" == "data" ] && [ "$sideband" == "sideband" ]; then
+	    ./createConfigFile.sh $min $max $i $dataset data sideband $analysis &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$sample" == "MC" ] && [ "$sideband" == "sideband" ]; then
+	    ./createConfigFile.sh $min $max $i $dataset MC sideband $analysis &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$sample" == "data" ] && [ "$sideband" == "SR" ]; then
+	    ./createConfigFile.sh $min $max $i $dataset data SR $analysis &> $dataset\_$i\_cfg.py
+	fi
+	if [ "$sample" == "MC" ] && [ "$sideband" == "SR" ]; then
+	    ./createConfigFile.sh $min $max $i $dataset MC SR $analysis &> $dataset\_$i\_cfg.py
 	fi
 
 	if [ "$where" == "CERN" ]; then
