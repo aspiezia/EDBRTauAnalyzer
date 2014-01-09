@@ -41,8 +41,8 @@ echo ""
 if [ "$analysis" == "fullyLeptonic" ]; then
     echo "process.demo = cms.EDAnalyzer('FullyLeptonicAnalyzer',"
 fi
-if [ "$analysis" == "MuTauAnalysis" ]; then
-    echo "process.demo = cms.EDAnalyzer('MuTauAnalyzer',"
+if [ "$analysis" == "semiLeptonic" ]; then
+    echo "process.demo = cms.EDAnalyzer('SemiLeptonicAnalyzer',"
 fi
 if [ "$sample" == "data" ]; then
     echo "                              isData_ = cms.untracked.bool(True),"
@@ -62,6 +62,7 @@ echo '                              jetPrunedColl = cms.InputTag("selectedPatJet
 echo '                              electronColl = cms.InputTag("patElectronsWithTrigger"),'
 echo '                              muonColl = cms.InputTag("patMuonsWithTrigger"),'
 echo '                              tauMuTauColl = cms.InputTag("selectedPatTausMuTau"),'
+echo '                              tauElTauColl = cms.InputTag("selectedPatTausEleTau"),'
 echo '                              metColl = cms.InputTag("patMetShiftCorrected"),'
 echo '                              metRawColl = cms.InputTag("patMETsRaw"),'
 echo '                              ak5JetColl = cms.InputTag("patJetsWithVarCHS"),'

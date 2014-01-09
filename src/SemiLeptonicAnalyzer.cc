@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    MuTauAnalyzer
-// Class:      MuTauAnalyzer
+// Package:    SemiLeptonicAnalyzer
+// Class:      SemiLeptonicAnalyzer
 // 
-/**\class MuTauAnalyzer MuTauAnalyzer.cc ExoDiBosonResonances/EDBRTauAnalyzer/src/MuTauAnalyzer.cc
+/**\class SemiLeptonicAnalyzer SemiLeptonicAnalyzer.cc ExoDiBosonResonances/EDBRTauAnalyzer/src/SemiLeptonicAnalyzer.cc
 
 Description: [one line class summary]
 
@@ -53,10 +53,10 @@ Implementation:
 // class declaration
 //
 
-class MuTauAnalyzer : public edm::EDAnalyzer {
+class SemiLeptonicAnalyzer : public edm::EDAnalyzer {
 public:
-  explicit MuTauAnalyzer(const edm::ParameterSet&);
-  ~MuTauAnalyzer();
+  explicit SemiLeptonicAnalyzer(const edm::ParameterSet&);
+  ~SemiLeptonicAnalyzer();
   
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   
@@ -143,7 +143,7 @@ using namespace std;
 //
 // constructors and destructor
 //
-MuTauAnalyzer::MuTauAnalyzer(const edm::ParameterSet& iConfig)
+SemiLeptonicAnalyzer::SemiLeptonicAnalyzer(const edm::ParameterSet& iConfig)
 
 {
   //now do what ever initialization is needed
@@ -182,7 +182,7 @@ MuTauAnalyzer::MuTauAnalyzer(const edm::ParameterSet& iConfig)
 }
 
 
-MuTauAnalyzer::~MuTauAnalyzer()
+SemiLeptonicAnalyzer::~SemiLeptonicAnalyzer()
 {
  
   // do anything here that needs to be done at desctruction time
@@ -197,7 +197,7 @@ MuTauAnalyzer::~MuTauAnalyzer()
 
 // ------------ method called for each event  ------------
 void
-MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
  
   Nevents->Fill(1);
@@ -538,7 +538,7 @@ MuTauAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-MuTauAnalyzer::beginJob()
+SemiLeptonicAnalyzer::beginJob()
 {
   Service<TFileService> fs;
   Nevents = fs->make<TH1D>("Nevents", "Nevents", 3, -0.5, 2.5);
@@ -616,37 +616,37 @@ MuTauAnalyzer::beginJob()
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-MuTauAnalyzer::endJob() 
+SemiLeptonicAnalyzer::endJob() 
 {
 }
 
 // ------------ method called when starting to processes a run  ------------
 void 
-MuTauAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
+SemiLeptonicAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when ending the processing of a run  ------------
 void 
-MuTauAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
+SemiLeptonicAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when starting to processes a luminosity block  ------------
 void 
-MuTauAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+SemiLeptonicAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when ending the processing of a luminosity block  ------------
 void 
-MuTauAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+SemiLeptonicAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-MuTauAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+SemiLeptonicAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -654,7 +654,7 @@ MuTauAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   descriptions.addDefault(desc);
 }
 
-float MuTauAnalyzer::MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
+float SemiLeptonicAnalyzer::MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
   float sumChargedHadronPt = muon->pfIsolationR04().sumChargedHadronPt;
   float sumNeutralHadronEt = muon->pfIsolationR04().sumNeutralHadronEt;
   float sumPhotonEt = muon->pfIsolationR04().sumPhotonEt;
@@ -667,7 +667,7 @@ float MuTauAnalyzer::MuonPFIso(pat::MuonCollection::const_iterator muon, bool hi
   return iso;
 }
 
-void MuTauAnalyzer::BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & nbtagsL, int & nbtagsM, int & nbtagsT,
+void SemiLeptonicAnalyzer::BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & nbtagsL, int & nbtagsM, int & nbtagsT,
 				     pat::JetCollection::const_iterator SelectedJet){
   for(pat::JetCollection::const_iterator ak5 = ak5jetCands->begin(); ak5 != ak5jetCands->end(); ++ak5) {
     if(ROOT::Math::VectorUtil::DeltaR(ak5->p4(),SelectedJet->p4())<0.8) continue;
@@ -679,4 +679,4 @@ void MuTauAnalyzer::BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & 
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(MuTauAnalyzer);
+DEFINE_FWK_MODULE(SemiLeptonicAnalyzer);

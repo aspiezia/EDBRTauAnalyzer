@@ -27,30 +27,19 @@ do
     min=$(($i*$numJob));
     max=$(($(($i+1))*$numJob));
     if [ "$min" -lt "$x" ]; then
-	if [ "$sample" == "data" ] && [ "$sideband" == "sideband" ]; then
-	    ./createConfigFile.sh $min $max $i $dataset data sideband $analysis &> $dataset\_$i\_cfg.py
-	fi
-	if [ "$sample" == "MC" ] && [ "$sideband" == "sideband" ]; then
-	    ./createConfigFile.sh $min $max $i $dataset MC sideband $analysis &> $dataset\_$i\_cfg.py
-	fi
-	if [ "$sample" == "data" ] && [ "$sideband" == "SR" ]; then
-	    ./createConfigFile.sh $min $max $i $dataset data SR $analysis &> $dataset\_$i\_cfg.py
-	fi
-	if [ "$sample" == "MC" ] && [ "$sideband" == "SR" ]; then
-	    ./createConfigFile.sh $min $max $i $dataset MC SR $analysis &> $dataset\_$i\_cfg.py
-	fi
+	./createConfigFile.sh $min $max $i $dataset $sample $sideband $analysis &> $dataset\_$i\_cfg.py
 
 	if [ "$where" == "CERN" ]; then
 	    ./createRunFileCERN.sh $dataset\_$i\_cfg.py $folder &> run$i.sh
 	    chmod 777 run$i.sh
 	    echo "bsub -q 8nh run$i.sh"
-	    #bsub -q $queue run$i.sh
+	    bsub -q $queue run$i.sh
 	fi
 	if [ "$where" == "ZURICH" ]; then
 	    ./createRunFileZURICH.sh $dataset\_$i\_cfg.py $folder &> run$i.sh
 	    chmod 777 run$i.sh
 	    echo "qsub run$i.sh"
-	    #qsub run$i.sh
+	    qsub run$i.sh
 	fi
     fi
 done
