@@ -71,49 +71,93 @@ private:
   virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
+  //FUNCTION
+  void SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets, edm::Handle<pat::JetCollection> CA8JetsPruned, bool & foundJet,
+                 pat::JetCollection::const_iterator & SelectedJet, float & massZ, float & tau21Z, float & ptZ, float massMin, float massMax);
+  void SelectTau(edm::Handle<pat::TauCollection> tauHandle, pat::JetCollection::const_iterator SelectedJet, bool & foundTau, 
+		 pat::TauCollection::const_iterator & SelectedTau, float & ptTau, bool foundJet);
+  void SelectMuon(edm::Handle<pat::MuonCollection> muoH, pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+		  pat::MuonCollection::const_iterator & SelectedMuon, float & ptMuon, bool foundJet, reco::Vertex primaryVertex);
+  void SelectElectron(edm::Handle<pat::ElectronCollection> eleH, pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+		      pat::ElectronCollection::const_iterator & SelectedElectron, float & ptElectron, bool foundJet, reco::Vertex primaryVertex);
+  void Efficiency(float & genEvent, bool isData, edm::Handle<std::vector<reco::GenParticle> > genParts);
+  void svfit(edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, LorentzVector SelectedTau, LorentzVector SelectedMuon, TLorentzVector PrunedJet,
+	     float & MassSVFit, float & XMassSVFit, float & dRJetZSVFit, float & ptSVFit, pat::JetCollection::const_iterator SelectedJet);
+  
   float MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
+  float ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho);
+  float MuonCorrPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
+  float ElectronCorrPFIso(pat::ElectronCollection::const_iterator electron, float rho);
   void BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & nbtagsL, int & nbtagsM, int & nbtagsT, pat::JetCollection::const_iterator SelectedJet);
 
   TH1D* Nevents;
 
-  TTree *TreeMuoTau;                        TTree *TreeEleTau;
-  float m_jetPtMuoTau;			    float m_jetPtEleTau;
-  float m_jetEtaMuoTau;			    float m_jetEtaEleTau;
-  float m_jetMassMuoTau;		    float m_jetMassEleTau;
-  float m_jetSubjettinessMuoTau;	    float m_jetSubjettinessEleTau;
-  float m_dPhiJetMetMuoTau;		    float m_dPhiJetMetEleTau;
-  float m_dRJetMetMuoTau;		    float m_dRJetMetEleTau;
-  float m_dRJetLepMuoTau;		    float m_dRJetLepEleTau;
-  float m_dRJetTauMuoTau;		    float m_dRJetTauEleTau;
-  float m_dPhiTauMetMuoTau;		    float m_dPhiTauMetEleTau;
-  float m_dRTauMetMuoTau;		    float m_dRTauMetEleTau;
-  float m_dRTauLepMuoTau;		    float m_dRTauLepEleTau;
-  float m_dPhiLepMetMuoTau;		    float m_dPhiLepMetEleTau;
-  float m_dRLepMetMuoTau;		    float m_dRLepMetEleTau;
-  float m_dRZZMuoTau;			    float m_dRZZEleTau;
-  float m_tauPtMuoTau;			    float m_tauPtEleTau;
-  float m_tauEtaMuoTau;			    float m_tauEtaEleTau;
-  float m_lepPtMuoTau;			    float m_lepPtEleTau;
-  float m_lepEtaMuoTau;			    float m_lepEtaEleTau;
-  float m_lepPFIsoMuoTau;		    float m_lepPFIsoEleTau;
-  float m_metMuoTau;			    float m_metEleTau;
-  float m_MassSvfitTauLepMuoTau;	    float m_MassSvfitTauLepEleTau;
-  float m_XMassSVFitMuoTau;		    float m_XMassSVFitEleTau;
-  int m_nbtagsLMuoTau;			    int m_nbtagsLEleTau;
-  int m_nbtagsMMuoTau;			    int m_nbtagsMEleTau;
-  int m_nbtagsTMuoTau;			    int m_nbtagsTEleTau;
-  int m_trigger650MuoTau;		    int m_trigger650EleTau;
-  int m_trigger320MuoTau;		    int m_trigger320EleTau;
-  int m_NVerticesMuoTau;		    int m_NVerticesEleTau;
-  float m_PUWeightMuoTau;		    float m_PUWeightEleTau;
-  float m_metPxMuoTau;			    float m_metPxEleTau;
-  float m_metPyMuoTau;			    float m_metPyEleTau;
-  float m_metEtaMuoTau;			    float m_metEtaEleTau;
-  float m_metPhiMuoTau;         	    float m_metPhiEleTau;
+  TTree *TreeSignalEff;
+  float m_genEvent;
+
+  TTree *TreeMuoTau;
+  TTree *TreeEleTau;
+  TTree *TreeSB1MuoTau;
+  TTree *TreeSB1EleTau;
+  TTree *TreeSB2MuoTau;
+  TTree *TreeSB2EleTau;
+  float m_jetPt;
+  float m_jetEta;
+  float m_jetMass;
+  float m_jetSubjettiness;
+  float m_dPhiJetMet;
+  float m_dRJetMet;
+  float m_dRJetLep;
+  float m_dRJetTau;
+  float m_dPhiTauMet;
+  float m_dRTauMet;
+  float m_dRTauLep;
+  float m_dPhiLepMet;
+  float m_dRLepMet;
+  float m_dRZZVis;
+  float m_dRZZEff;
+  float m_dRZZSvFit;
+  float m_dRZZCA;
+  float m_tauPt;
+  float m_tauEta;
+  float m_tauCharge;
+  float m_lepPt;
+  float m_lepEta;
+  float m_lepCharge;
+  float m_lepPFIso;
+  float m_lepCorrPFIso;
+  float m_charge;
+  float m_met;
+  float m_metPhi;
+  float m_uncorrmet;
+  float m_uncorrmetPhi;
+  float m_PtSvfit;
+  float m_MassVis;
+  float m_MassEff;
+  float m_MassSvfit;
+  float m_MassCA;
+  float m_XMassVis;
+  float m_XMassEff;
+  float m_XMassSVFit;
+  float m_XMassCA;
+  int m_nbtagsL;
+  int m_nbtagsM;
+  int m_nbtagsT;
+  int m_trigger;
+  int m_trigger650;
+  int m_trigger320;
+  int m_sideband;
+  int m_NVertices;
+  float m_PUWeight;
+  float m_metPx;
+  float m_metPy;
+  int m_NeventsTOT;
+  double m_xsec;
+  double m_lumi;
+  float m_weight;
 
   edm::LumiReWeighting LumiWeights_;
   bool isData; 
-  bool sideband; 
   edm::InputTag vtxColl_;
   edm::InputTag jetColl_;
   edm::InputTag jetPrunedColl_;
@@ -123,7 +167,11 @@ private:
   edm::InputTag tauElTauColl_;
   edm::InputTag metColl_;
   edm::InputTag metRawColl_;
+  edm::InputTag uncorrmetColl_;
   edm::InputTag ak5JetColl_;
+  int NeventsTOT_;
+  double xsec_;
+  double lumi_;
 
   // ----------member data ---------------------------
 };
@@ -148,7 +196,6 @@ SemiLeptonicAnalyzer::SemiLeptonicAnalyzer(const edm::ParameterSet& iConfig)
 {
   //now do what ever initialization is needed
   isData = iConfig.getUntrackedParameter<bool>("isData_");
-  sideband = iConfig.getUntrackedParameter<bool>("sideband_");
   vtxColl_ = iConfig.getParameter<edm::InputTag>("vtxColl"); 
   jetColl_ = iConfig.getParameter<edm::InputTag>("jetColl"); 
   jetPrunedColl_ = iConfig.getParameter<edm::InputTag>("jetPrunedColl"); 
@@ -157,8 +204,12 @@ SemiLeptonicAnalyzer::SemiLeptonicAnalyzer(const edm::ParameterSet& iConfig)
   tauMuTauColl_ = iConfig.getParameter<edm::InputTag>("tauMuTauColl");
   tauElTauColl_ = iConfig.getParameter<edm::InputTag>("tauElTauColl"); 
   metColl_ = iConfig.getParameter<edm::InputTag>("metColl"); 
-  metRawColl_ = iConfig.getParameter<edm::InputTag>("metRawColl"); 
+  metRawColl_ = iConfig.getParameter<edm::InputTag>("metRawColl");
+  uncorrmetColl_ = iConfig.getParameter<edm::InputTag>("uncorrmetColl");  
   ak5JetColl_ = iConfig.getParameter<edm::InputTag>("ak5JetColl"); 
+  NeventsTOT_ = iConfig.getParameter<int>( "NeventsTOT" );
+  xsec_= iConfig.getParameter<double>( "xsec" );
+  lumi_= iConfig.getParameter<double>( "lumi" );
 
 
   // True number of interaction for data produced as in: https://twiki.cern.ch/twiki/bin/view/CMS/PileupJSONFileforData
@@ -229,12 +280,29 @@ SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   edm::Handle<pat::METCollection> metRaw;
   iEvent.getByLabel(metRawColl_, metRaw);
 
+  edm::Handle<pat::METCollection> uncorrmet;
+  iEvent.getByLabel(uncorrmetColl_, uncorrmet);
+
   edm::Handle<pat::JetCollection> ak5jetCands;
   iEvent.getByLabel(ak5JetColl_,ak5jetCands);
+
+  edm::Handle<double> rhoHandle;
+  iEvent.getByLabel("kt6PFJets", "rho", rhoHandle);
+  float rho = *(rhoHandle.product());
+
+  Handle<vector<reco::GenParticle> > genParts;
+  iEvent.getByLabel("genParticles", genParts);
+
+  //FOR SIGNAL EFFICIENCY
+  float genEvent = 0;
+  Efficiency(genEvent, isData, genParts);
+  m_genEvent = genEvent;
+  TreeSignalEff->Fill();
 
   //TRIGGER
   bool isFired_HLT_HT650 = false;
   bool isFired_HLT_PFJet320 = false;
+  bool isFired_HLT = false;
   edm::Handle<edm::TriggerResults> trigResults;
   edm::InputTag trigResultsTag("TriggerResults","","HLT");  
   iEvent.getByLabel(trigResultsTag,trigResults);
@@ -267,6 +335,7 @@ SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   if(TrggIndex_PFJet320_v6 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v6);
   if(TrggIndex_PFJet320_v8 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v8);
   if(TrggIndex_PFJet320_v9 < trigResults->size()) isFired_HLT_PFJet320 = trigResults->accept(TrggIndex_PFJet320_v9); 
+  if(isFired_HLT_PFJet320 || isFired_HLT_HT650) isFired_HLT=true;
 
   //PILEUP WEIGHT
   double MyWeight = 1;
@@ -287,241 +356,661 @@ SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   }
 
   
-  //JET SELECTION
+  //JET SELECTION - SR
   pat::JetCollection::const_iterator SelectedJet;
   float massZ=-9999; float ptZ=-999; bool foundJet=false; float tau21Z=-9999;
-  for(pat::JetCollection::const_iterator jet = CA8JetswithQjets->begin(); jet != CA8JetswithQjets->end(); ++jet) {
-    float dRmin = 9999.; float mass = 0.;
-    for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
-      float dRtmp = ROOT::Math::VectorUtil::DeltaR(jet->p4(),jetPruned->p4());
-      if(dRtmp<dRmin && dRtmp<0.8){//matching failed if greater than jet radius
-	dRmin=dRtmp;
-	mass=jetPruned->mass();
-      }
-    }
-    if(jet->muonEnergyFraction()>=0.99) continue;
-    if(jet->photonEnergyFraction()>=0.99) continue;
-    if(jet->chargedEmEnergyFraction()>=0.99) continue;
-    if(jet->neutralHadronEnergyFraction()>=0.99) continue;
-    if(jet->chargedHadronEnergyFraction()<=0.00) continue;
-    if(jet->pt()<400) continue;
-    if(abs(jet->eta())>2.4) continue;
-    if(sideband) {if(!(mass>20 && mass<70))  continue;}
-    else         {if(!(mass>70 && mass<110)) continue;}
-    if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;
-    foundJet=true;
-    if(jet->pt()>ptZ){
-      massZ=mass;
-      ptZ=jet->pt();
-      tau21Z=jet->userFloat("tau2")/jet->userFloat("tau1")>0.75;
-      SelectedJet=jet;
-    }
-  }
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundJet, SelectedJet, massZ, tau21Z, ptZ, 70, 110);
   
-  //TAU SELECTION - MUTAU
+  //JET SELECTION - SB1
+  pat::JetCollection::const_iterator SelectedSB1Jet;
+  float massSB1Z=-9999; float ptSB1Z=-999; bool foundSB1Jet=false; float tau21SB1Z=-9999;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB1Jet, SelectedSB1Jet, massSB1Z, tau21SB1Z, ptSB1Z, 20, 70);
+  
+  //JET SELECTION - SB2
+  pat::JetCollection::const_iterator SelectedSB2Jet;
+  float massSB2Z=-9999; float ptSB2Z=-999; bool foundSB2Jet=false; float tau21SB2Z=-9999;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB2Jet, SelectedSB2Jet, massSB2Z, tau21SB2Z, ptSB2Z, 110, 99999);
+  
+  //TAU SELECTION - MUTAU - SR
   float ptTauMuTau=-99; bool foundTauMuTau=false;
   pat::TauCollection::const_iterator SelectedTauMuTau;
-  for (pat::TauCollection::const_iterator patTau = tauMuTauHandle->begin(); patTau != tauMuTauHandle->end(); ++patTau ) {
-    if(patTau->pt()<20) continue;
-    if(abs(patTau->eta())>2.4) continue;
-    if(patTau->tauID("decayModeFinding")<0.5) continue;
-    if(patTau->tauID("againstMuonLoose")<0.5) continue;
-    if(patTau->tauID("againstElectronLoose")<0.5) continue;
-    if(patTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")<0.5) continue;
-    foundTauMuTau=true;
-    if(patTau->pt()>ptTauMuTau){
-      SelectedTauMuTau=patTau;
-      ptTauMuTau=patTau->pt();
-    }
-  }
+  SelectTau(tauMuTauHandle, SelectedJet, foundTauMuTau, SelectedTauMuTau, ptTauMuTau, foundJet);
   
-  //TAU SELECTION - ELTAU
+  //TAU SELECTION - MUTAU - SB1
+  float ptSB1TauMuTau=-99; bool foundSB1TauMuTau=false;
+  pat::TauCollection::const_iterator SelectedSB1TauMuTau;
+  SelectTau(tauMuTauHandle, SelectedSB1Jet, foundSB1TauMuTau, SelectedSB1TauMuTau, ptSB1TauMuTau, foundSB1Jet);
+  
+  //TAU SELECTION - MUTAU - SB2
+  float ptSB2TauMuTau=-99; bool foundSB2TauMuTau=false;
+  pat::TauCollection::const_iterator SelectedSB2TauMuTau;
+  SelectTau(tauMuTauHandle, SelectedSB2Jet, foundSB2TauMuTau, SelectedSB2TauMuTau, ptSB2TauMuTau, foundSB2Jet); 
+  
+  //TAU SELECTION - ELTAU - SR
   float ptTauElTau=-99; bool foundTauElTau=false;
   pat::TauCollection::const_iterator SelectedTauElTau;
-  for (pat::TauCollection::const_iterator patTau = tauElTauHandle->begin(); patTau != tauElTauHandle->end(); ++patTau ) {
-    if(patTau->pt()<20) continue;
-    if(abs(patTau->eta())>2.4) continue;
-    if(patTau->tauID("decayModeFinding")<0.5) continue;
-    if(patTau->tauID("againstMuonLoose")<0.5) continue;
-    if(patTau->tauID("againstElectronLoose")<0.5) continue;
-    if(patTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")<0.5) continue;
-    foundTauElTau=true;
-    if(patTau->pt()>ptTauElTau){
-      SelectedTauElTau=patTau;
-      ptTauElTau=patTau->pt();
-    }
-  }
+  SelectTau(tauElTauHandle, SelectedJet, foundTauElTau, SelectedTauElTau, ptTauElTau, foundJet);
+  
+  //TAU SELECTION - ELTAU - SB1
+  float ptSB1TauElTau=-99; bool foundSB1TauElTau=false;
+  pat::TauCollection::const_iterator SelectedSB1TauElTau;
+  SelectTau(tauElTauHandle, SelectedSB1Jet, foundSB1TauElTau, SelectedSB1TauElTau, ptSB1TauElTau, foundSB1Jet);
+  
+  //TAU SELECTION - ELTAU - SB2
+  float ptSB2TauElTau=-99; bool foundSB2TauElTau=false;
+  pat::TauCollection::const_iterator SelectedSB2TauElTau;
+  SelectTau(tauElTauHandle, SelectedSB2Jet, foundSB2TauElTau, SelectedSB2TauElTau, ptSB2TauElTau, foundSB2Jet); 
 
-  //MUON SELECTION
+  //MUON SELECTION - SR
   float ptMuon=-99; bool foundMuon=false;
   pat::MuonCollection::const_iterator SelectedMuon;
-  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
-    if(!(muon->isGlobalMuon())) continue;
-    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
-    if(cktTrack->pt()<10) continue;
-    if(abs(cktTrack->eta())>2.4) continue;
-    if(abs(cktTrack->phi())>3.2) continue;
-    if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
-    if(muon->globalTrack()->hitPattern().numberOfValidMuonHits()<=0) continue;
-    if(muon->numberOfMatches()<=1) continue;
-    if(fabs(cktTrack->dxy(primaryVertex.position()))>=0.2) continue;
-    if(fabs(cktTrack->dz( primaryVertex.position()))>=0.5) continue;
-    if(muon->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
-    if(muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
-    foundMuon=true;
-    if(cktTrack->pt()>ptMuon){
-      SelectedMuon=muon;
-      ptMuon=cktTrack->pt();
-    }
-  }
+  SelectMuon(muoH, SelectedJet, foundMuon, SelectedMuon, ptMuon, foundJet, primaryVertex);
 
-  //ELECTRON SELECTION
+  //MUON SELECTION - SB1
+  float ptSB1Muon=-99; bool foundSB1Muon=false;
+  pat::MuonCollection::const_iterator SelectedSB1Muon;
+  SelectMuon(muoH, SelectedSB1Jet, foundSB1Muon, SelectedSB1Muon, ptSB1Muon, foundSB1Jet, primaryVertex);
+
+  //MUON SELECTION - SB2
+  float ptSB2Muon=-99; bool foundSB2Muon=false;
+  pat::MuonCollection::const_iterator SelectedSB2Muon;
+  SelectMuon(muoH, SelectedSB2Jet, foundSB2Muon, SelectedSB2Muon, ptSB2Muon, foundSB2Jet, primaryVertex);
+
+  //ELECTRON SELECTION - SR
   float ptElectron=-99; bool foundElectron=false;
   pat::ElectronCollection::const_iterator SelectedElectron;
-  for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
-    if(electron->pt()<10) continue;
-    if(fabs(electron->superCluster()->eta())<=1.479){
-      if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.004) continue;
-      if(electron->deltaPhiSuperClusterTrackAtVtx()>=0.030) continue;
-      if(electron->sigmaIetaIeta()>=0.01) continue;
-      if(electron->hadronicOverEm()>=0.12) continue;
-      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
-      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
-      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
-      if(electron->passConversionVeto()==0) continue;
-      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
-    }
-    if(fabs(electron->superCluster()->eta())>1.479 && fabs(electron->superCluster()->eta())<2.5){
-      if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.005) continue;
-      if(electron->deltaPhiSuperClusterTrackAtVtx()>=0.020) continue;
-      if(electron->sigmaIetaIeta()>=0.03) continue;
-      if(electron->hadronicOverEm()>=0.10) continue;
-      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
-      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
-      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
-      if(electron->passConversionVeto()==0) continue;
-      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
-    }
-    foundMuon=true;
-    if(electron->pt()>ptElectron){
-      SelectedElectron=electron;
-      ptElectron=electron->pt();
-    }
-  }
+  SelectElectron(eleH, SelectedJet, foundElectron, SelectedElectron, ptElectron, foundJet, primaryVertex);
+
+  //ELECTRON SELECTION - SB1
+  float ptSB1Electron=-99; bool foundSB1Electron=false;
+  pat::ElectronCollection::const_iterator SelectedSB1Electron;
+  SelectElectron(eleH, SelectedSB1Jet, foundSB1Electron, SelectedSB1Electron, ptSB1Electron, foundSB1Jet, primaryVertex);
+
+  //ELECTRON SELECTION - SB2
+  float ptSB2Electron=-99; bool foundSB2Electron=false;
+  pat::ElectronCollection::const_iterator SelectedSB2Electron;
+  SelectElectron(eleH, SelectedSB2Jet, foundSB2Electron, SelectedSB2Electron, ptSB2Electron, foundSB2Jet, primaryVertex);
   
-  //BTAG VETO
+  //BTAG VETO - SR
   int nbtagsL=0; int nbtagsM=0; int nbtagsT=0;
   if(foundJet) BtagVeto(ak5jetCands, nbtagsL, nbtagsM, nbtagsT, SelectedJet);
 
-  //MU-TAU ANALYSIS
-  if(foundJet && foundTauMuTau && foundMuon){
-    TMatrixD covMET(2, 2); // PFMET significance matrix
-    covMET[0][0] = (metRaw->front() ).getSignificanceMatrix()(0,0);
-    covMET[1][0] = (metRaw->front() ).getSignificanceMatrix()(1,0);
-    covMET[0][1] = (metRaw->front() ).getSignificanceMatrix()(0,1);
-    covMET[1][1] = (metRaw->front() ).getSignificanceMatrix()(1,1);
-    std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTauMuTau->p4()));
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon->p4()));
-    NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
-    algo.addLogM(false);
-    algo.integrateMarkovChain();
-    if(algo.pt()>0){
-      
-      TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
-      math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
-      TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
-      m_jetPtMuoTau=SelectedJet->pt();
-      m_jetEtaMuoTau=SelectedJet->eta();
-      m_jetMassMuoTau=massZ;
-      m_jetSubjettinessMuoTau=tau21Z;
-      m_dPhiJetMetMuoTau=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
-      m_dRJetMetMuoTau=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
-      m_dRJetLepMuoTau=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
-      m_dRJetTauMuoTau=ROOT::Math::VectorUtil::DeltaR(SelectedTauMuTau->p4(),SelectedJet->p4());
-      m_dPhiTauMetMuoTau=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTauMuTau->p4());
-      m_dRTauMetMuoTau=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTauMuTau->p4());
-      m_dRTauLepMuoTau=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTauMuTau->p4());
-      m_dPhiLepMetMuoTau=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
-      m_dRLepMetMuoTau=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
-      m_dRZZMuoTau=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
-      m_tauPtMuoTau=SelectedTauMuTau->pt();
-      m_tauEtaMuoTau=SelectedTauMuTau->eta();
-      m_lepPtMuoTau=SelectedMuon->pt();
-      m_lepEtaMuoTau=SelectedMuon->eta();
-      m_lepPFIsoMuoTau=MuonPFIso(SelectedMuon,true);
-      m_metMuoTau=met->begin()->pt();
-      m_MassSvfitTauLepMuoTau=algo.getMass();
-      m_XMassSVFitMuoTau=(SVFitTauTau+PrunedJet).M();
-      m_nbtagsLMuoTau=nbtagsL;
-      m_nbtagsMMuoTau=nbtagsM;
-      m_nbtagsTMuoTau=nbtagsT;
-      m_trigger320MuoTau=(int)isFired_HLT_PFJet320;
-      m_trigger650MuoTau=(int)isFired_HLT_HT650;
-      m_NVerticesMuoTau=vertices->size();
-      m_PUWeightMuoTau=MyWeight;
-      m_metPxMuoTau=met->begin()->px();
-      m_metPyMuoTau=met->begin()->py();
-      m_metEtaMuoTau=met->begin()->eta();
-      m_metPhiMuoTau=met->begin()->phi();
-      TreeMuoTau->Fill();
-    }
-  }
+  //BTAG VETO - SB1
+  int nSB1btagsL=0; int nSB1btagsM=0; int nSB1btagsT=0;
+  if(foundSB1Jet) BtagVeto(ak5jetCands, nSB1btagsL, nSB1btagsM, nSB1btagsT, SelectedSB1Jet);
 
+  //BTAG VETO - SB2
+  int nSB2btagsL=0; int nSB2btagsM=0; int nSB2btagsT=0;
+  if(foundSB2Jet) BtagVeto(ak5jetCands, nSB2btagsL, nSB2btagsM, nSB2btagsT, SelectedSB2Jet);
+
+  //MU-TAU ANALYSIS
+  if(foundJet && foundTauMuTau && foundMuon){ 
+    //SVFIT
+    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
+    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+    float MassSVFit = -1;
+    float XMassSVFit = -1;
+    float dRJetZSVFit = -1;
+    float ptSVFit = -1;
+    svfit(metRaw, met, SelectedTauMuTau->p4(), SelectedMuon->p4(), PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedJet);
+    //COLLINEAR APPROXIMATION
+    TLorentzVector CATauTau; bool CA = false;
+    float a = (SelectedTauMuTau->py()*met->begin()->px()-SelectedTauMuTau->px()*met->begin()->py())/
+      (SelectedMuon->px()*SelectedTauMuTau->py()-SelectedMuon->py()*SelectedTauMuTau->px());
+    float b = (SelectedMuon->py()*met->begin()->px()-SelectedMuon->px()*met->begin()->py())/
+      (SelectedTauMuTau->px()*SelectedMuon->py()-SelectedTauMuTau->py()*SelectedMuon->px());
+    if(((1+a)*(1+b))>0) {
+      CATauTau.SetPxPyPzE((1+a)*SelectedMuon->px()+(1+b)*SelectedTauMuTau->px(),
+			  (1+a)*SelectedMuon->py()+(1+b)*SelectedTauMuTau->py(),
+			  (1+a)*SelectedMuon->pz()+(1+b)*SelectedTauMuTau->pz(),
+			  (1+a)*SelectedMuon->energy()+(1+b)*SelectedTauMuTau->energy());
+      CA=true;
+    }
+    else CA = false;
+    float MassCA = -1;
+    float XmassCA = -1.;
+    float dRJetZCA = -1.;
+    if(CA){
+      MassCA = CATauTau.M();
+      XmassCA = (CATauTau+PrunedJet).M();
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+    }
+    //VISIBLE AND EFFECTIVE
+    math::PtEtaPhiELorentzVector dilep; dilep = SelectedTauMuTau->p4()+SelectedMuon->p4();
+    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedTauMuTau->p4()+SelectedMuon->p4()+met->begin()->p4();
+    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedTauMuTau->p4()+SelectedMuon->p4()+PrunedJet_prov;
+    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedTauMuTau->p4()+SelectedMuon->p4()+met->begin()->p4()+PrunedJet_prov;
+    m_jetPt=SelectedJet->pt();
+    m_jetEta=SelectedJet->eta();
+    m_jetMass=massZ;
+    m_jetSubjettiness=tau21Z;
+    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
+    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedTauMuTau->p4(),SelectedJet->p4());
+    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTauMuTau->p4());
+    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTauMuTau->p4());
+    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTauMuTau->p4());
+    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
+    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
+    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFit=dRJetZSVFit;
+    m_dRZZCA=dRJetZCA;
+    m_tauPt=SelectedTauMuTau->pt();
+    m_tauEta=SelectedTauMuTau->eta();
+    m_tauCharge=SelectedTauMuTau->charge();
+    m_lepPt=SelectedMuon->pt();
+    m_lepEta=SelectedMuon->eta();
+    m_lepCharge=SelectedMuon->charge();
+    m_lepPFIso=MuonPFIso(SelectedMuon,true);
+    m_lepCorrPFIso=MuonCorrPFIso(SelectedMuon,true);
+    m_charge=SelectedTauMuTau->charge()*SelectedMuon->charge();
+    m_met=met->begin()->pt();
+    m_metPhi=met->begin()->phi();
+    m_uncorrmet=uncorrmet->begin()->pt();
+    m_uncorrmetPhi=uncorrmet->begin()->phi();
+    m_PtSvfit=ptSVFit;
+    m_MassVis=dilep.mass();
+    m_MassEff=dilepmet.mass();
+    m_MassSvfit=MassSVFit;
+    m_MassCA=MassCA;
+    m_XMassVis=dilepjet.mass();
+    m_XMassEff=dilepmetjet.mass();
+    m_XMassSVFit=XMassSVFit;
+    m_XMassCA=XmassCA;
+    m_nbtagsL=nbtagsL;
+    m_nbtagsM=nbtagsM;
+    m_nbtagsT=nbtagsT;
+    m_trigger=(int)isFired_HLT;
+    m_trigger320=(int)isFired_HLT_PFJet320;
+    m_trigger650=(int)isFired_HLT_HT650;
+    m_sideband=(int)(massZ<70);
+    m_NVertices=vertices->size();
+    m_PUWeight=MyWeight;
+    m_metPx=met->begin()->px();
+    m_metPy=met->begin()->py();
+    m_NeventsTOT=NeventsTOT_;
+    m_xsec=xsec_;
+    m_lumi=lumi_;
+    m_weight=xsec_*lumi_/NeventsTOT_;
+    m_genEvent = genEvent;
+    TreeMuoTau->Fill();
+  }
 
   //ELE-TAU ANALYSIS
   if(foundJet && foundTauElTau && foundElectron){
-    TMatrixD covMET(2, 2); // PFMET significance matrix
-    covMET[0][0] = (metRaw->front() ).getSignificanceMatrix()(0,0);
-    covMET[1][0] = (metRaw->front() ).getSignificanceMatrix()(1,0);
-    covMET[0][1] = (metRaw->front() ).getSignificanceMatrix()(0,1);
-    covMET[1][1] = (metRaw->front() ).getSignificanceMatrix()(1,1);
-    std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTauElTau->p4()));
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedElectron->p4()));
-    NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
-    algo.addLogM(false);
-    algo.integrateMarkovChain();
-    if(algo.pt()>0){
-      
-      TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
-      math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
-      TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E()); 
-      m_jetPtEleTau=SelectedJet->pt();
-      m_jetEtaEleTau=SelectedJet->eta();
-      m_jetMassEleTau=massZ;
-      m_jetSubjettinessEleTau=tau21Z;
-      m_dPhiJetMetEleTau=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
-      m_dRJetMetEleTau=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
-      m_dRJetLepEleTau=ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedJet->p4());
-      m_dRJetTauEleTau=ROOT::Math::VectorUtil::DeltaR(SelectedTauElTau->p4(),SelectedJet->p4());
-      m_dPhiTauMetEleTau=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTauElTau->p4());
-      m_dRTauMetEleTau=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTauElTau->p4());
-      m_dRTauLepEleTau=ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedTauElTau->p4());
-      m_dPhiLepMetEleTau=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedElectron->p4());
-      m_dRLepMetEleTau=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedElectron->p4());
-      m_dRZZEleTau=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
-      m_tauPtEleTau=SelectedTauElTau->pt();
-      m_tauEtaEleTau=SelectedTauElTau->eta();
-      m_lepPtEleTau=SelectedMuon->pt();
-      m_lepEtaEleTau=SelectedMuon->eta();
-      m_lepPFIsoEleTau=MuonPFIso(SelectedMuon,true);
-      m_metEleTau=met->begin()->pt();
-      m_MassSvfitTauLepEleTau=algo.getMass();
-      m_XMassSVFitEleTau=(SVFitTauTau+PrunedJet).M();
-      m_nbtagsLEleTau=nbtagsL;
-      m_nbtagsMEleTau=nbtagsM;
-      m_nbtagsTEleTau=nbtagsT;
-      m_trigger320EleTau=(int)isFired_HLT_PFJet320;
-      m_trigger650EleTau=(int)isFired_HLT_HT650;
-      m_NVerticesEleTau=vertices->size();
-      m_PUWeightEleTau=MyWeight;
-      m_metPxEleTau=met->begin()->px();
-      m_metPyEleTau=met->begin()->py();
-      m_metEtaEleTau=met->begin()->eta();
-      m_metPhiEleTau=met->begin()->phi();
-      TreeEleTau->Fill();
+    //SVFIT
+    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
+    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+    float MassSVFit = -1;
+    float XMassSVFit = -1;
+    float dRJetZSVFit = -1;
+    float ptSVFit = -1;
+    svfit(metRaw, met, SelectedTauElTau->p4(), SelectedElectron->p4(), PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedJet);
+    //COLLINEAR APPROXIMATION
+    TLorentzVector CATauTau; bool CA = false;
+    float a = (SelectedTauElTau->py()*met->begin()->px()-SelectedTauElTau->px()*met->begin()->py())/
+      (SelectedElectron->px()*SelectedTauElTau->py()-SelectedElectron->py()*SelectedTauElTau->px());
+    float b = (SelectedElectron->py()*met->begin()->px()-SelectedElectron->px()*met->begin()->py())/
+      (SelectedTauElTau->px()*SelectedElectron->py()-SelectedTauElTau->py()*SelectedElectron->px());
+    if(((1+a)*(1+b))>0) {
+      CATauTau.SetPxPyPzE((1+a)*SelectedElectron->px()+(1+b)*SelectedTauElTau->px(),
+			  (1+a)*SelectedElectron->py()+(1+b)*SelectedTauElTau->py(),
+			  (1+a)*SelectedElectron->pz()+(1+b)*SelectedTauElTau->pz(),
+			  (1+a)*SelectedElectron->energy()+(1+b)*SelectedTauElTau->energy());
+      CA=true;
     }
+    else CA = false;
+    float MassCA = -1;
+    float XmassCA = -1.;
+    float dRJetZCA = -1.;
+    if(CA){
+      MassCA = CATauTau.M();
+      XmassCA = (CATauTau+PrunedJet).M();
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+    }
+    //VISIBLE AND EFFECTIVE
+    math::PtEtaPhiELorentzVector dilep; dilep = SelectedTauElTau->p4()+SelectedElectron->p4();
+    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedTauElTau->p4()+SelectedElectron->p4()+met->begin()->p4();
+    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedTauElTau->p4()+SelectedElectron->p4()+PrunedJet_prov;
+    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedTauElTau->p4()+SelectedElectron->p4()+met->begin()->p4()+PrunedJet_prov;
+    m_jetPt=SelectedJet->pt();
+    m_jetEta=SelectedJet->eta();
+    m_jetMass=massZ;
+    m_jetSubjettiness=tau21Z;
+    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedJet->p4());
+    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedTauElTau->p4(),SelectedJet->p4());
+    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTauElTau->p4());
+    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTauElTau->p4());
+    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedTauElTau->p4());
+    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedElectron->p4());
+    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedElectron->p4());
+    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFit=dRJetZSVFit;
+    m_dRZZCA=dRJetZCA;
+    m_tauPt=SelectedTauElTau->pt();
+    m_tauEta=SelectedTauElTau->eta();
+    m_tauCharge=SelectedTauElTau->charge();
+    m_lepPt=SelectedElectron->pt();
+    m_lepEta=SelectedElectron->eta();
+    m_lepCharge=SelectedElectron->charge();
+    m_lepPFIso=ElectronPFIso(SelectedElectron,rho);
+    m_lepCorrPFIso=ElectronCorrPFIso(SelectedElectron,rho);
+    m_charge=SelectedTauElTau->charge()*SelectedElectron->charge();
+    m_met=met->begin()->pt();
+    m_metPhi=met->begin()->phi();
+    m_uncorrmet=uncorrmet->begin()->pt();
+    m_uncorrmetPhi=uncorrmet->begin()->phi();
+    m_PtSvfit=ptSVFit;
+    m_MassVis=dilep.mass();
+    m_MassEff=dilepmet.mass();
+    m_MassSvfit=MassSVFit;
+    m_MassCA=MassCA;
+    m_XMassVis=dilepjet.mass();
+    m_XMassEff=dilepmetjet.mass();
+    m_XMassSVFit=XMassSVFit;
+    m_XMassCA=XmassCA;
+    m_nbtagsL=nbtagsL;
+    m_nbtagsM=nbtagsM;
+    m_nbtagsT=nbtagsT;
+    m_trigger=(int)isFired_HLT;
+    m_trigger320=(int)isFired_HLT_PFJet320;
+    m_trigger650=(int)isFired_HLT_HT650;
+    m_sideband=(int)(massZ<70);
+    m_NVertices=vertices->size();
+    m_PUWeight=MyWeight;
+    m_metPx=met->begin()->px();
+    m_metPy=met->begin()->py();
+    m_NeventsTOT=NeventsTOT_;
+    m_xsec=xsec_;
+    m_lumi=lumi_;
+    m_weight=xsec_*lumi_/NeventsTOT_;
+    m_genEvent = genEvent;
+    TreeEleTau->Fill();
+  }
+
+  //MU-TAU ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1TauMuTau && foundSB1Muon){ 
+    //SVFIT
+    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedSB1Jet->pt(),SelectedSB1Jet->eta(),SelectedSB1Jet->phi(),massSB1Z);
+    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+    float MassSVFit = -1;
+    float XMassSVFit = -1;
+    float dRJetZSVFit = -1;
+    float ptSVFit = -1;
+    svfit(metRaw, met, SelectedSB1TauMuTau->p4(), SelectedSB1Muon->p4(), PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedSB1Jet);
+    //COLLINEAR APPROXIMATION
+    TLorentzVector CATauTau; bool CA = false;
+    float a = (SelectedSB1TauMuTau->py()*met->begin()->px()-SelectedSB1TauMuTau->px()*met->begin()->py())/
+      (SelectedSB1Muon->px()*SelectedSB1TauMuTau->py()-SelectedSB1Muon->py()*SelectedSB1TauMuTau->px());
+    float b = (SelectedSB1Muon->py()*met->begin()->px()-SelectedSB1Muon->px()*met->begin()->py())/
+      (SelectedSB1TauMuTau->px()*SelectedSB1Muon->py()-SelectedSB1TauMuTau->py()*SelectedSB1Muon->px());
+    if(((1+a)*(1+b))>0) {
+      CATauTau.SetPxPyPzE((1+a)*SelectedSB1Muon->px()+(1+b)*SelectedSB1TauMuTau->px(),
+			  (1+a)*SelectedSB1Muon->py()+(1+b)*SelectedSB1TauMuTau->py(),
+			  (1+a)*SelectedSB1Muon->pz()+(1+b)*SelectedSB1TauMuTau->pz(),
+			  (1+a)*SelectedSB1Muon->energy()+(1+b)*SelectedSB1TauMuTau->energy());
+      CA=true;
+    }
+    else CA = false;
+    float MassCA = -1;
+    float XmassCA = -1.;
+    float dRJetZCA = -1.;
+    if(CA){
+      MassCA = CATauTau.M();
+      XmassCA = (CATauTau+PrunedJet).M();
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+    }
+    //VISIBLE AND EFFECTIVE
+    math::PtEtaPhiELorentzVector dilep; dilep = SelectedSB1TauMuTau->p4()+SelectedSB1Muon->p4();
+    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedSB1TauMuTau->p4()+SelectedSB1Muon->p4()+met->begin()->p4();
+    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedSB1TauMuTau->p4()+SelectedSB1Muon->p4()+PrunedJet_prov;
+    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedSB1TauMuTau->p4()+SelectedSB1Muon->p4()+met->begin()->p4()+PrunedJet_prov;
+    m_jetPt=SelectedSB1Jet->pt();
+    m_jetEta=SelectedSB1Jet->eta();
+    m_jetMass=massSB1Z;
+    m_jetSubjettiness=tau21SB1Z;
+    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB1Jet->p4());
+    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB1Jet->p4());
+    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB1Muon->p4(),SelectedSB1Jet->p4());
+    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedSB1TauMuTau->p4(),SelectedSB1Jet->p4());
+    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB1TauMuTau->p4());
+    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB1TauMuTau->p4());
+    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB1Muon->p4(),SelectedSB1TauMuTau->p4());
+    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB1Muon->p4());
+    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB1Muon->p4());
+    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFit=dRJetZSVFit;
+    m_dRZZCA=dRJetZCA;
+    m_tauPt=SelectedSB1TauMuTau->pt();
+    m_tauEta=SelectedSB1TauMuTau->eta();
+    m_tauCharge=SelectedSB1TauMuTau->charge();
+    m_lepPt=SelectedSB1Muon->pt();
+    m_lepEta=SelectedSB1Muon->eta();
+    m_lepCharge=SelectedSB1Muon->charge();
+    m_lepPFIso=MuonPFIso(SelectedSB1Muon,true);
+    m_lepCorrPFIso=MuonCorrPFIso(SelectedSB1Muon,true);
+    m_charge=SelectedSB1TauMuTau->charge()*SelectedSB1Muon->charge();
+    m_met=met->begin()->pt();
+    m_metPhi=met->begin()->phi();
+    m_uncorrmet=uncorrmet->begin()->pt();
+    m_uncorrmetPhi=uncorrmet->begin()->phi();
+    m_PtSvfit=ptSVFit;
+    m_MassVis=dilep.mass();
+    m_MassEff=dilepmet.mass();
+    m_MassSvfit=MassSVFit;
+    m_MassCA=MassCA;
+    m_XMassVis=dilepjet.mass();
+    m_XMassEff=dilepmetjet.mass();
+    m_XMassSVFit=XMassSVFit;
+    m_XMassCA=XmassCA;
+    m_nbtagsL=nSB1btagsL;
+    m_nbtagsM=nSB1btagsM;
+    m_nbtagsT=nSB1btagsT;
+    m_trigger=(int)isFired_HLT;
+    m_trigger320=(int)isFired_HLT_PFJet320;
+    m_trigger650=(int)isFired_HLT_HT650;
+    m_sideband=(int)(massSB1Z<70);
+    m_NVertices=vertices->size();
+    m_PUWeight=MyWeight;
+    m_metPx=met->begin()->px();
+    m_metPy=met->begin()->py();
+    m_NeventsTOT=NeventsTOT_;
+    m_xsec=xsec_;
+    m_lumi=lumi_;
+    m_weight=xsec_*lumi_/NeventsTOT_;
+    m_genEvent = genEvent;
+    TreeSB1MuoTau->Fill();
+  }
+
+  //ELE-TAU ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1TauElTau && foundSB1Electron){
+    //SVFIT
+    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedSB1Jet->pt(),SelectedSB1Jet->eta(),SelectedSB1Jet->phi(),massSB1Z);
+    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+    float MassSVFit = -1;
+    float XMassSVFit = -1;
+    float dRJetZSVFit = -1;
+    float ptSVFit = -1;
+    svfit(metRaw, met, SelectedSB1TauElTau->p4(), SelectedSB1Electron->p4(), PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedSB1Jet);
+    //COLLINEAR APPROXIMATION
+    TLorentzVector CATauTau; bool CA = false;
+    float a = (SelectedSB1TauElTau->py()*met->begin()->px()-SelectedSB1TauElTau->px()*met->begin()->py())/
+      (SelectedSB1Electron->px()*SelectedSB1TauElTau->py()-SelectedSB1Electron->py()*SelectedSB1TauElTau->px());
+    float b = (SelectedSB1Electron->py()*met->begin()->px()-SelectedSB1Electron->px()*met->begin()->py())/
+      (SelectedSB1TauElTau->px()*SelectedSB1Electron->py()-SelectedSB1TauElTau->py()*SelectedSB1Electron->px());
+    if(((1+a)*(1+b))>0) {
+      CATauTau.SetPxPyPzE((1+a)*SelectedSB1Electron->px()+(1+b)*SelectedSB1TauElTau->px(),
+			  (1+a)*SelectedSB1Electron->py()+(1+b)*SelectedSB1TauElTau->py(),
+			  (1+a)*SelectedSB1Electron->pz()+(1+b)*SelectedSB1TauElTau->pz(),
+			  (1+a)*SelectedSB1Electron->energy()+(1+b)*SelectedSB1TauElTau->energy());
+      CA=true;
+    }
+    else CA = false;
+    float MassCA = -1;
+    float XmassCA = -1.;
+    float dRJetZCA = -1.;
+    if(CA){
+      MassCA = CATauTau.M();
+      XmassCA = (CATauTau+PrunedJet).M();
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+    }
+    //VISIBLE AND EFFECTIVE
+    math::PtEtaPhiELorentzVector dilep; dilep = SelectedSB1TauElTau->p4()+SelectedSB1Electron->p4();
+    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedSB1TauElTau->p4()+SelectedSB1Electron->p4()+met->begin()->p4();
+    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedSB1TauElTau->p4()+SelectedSB1Electron->p4()+PrunedJet_prov;
+    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedSB1TauElTau->p4()+SelectedSB1Electron->p4()+met->begin()->p4()+PrunedJet_prov;
+    m_jetPt=SelectedSB1Jet->pt();
+    m_jetEta=SelectedSB1Jet->eta();
+    m_jetMass=massSB1Z;
+    m_jetSubjettiness=tau21SB1Z;
+    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB1Jet->p4());
+    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB1Jet->p4());
+    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB1Electron->p4(),SelectedSB1Jet->p4());
+    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedSB1TauElTau->p4(),SelectedSB1Jet->p4());
+    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB1TauElTau->p4());
+    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB1TauElTau->p4());
+    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB1Electron->p4(),SelectedSB1TauElTau->p4());
+    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB1Electron->p4());
+    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB1Electron->p4());
+    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFit=dRJetZSVFit;
+    m_dRZZCA=dRJetZCA;
+    m_tauPt=SelectedSB1TauElTau->pt();
+    m_tauEta=SelectedSB1TauElTau->eta();
+    m_tauCharge=SelectedSB1TauElTau->charge();
+    m_lepPt=SelectedSB1Electron->pt();
+    m_lepEta=SelectedSB1Electron->eta();
+    m_lepCharge=SelectedSB1Electron->charge();
+    m_lepPFIso=ElectronPFIso(SelectedSB1Electron,rho);
+    m_lepCorrPFIso=ElectronCorrPFIso(SelectedSB1Electron,rho);
+    m_charge=SelectedSB1TauElTau->charge()*SelectedSB1Electron->charge();
+    m_met=met->begin()->pt();
+    m_metPhi=met->begin()->phi();
+    m_uncorrmet=uncorrmet->begin()->pt();
+    m_uncorrmetPhi=uncorrmet->begin()->phi();
+    m_PtSvfit=ptSVFit;
+    m_MassVis=dilep.mass();
+    m_MassEff=dilepmet.mass();
+    m_MassSvfit=MassSVFit;
+    m_MassCA=MassCA;
+    m_XMassVis=dilepjet.mass();
+    m_XMassEff=dilepmetjet.mass();
+    m_XMassSVFit=XMassSVFit;
+    m_XMassCA=XmassCA;
+    m_nbtagsL=nbtagsL;
+    m_nbtagsM=nbtagsM;
+    m_nbtagsT=nbtagsT;
+    m_trigger=(int)isFired_HLT;
+    m_trigger320=(int)isFired_HLT_PFJet320;
+    m_trigger650=(int)isFired_HLT_HT650;
+    m_sideband=(int)(massSB1Z<70);
+    m_NVertices=vertices->size();
+    m_PUWeight=MyWeight;
+    m_metPx=met->begin()->px();
+    m_metPy=met->begin()->py();
+    m_NeventsTOT=NeventsTOT_;
+    m_xsec=xsec_;
+    m_lumi=lumi_;
+    m_weight=xsec_*lumi_/NeventsTOT_;
+    m_genEvent = genEvent;
+    TreeSB1EleTau->Fill();
+  }
+
+  //MU-TAU ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2TauMuTau && foundSB2Muon){ 
+    //SVFIT
+    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedSB2Jet->pt(),SelectedSB2Jet->eta(),SelectedSB2Jet->phi(),massSB2Z);
+    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+    float MassSVFit = -1;
+    float XMassSVFit = -1;
+    float dRJetZSVFit = -1;
+    float ptSVFit = -1;
+    svfit(metRaw, met, SelectedSB2TauMuTau->p4(), SelectedSB2Muon->p4(), PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedSB2Jet);
+    //COLLINEAR APPROXIMATION
+    TLorentzVector CATauTau; bool CA = false;
+    float a = (SelectedSB2TauMuTau->py()*met->begin()->px()-SelectedSB2TauMuTau->px()*met->begin()->py())/
+      (SelectedSB2Muon->px()*SelectedSB2TauMuTau->py()-SelectedSB2Muon->py()*SelectedSB2TauMuTau->px());
+    float b = (SelectedSB2Muon->py()*met->begin()->px()-SelectedSB2Muon->px()*met->begin()->py())/
+      (SelectedSB2TauMuTau->px()*SelectedSB2Muon->py()-SelectedSB2TauMuTau->py()*SelectedSB2Muon->px());
+    if(((1+a)*(1+b))>0) {
+      CATauTau.SetPxPyPzE((1+a)*SelectedSB2Muon->px()+(1+b)*SelectedSB2TauMuTau->px(),
+			  (1+a)*SelectedSB2Muon->py()+(1+b)*SelectedSB2TauMuTau->py(),
+			  (1+a)*SelectedSB2Muon->pz()+(1+b)*SelectedSB2TauMuTau->pz(),
+			  (1+a)*SelectedSB2Muon->energy()+(1+b)*SelectedSB2TauMuTau->energy());
+      CA=true;
+    }
+    else CA = false;
+    float MassCA = -1;
+    float XmassCA = -1.;
+    float dRJetZCA = -1.;
+    if(CA){
+      MassCA = CATauTau.M();
+      XmassCA = (CATauTau+PrunedJet).M();
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+    }
+    //VISIBLE AND EFFECTIVE
+    math::PtEtaPhiELorentzVector dilep; dilep = SelectedSB2TauMuTau->p4()+SelectedSB2Muon->p4();
+    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedSB2TauMuTau->p4()+SelectedSB2Muon->p4()+met->begin()->p4();
+    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedSB2TauMuTau->p4()+SelectedSB2Muon->p4()+PrunedJet_prov;
+    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedSB2TauMuTau->p4()+SelectedSB2Muon->p4()+met->begin()->p4()+PrunedJet_prov;
+    m_jetPt=SelectedSB2Jet->pt();
+    m_jetEta=SelectedSB2Jet->eta();
+    m_jetMass=massSB2Z;
+    m_jetSubjettiness=tau21SB2Z;
+    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB2Jet->p4());
+    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB2Jet->p4());
+    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB2Muon->p4(),SelectedSB2Jet->p4());
+    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedSB2TauMuTau->p4(),SelectedSB2Jet->p4());
+    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB2TauMuTau->p4());
+    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB2TauMuTau->p4());
+    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB2Muon->p4(),SelectedSB2TauMuTau->p4());
+    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB2Muon->p4());
+    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB2Muon->p4());
+    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFit=dRJetZSVFit;
+    m_dRZZCA=dRJetZCA;
+    m_tauPt=SelectedSB2TauMuTau->pt();
+    m_tauEta=SelectedSB2TauMuTau->eta();
+    m_tauCharge=SelectedSB2TauMuTau->charge();
+    m_lepPt=SelectedSB2Muon->pt();
+    m_lepEta=SelectedSB2Muon->eta();
+    m_lepCharge=SelectedSB2Muon->charge();
+    m_lepPFIso=MuonPFIso(SelectedSB2Muon,true);
+    m_lepCorrPFIso=MuonCorrPFIso(SelectedSB2Muon,true);
+    m_charge=SelectedSB2TauMuTau->charge()*SelectedSB2Muon->charge();
+    m_met=met->begin()->pt();
+    m_metPhi=met->begin()->phi();
+    m_uncorrmet=uncorrmet->begin()->pt();
+    m_uncorrmetPhi=uncorrmet->begin()->phi();
+    m_PtSvfit=ptSVFit;
+    m_MassVis=dilep.mass();
+    m_MassEff=dilepmet.mass();
+    m_MassSvfit=MassSVFit;
+    m_MassCA=MassCA;
+    m_XMassVis=dilepjet.mass();
+    m_XMassEff=dilepmetjet.mass();
+    m_XMassSVFit=XMassSVFit;
+    m_XMassCA=XmassCA;
+    m_nbtagsL=nSB2btagsL;
+    m_nbtagsM=nSB2btagsM;
+    m_nbtagsT=nSB2btagsT;
+    m_trigger=(int)isFired_HLT;
+    m_trigger320=(int)isFired_HLT_PFJet320;
+    m_trigger650=(int)isFired_HLT_HT650;
+    m_sideband=(int)(massSB2Z<70);
+    m_NVertices=vertices->size();
+    m_PUWeight=MyWeight;
+    m_metPx=met->begin()->px();
+    m_metPy=met->begin()->py();
+    m_NeventsTOT=NeventsTOT_;
+    m_xsec=xsec_;
+    m_lumi=lumi_;
+    m_weight=xsec_*lumi_/NeventsTOT_;
+    m_genEvent = genEvent;
+    TreeSB2MuoTau->Fill();
+  }
+
+  //ELE-TAU ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2TauElTau && foundSB2Electron){
+    //SVFIT
+    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedSB2Jet->pt(),SelectedSB2Jet->eta(),SelectedSB2Jet->phi(),massSB2Z);
+    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+    float MassSVFit = -1;
+    float XMassSVFit = -1;
+    float dRJetZSVFit = -1;
+    float ptSVFit = -1;
+    svfit(metRaw, met, SelectedSB2TauElTau->p4(), SelectedSB2Electron->p4(), PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedSB2Jet);
+    //COLLINEAR APPROXIMATION
+    TLorentzVector CATauTau; bool CA = false;
+    float a = (SelectedSB2TauElTau->py()*met->begin()->px()-SelectedSB2TauElTau->px()*met->begin()->py())/
+      (SelectedSB2Electron->px()*SelectedSB2TauElTau->py()-SelectedSB2Electron->py()*SelectedSB2TauElTau->px());
+    float b = (SelectedSB2Electron->py()*met->begin()->px()-SelectedSB2Electron->px()*met->begin()->py())/
+      (SelectedSB2TauElTau->px()*SelectedSB2Electron->py()-SelectedSB2TauElTau->py()*SelectedSB2Electron->px());
+    if(((1+a)*(1+b))>0) {
+      CATauTau.SetPxPyPzE((1+a)*SelectedSB2Electron->px()+(1+b)*SelectedSB2TauElTau->px(),
+			  (1+a)*SelectedSB2Electron->py()+(1+b)*SelectedSB2TauElTau->py(),
+			  (1+a)*SelectedSB2Electron->pz()+(1+b)*SelectedSB2TauElTau->pz(),
+			  (1+a)*SelectedSB2Electron->energy()+(1+b)*SelectedSB2TauElTau->energy());
+      CA=true;
+    }
+    else CA = false;
+    float MassCA = -1;
+    float XmassCA = -1.;
+    float dRJetZCA = -1.;
+    if(CA){
+      MassCA = CATauTau.M();
+      XmassCA = (CATauTau+PrunedJet).M();
+      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+    }
+    //VISIBLE AND EFFECTIVE
+    math::PtEtaPhiELorentzVector dilep; dilep = SelectedSB2TauElTau->p4()+SelectedSB2Electron->p4();
+    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedSB2TauElTau->p4()+SelectedSB2Electron->p4()+met->begin()->p4();
+    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedSB2TauElTau->p4()+SelectedSB2Electron->p4()+PrunedJet_prov;
+    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedSB2TauElTau->p4()+SelectedSB2Electron->p4()+met->begin()->p4()+PrunedJet_prov;
+    m_jetPt=SelectedSB2Jet->pt();
+    m_jetEta=SelectedSB2Jet->eta();
+    m_jetMass=massSB2Z;
+    m_jetSubjettiness=tau21SB2Z;
+    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB2Jet->p4());
+    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB2Jet->p4());
+    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB2Electron->p4(),SelectedSB2Jet->p4());
+    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedSB2TauElTau->p4(),SelectedSB2Jet->p4());
+    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB2TauElTau->p4());
+    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB2TauElTau->p4());
+    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedSB2Electron->p4(),SelectedSB2TauElTau->p4());
+    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedSB2Electron->p4());
+    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedSB2Electron->p4());
+    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+    m_dRZZSvFit=dRJetZSVFit;
+    m_dRZZCA=dRJetZCA;
+    m_tauPt=SelectedSB2TauElTau->pt();
+    m_tauEta=SelectedSB2TauElTau->eta();
+    m_tauCharge=SelectedSB2TauElTau->charge();
+    m_lepPt=SelectedSB2Electron->pt();
+    m_lepEta=SelectedSB2Electron->eta();
+    m_lepCharge=SelectedSB2Electron->charge();
+    m_lepPFIso=ElectronPFIso(SelectedSB2Electron,rho);
+    m_lepCorrPFIso=ElectronCorrPFIso(SelectedSB2Electron,rho);
+    m_charge=SelectedSB2TauElTau->charge()*SelectedSB2Electron->charge();
+    m_met=met->begin()->pt();
+    m_metPhi=met->begin()->phi();
+    m_uncorrmet=uncorrmet->begin()->pt();
+    m_uncorrmetPhi=uncorrmet->begin()->phi();
+    m_PtSvfit=ptSVFit;
+    m_MassVis=dilep.mass();
+    m_MassEff=dilepmet.mass();
+    m_MassSvfit=MassSVFit;
+    m_MassCA=MassCA;
+    m_XMassVis=dilepjet.mass();
+    m_XMassEff=dilepmetjet.mass();
+    m_XMassSVFit=XMassSVFit;
+    m_XMassCA=XmassCA;
+    m_nbtagsL=nbtagsL;
+    m_nbtagsM=nbtagsM;
+    m_nbtagsT=nbtagsT;
+    m_trigger=(int)isFired_HLT;
+    m_trigger320=(int)isFired_HLT_PFJet320;
+    m_trigger650=(int)isFired_HLT_HT650;
+    m_sideband=(int)(massSB2Z<70);
+    m_NVertices=vertices->size();
+    m_PUWeight=MyWeight;
+    m_metPx=met->begin()->px();
+    m_metPy=met->begin()->py();
+    m_NeventsTOT=NeventsTOT_;
+    m_xsec=xsec_;
+    m_lumi=lumi_;
+    m_weight=xsec_*lumi_/NeventsTOT_;
+    m_genEvent = genEvent;
+    TreeSB2EleTau->Fill();
   }
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
@@ -543,75 +1032,350 @@ SemiLeptonicAnalyzer::beginJob()
   Service<TFileService> fs;
   Nevents = fs->make<TH1D>("Nevents", "Nevents", 3, -0.5, 2.5);
 
+  TreeSignalEff = fs->make<TTree>("TreeSignalEff", "TreeSignalEff");
+  TreeSignalEff->Branch("genEvent", &m_genEvent, "genEvent/f");
+
   TreeMuoTau = fs->make<TTree>("TreeMuoTau", "TreeMuoTau");
-  TreeMuoTau->Branch("jetPtMuoTau", &m_jetPtMuoTau, "jetPtMuoTau/f");
-  TreeMuoTau->Branch("jetEtaMuoTau", &m_jetEtaMuoTau, "jetEtaMuoTau/f");
-  TreeMuoTau->Branch("jetMassMuoTau", &m_jetMassMuoTau, "jetMassMuoTau/f");
-  TreeMuoTau->Branch("jetSubjettinessMuoTau", &m_jetSubjettinessMuoTau, "jetSubjettinessMuoTau/f");
-  TreeMuoTau->Branch("dPhiJetMetMuoTau", &m_dPhiJetMetMuoTau, "dPhiJetMetMuoTau/f");
-  TreeMuoTau->Branch("dRJetMetMuoTau", &m_dRJetMetMuoTau, "dRJetMetMuoTau/f");
-  TreeMuoTau->Branch("dRJetLepMuoTau", &m_dRJetLepMuoTau, "dRJetLepMuoTau/f");
-  TreeMuoTau->Branch("dRJetTauMuoTau", &m_dRJetTauMuoTau, "dRJetTauMuoTau/f");
-  TreeMuoTau->Branch("dPhiTauMetMuoTau", &m_dPhiTauMetMuoTau, "dPhiTauMetMuoTau/f");
-  TreeMuoTau->Branch("dRTauMetMuoTau", &m_dRTauMetMuoTau, "dRTauMetMuoTau/f");
-  TreeMuoTau->Branch("dRTauLepMuoTau", &m_dRTauLepMuoTau, "dRTauLepMuoTau/f");
-  TreeMuoTau->Branch("dPhiLepMetMuoTau", &m_dPhiLepMetMuoTau, "dPhiLepMetMuoTau/f");
-  TreeMuoTau->Branch("dRLepMetMuoTau", &m_dRLepMetMuoTau, "dRLepMetMuoTau/f");
-  TreeMuoTau->Branch("dRZZMuoTau", &m_dRZZMuoTau, "dRZZMuoTau/f");
-  TreeMuoTau->Branch("tauPtMuoTau", &m_tauPtMuoTau, "tauPtMuoTau/f");
-  TreeMuoTau->Branch("tauEtaMuoTau", &m_tauEtaMuoTau, "tauEtaMuoTau/f");
-  TreeMuoTau->Branch("lepPtMuoTau", &m_lepPtMuoTau, "lepPtMuoTau/f");
-  TreeMuoTau->Branch("lepEtaMuoTau", &m_lepEtaMuoTau, "lepEtaMuoTau/f");
-  TreeMuoTau->Branch("lepPFIsoMuoTau", &m_lepPFIsoMuoTau, "lepPFIsoMuoTau/f");
-  TreeMuoTau->Branch("metMuoTau", &m_metMuoTau, "metMuoTau/f");
-  TreeMuoTau->Branch("MassSvfitTauLepMuoTau", &m_MassSvfitTauLepMuoTau, "MassSvfitTauLepMuoTau/f");
-  TreeMuoTau->Branch("XMassSVFitMuoTau", &m_XMassSVFitMuoTau, "XMassSVFitMuoTau/f");
-  TreeMuoTau->Branch("nbtagsLMuoTau", &m_nbtagsLMuoTau, "nbtagsLMuoTau/i");
-  TreeMuoTau->Branch("nbtagsMMuoTau", &m_nbtagsMMuoTau, "nbtagsMMuoTau/i");
-  TreeMuoTau->Branch("nbtagsTMuoTau", &m_nbtagsTMuoTau, "nbtagsTMuoTau/i");
-  TreeMuoTau->Branch("trigger320MuoTau", &m_trigger320MuoTau, "trigger320MuoTau/i");
-  TreeMuoTau->Branch("trigger650MuoTau", &m_trigger650MuoTau, "trigger650MuoTau/i");
-  TreeMuoTau->Branch("NVerticesMuoTau", &m_NVerticesMuoTau, "NVerticesMuoTau/i");
-  TreeMuoTau->Branch("PUWeightMuoTau", &m_PUWeightMuoTau, "PUWeightMuoTau/f");
-  TreeMuoTau->Branch("metPxMuoTau", &m_metPxMuoTau, "metPxMuoTau/f");
-  TreeMuoTau->Branch("metPyMuoTau", &m_metPyMuoTau, "metPyMuoTau/f");
-  TreeMuoTau->Branch("metEtaMuoTau", &m_metEtaMuoTau, "metEtaMuoTau/f");
-  TreeMuoTau->Branch("metPhiMuoTau", &m_metPhiMuoTau, "metPhiMuoTau/f");
+  TreeMuoTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeMuoTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeMuoTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeMuoTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeMuoTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeMuoTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeMuoTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
+  TreeMuoTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
+  TreeMuoTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
+  TreeMuoTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
+  TreeMuoTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
+  TreeMuoTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
+  TreeMuoTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeMuoTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeMuoTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeMuoTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeMuoTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeMuoTau->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeMuoTau->Branch("tauEta", &m_tauEta, "tauEta/f");
+  TreeMuoTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
+  TreeMuoTau->Branch("lepPt", &m_lepPt, "lepPt/f");
+  TreeMuoTau->Branch("lepEta", &m_lepEta, "lepEta/f");
+  TreeMuoTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
+  TreeMuoTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
+  TreeMuoTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeMuoTau->Branch("charge", &m_charge, "charge/f");
+  TreeMuoTau->Branch("met", &m_met, "met/f");
+  TreeMuoTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeMuoTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeMuoTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeMuoTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeMuoTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeMuoTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeMuoTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeMuoTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeMuoTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeMuoTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeMuoTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeMuoTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeMuoTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
+  TreeMuoTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
+  TreeMuoTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeMuoTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeMuoTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeMuoTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeMuoTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeMuoTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeMuoTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeMuoTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeMuoTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeMuoTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeMuoTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeMuoTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeMuoTau->Branch("weight", &m_weight, "weight/f");
+  TreeMuoTau->Branch("genEvent", &m_genEvent, "genEvent/f");
 
   TreeEleTau = fs->make<TTree>("TreeEleTau", "TreeEleTau");
-  TreeEleTau->Branch("jetPtEleTau", &m_jetPtEleTau, "jetPtEleTau/f");
-  TreeEleTau->Branch("jetEtaEleTau", &m_jetEtaEleTau, "jetEtaEleTau/f");
-  TreeEleTau->Branch("jetMassEleTau", &m_jetMassEleTau, "jetMassEleTau/f");
-  TreeEleTau->Branch("jetSubjettinessEleTau", &m_jetSubjettinessEleTau, "jetSubjettinessEleTau/f");
-  TreeEleTau->Branch("dPhiJetMetEleTau", &m_dPhiJetMetEleTau, "dPhiJetMetEleTau/f");
-  TreeEleTau->Branch("dRJetMetEleTau", &m_dRJetMetEleTau, "dRJetMetEleTau/f");
-  TreeEleTau->Branch("dRJetLepEleTau", &m_dRJetLepEleTau, "dRJetLepEleTau/f");
-  TreeEleTau->Branch("dRJetTauEleTau", &m_dRJetTauEleTau, "dRJetTauEleTau/f");
-  TreeEleTau->Branch("dPhiTauMetEleTau", &m_dPhiTauMetEleTau, "dPhiTauMetEleTau/f");
-  TreeEleTau->Branch("dRTauMetEleTau", &m_dRTauMetEleTau, "dRTauMetEleTau/f");
-  TreeEleTau->Branch("dRTauLepEleTau", &m_dRTauLepEleTau, "dRTauLepEleTau/f");
-  TreeEleTau->Branch("dPhiLepMetEleTau", &m_dPhiLepMetEleTau, "dPhiLepMetEleTau/f");
-  TreeEleTau->Branch("dRLepMetEleTau", &m_dRLepMetEleTau, "dRLepMetEleTau/f");
-  TreeEleTau->Branch("dRZZEleTau", &m_dRZZEleTau, "dRZZEleTau/f");
-  TreeEleTau->Branch("tauPtEleTau", &m_tauPtEleTau, "tauPtEleTau/f");
-  TreeEleTau->Branch("tauEtaEleTau", &m_tauEtaEleTau, "tauEtaEleTau/f");
-  TreeEleTau->Branch("lepPtEleTau", &m_lepPtEleTau, "lepPtEleTau/f");
-  TreeEleTau->Branch("lepEtaEleTau", &m_lepEtaEleTau, "lepEtaEleTau/f");
-  TreeEleTau->Branch("lepPFIsoEleTau", &m_lepPFIsoEleTau, "lepPFIsoEleTau/f");
-  TreeEleTau->Branch("metEleTau", &m_metEleTau, "metEleTau/f");
-  TreeEleTau->Branch("MassSvfitTauLepEleTau", &m_MassSvfitTauLepEleTau, "MassSvfitTauLepEleTau/f");
-  TreeEleTau->Branch("XMassSVFitEleTau", &m_XMassSVFitEleTau, "XMassSVFitEleTau/f");
-  TreeEleTau->Branch("nbtagsLEleTau", &m_nbtagsLEleTau, "nbtagsLEleTau/i");
-  TreeEleTau->Branch("nbtagsMEleTau", &m_nbtagsMEleTau, "nbtagsMEleTau/i");
-  TreeEleTau->Branch("nbtagsTEleTau", &m_nbtagsTEleTau, "nbtagsTEleTau/i");
-  TreeEleTau->Branch("trigger320EleTau", &m_trigger320EleTau, "trigger320EleTau/i");
-  TreeEleTau->Branch("trigger650EleTau", &m_trigger650EleTau, "trigger650EleTau/i");
-  TreeEleTau->Branch("NVerticesEleTau", &m_NVerticesEleTau, "NVerticesEleTau/i");
-  TreeEleTau->Branch("PUWeightEleTau", &m_PUWeightEleTau, "PUWeightEleTau/f");
-  TreeEleTau->Branch("metPxEleTau", &m_metPxEleTau, "metPxEleTau/f");
-  TreeEleTau->Branch("metPyEleTau", &m_metPyEleTau, "metPyEleTau/f");
-  TreeEleTau->Branch("metEtaEleTau", &m_metEtaEleTau, "metEtaEleTau/f");
-  TreeEleTau->Branch("metPhiEleTau", &m_metPhiEleTau, "metPhiEleTau/f");
+  TreeEleTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeEleTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeEleTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeEleTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeEleTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeEleTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeEleTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
+  TreeEleTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
+  TreeEleTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
+  TreeEleTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
+  TreeEleTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
+  TreeEleTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
+  TreeEleTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeEleTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeEleTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeEleTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeEleTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeEleTau->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeEleTau->Branch("tauEta", &m_tauEta, "tauEta/f");
+  TreeEleTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
+  TreeEleTau->Branch("lepPt", &m_lepPt, "lepPt/f");
+  TreeEleTau->Branch("lepEta", &m_lepEta, "lepEta/f");
+  TreeEleTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
+  TreeEleTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
+  TreeEleTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeEleTau->Branch("charge", &m_charge, "charge/f");
+  TreeEleTau->Branch("met", &m_met, "met/f");
+  TreeEleTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeEleTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeEleTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeEleTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeEleTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeEleTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeEleTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeEleTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeEleTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeEleTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeEleTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeEleTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeEleTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
+  TreeEleTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
+  TreeEleTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeEleTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeEleTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeEleTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeEleTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeEleTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeEleTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeEleTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeEleTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeEleTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeEleTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeEleTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeEleTau->Branch("weight", &m_weight, "weight/f");
+  TreeEleTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+
+  TreeSB1MuoTau = fs->make<TTree>("TreeSB1MuoTau", "TreeSB1MuoTau");
+  TreeSB1MuoTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1MuoTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1MuoTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1MuoTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1MuoTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1MuoTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1MuoTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
+  TreeSB1MuoTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
+  TreeSB1MuoTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
+  TreeSB1MuoTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
+  TreeSB1MuoTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
+  TreeSB1MuoTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
+  TreeSB1MuoTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeSB1MuoTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1MuoTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1MuoTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1MuoTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1MuoTau->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeSB1MuoTau->Branch("tauEta", &m_tauEta, "tauEta/f");
+  TreeSB1MuoTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
+  TreeSB1MuoTau->Branch("lepPt", &m_lepPt, "lepPt/f");
+  TreeSB1MuoTau->Branch("lepEta", &m_lepEta, "lepEta/f");
+  TreeSB1MuoTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
+  TreeSB1MuoTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
+  TreeSB1MuoTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeSB1MuoTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB1MuoTau->Branch("met", &m_met, "met/f");
+  TreeSB1MuoTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1MuoTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1MuoTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1MuoTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1MuoTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1MuoTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1MuoTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1MuoTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1MuoTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1MuoTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1MuoTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1MuoTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1MuoTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
+  TreeSB1MuoTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
+  TreeSB1MuoTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeSB1MuoTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1MuoTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1MuoTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1MuoTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1MuoTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1MuoTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1MuoTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1MuoTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1MuoTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1MuoTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1MuoTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1MuoTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB1MuoTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+
+  TreeSB1EleTau = fs->make<TTree>("TreeSB1EleTau", "TreeSB1EleTau");
+  TreeSB1EleTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1EleTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1EleTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1EleTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1EleTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1EleTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1EleTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
+  TreeSB1EleTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
+  TreeSB1EleTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
+  TreeSB1EleTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
+  TreeSB1EleTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
+  TreeSB1EleTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
+  TreeSB1EleTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeSB1EleTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1EleTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1EleTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1EleTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1EleTau->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeSB1EleTau->Branch("tauEta", &m_tauEta, "tauEta/f");
+  TreeSB1EleTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
+  TreeSB1EleTau->Branch("lepPt", &m_lepPt, "lepPt/f");
+  TreeSB1EleTau->Branch("lepEta", &m_lepEta, "lepEta/f");
+  TreeSB1EleTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
+  TreeSB1EleTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
+  TreeSB1EleTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeSB1EleTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB1EleTau->Branch("met", &m_met, "met/f");
+  TreeSB1EleTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1EleTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1EleTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1EleTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1EleTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1EleTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1EleTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1EleTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1EleTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1EleTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1EleTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1EleTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1EleTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
+  TreeSB1EleTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
+  TreeSB1EleTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeSB1EleTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1EleTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1EleTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1EleTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1EleTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1EleTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1EleTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1EleTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1EleTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1EleTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1EleTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1EleTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB1EleTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+
+  TreeSB2MuoTau = fs->make<TTree>("TreeSB2MuoTau", "TreeSB2MuoTau");
+  TreeSB2MuoTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2MuoTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2MuoTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2MuoTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2MuoTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2MuoTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2MuoTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
+  TreeSB2MuoTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
+  TreeSB2MuoTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
+  TreeSB2MuoTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
+  TreeSB2MuoTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
+  TreeSB2MuoTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
+  TreeSB2MuoTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeSB2MuoTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2MuoTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2MuoTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2MuoTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2MuoTau->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeSB2MuoTau->Branch("tauEta", &m_tauEta, "tauEta/f");
+  TreeSB2MuoTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
+  TreeSB2MuoTau->Branch("lepPt", &m_lepPt, "lepPt/f");
+  TreeSB2MuoTau->Branch("lepEta", &m_lepEta, "lepEta/f");
+  TreeSB2MuoTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
+  TreeSB2MuoTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
+  TreeSB2MuoTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeSB2MuoTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB2MuoTau->Branch("met", &m_met, "met/f");
+  TreeSB2MuoTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2MuoTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2MuoTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2MuoTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2MuoTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2MuoTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2MuoTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2MuoTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2MuoTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2MuoTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2MuoTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2MuoTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2MuoTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
+  TreeSB2MuoTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
+  TreeSB2MuoTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeSB2MuoTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2MuoTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2MuoTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2MuoTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2MuoTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2MuoTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2MuoTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2MuoTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2MuoTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2MuoTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2MuoTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2MuoTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB2MuoTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+
+  TreeSB2EleTau = fs->make<TTree>("TreeSB2EleTau", "TreeSB2EleTau");
+  TreeSB2EleTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2EleTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2EleTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2EleTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2EleTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2EleTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2EleTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
+  TreeSB2EleTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
+  TreeSB2EleTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
+  TreeSB2EleTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
+  TreeSB2EleTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
+  TreeSB2EleTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
+  TreeSB2EleTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeSB2EleTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2EleTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2EleTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2EleTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2EleTau->Branch("tauPt", &m_tauPt, "tauPt/f");
+  TreeSB2EleTau->Branch("tauEta", &m_tauEta, "tauEta/f");
+  TreeSB2EleTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
+  TreeSB2EleTau->Branch("lepPt", &m_lepPt, "lepPt/f");
+  TreeSB2EleTau->Branch("lepEta", &m_lepEta, "lepEta/f");
+  TreeSB2EleTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
+  TreeSB2EleTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
+  TreeSB2EleTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeSB2EleTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB2EleTau->Branch("met", &m_met, "met/f");
+  TreeSB2EleTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2EleTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2EleTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2EleTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2EleTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2EleTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2EleTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2EleTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2EleTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2EleTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2EleTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2EleTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2EleTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
+  TreeSB2EleTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
+  TreeSB2EleTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeSB2EleTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2EleTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2EleTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2EleTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2EleTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2EleTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2EleTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2EleTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2EleTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2EleTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2EleTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2EleTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB2EleTau->Branch("genEvent", &m_genEvent, "genEvent/f");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -654,6 +1418,135 @@ SemiLeptonicAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descripti
   descriptions.addDefault(desc);
 }
 
+void SemiLeptonicAnalyzer::SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets,
+				     edm::Handle<pat::JetCollection> CA8JetsPruned,
+				     bool & foundJet,
+				     pat::JetCollection::const_iterator & SelectedJet,
+				     float & massZ, float & tau21Z, float & ptZ,
+				     float massMin, float massMax){
+
+  for(pat::JetCollection::const_iterator jet = CA8JetswithQjets->begin(); jet != CA8JetswithQjets->end(); ++jet) {
+    float dRmin = 9999.; float mass = 0.;
+    for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
+      float dRtmp = ROOT::Math::VectorUtil::DeltaR(jet->p4(),jetPruned->p4());
+      if(dRtmp<dRmin && dRtmp<0.8 ){//matching failed if greater than jet radius
+        dRmin=dRtmp;
+        mass=jetPruned->mass();
+      }
+    }
+    if(jet->muonEnergyFraction()>=0.99) continue;
+    if(jet->photonEnergyFraction()>=0.99) continue;
+    if(jet->chargedEmEnergyFraction()>=0.99) continue;
+    if(jet->neutralHadronEnergyFraction()>=0.99) continue;
+    if(jet->chargedHadronEnergyFraction()<=0.00) continue;
+    if(jet->pt()<400) continue;
+    if(abs(jet->eta())>2.4) continue;
+    if(!(mass>massMin && mass<massMax))  continue;
+    if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;
+    foundJet=true;
+    if(jet->pt()>ptZ){
+      massZ=mass;
+      ptZ=jet->pt();
+      tau21Z=jet->userFloat("tau2")/jet->userFloat("tau1");
+      SelectedJet=jet;
+    }
+  }
+}
+
+void SemiLeptonicAnalyzer::SelectTau(edm::Handle<pat::TauCollection> tauHandle,
+					  pat::JetCollection::const_iterator SelectedJet,
+					  bool & foundTau,
+					  pat::TauCollection::const_iterator & SelectedTau,
+					  float & ptTau, bool foundJet){
+  
+  for (pat::TauCollection::const_iterator patTau = tauHandle->begin(); patTau != tauHandle->end(); ++patTau ) {
+    if(patTau->pt()<20) continue;
+    if(abs(patTau->eta())>2.4) continue;
+    if(patTau->tauID("decayModeFinding")<0.5) continue;
+    if(patTau->tauID("againstMuonLoose")<0.5) continue;
+    if(patTau->tauID("againstElectronLoose")<0.5) continue;
+    if(patTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")<0.5) continue;
+    if(foundJet){
+      if(ROOT::Math::VectorUtil::DeltaR(patTau->p4(),SelectedJet->p4())>0.8){
+	foundTau=true;
+	if(patTau->pt()>ptTau){
+	  SelectedTau=patTau;
+	  ptTau=patTau->pt();
+	}
+      }
+    }
+  }
+}
+
+void SemiLeptonicAnalyzer::SelectMuon(edm::Handle<pat::MuonCollection> muoH,
+				      pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+				      pat::MuonCollection::const_iterator & SelectedMuon,
+				      float & ptMuon, bool foundJet, reco::Vertex primaryVertex){
+  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+    if(!(muon->isGlobalMuon())) continue;
+    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
+    if(cktTrack->pt()<10) continue;
+    if(abs(cktTrack->eta())>2.4) continue;
+    if(abs(cktTrack->phi())>3.2) continue;
+    if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
+    if(muon->globalTrack()->hitPattern().numberOfValidMuonHits()<=0) continue;
+    if(muon->numberOfMatches()<=1) continue;
+    if(fabs(cktTrack->dxy(primaryVertex.position()))>=0.2) continue;
+    if(fabs(cktTrack->dz( primaryVertex.position()))>=0.5) continue;
+    if(muon->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
+    if(muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
+    if(foundJet) {
+      if(ROOT::Math::VectorUtil::DeltaR(muon->p4(),SelectedJet->p4())>0.8){
+	foundMuon=true;
+	if(cktTrack->pt()>ptMuon){
+	  SelectedMuon=muon;
+	  ptMuon=cktTrack->pt();
+	}
+      }
+    }
+  }
+}
+
+void SemiLeptonicAnalyzer::SelectElectron(edm::Handle<pat::ElectronCollection> eleH,
+					  pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+					  pat::ElectronCollection::const_iterator & SelectedElectron,
+					  float & ptElectron, bool foundJet, reco::Vertex primaryVertex){
+  for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
+    if(electron->pt()<10) continue;
+    if(fabs(electron->superCluster()->eta())<=1.479){
+      if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.004) continue;
+      if(electron->deltaPhiSuperClusterTrackAtVtx()>=0.030) continue;
+      if(electron->sigmaIetaIeta()>=0.01) continue;
+      if(electron->hadronicOverEm()>=0.12) continue;
+      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
+      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
+      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
+      if(electron->passConversionVeto()==0) continue;
+      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
+    }
+    if(fabs(electron->superCluster()->eta())>1.479 && fabs(electron->superCluster()->eta())<2.5){
+      if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.005) continue;
+      if(electron->deltaPhiSuperClusterTrackAtVtx()>=0.020) continue;
+      if(electron->sigmaIetaIeta()>=0.03) continue;
+      if(electron->hadronicOverEm()>=0.10) continue;
+      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
+      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
+      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
+      if(electron->passConversionVeto()==0) continue;
+      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
+    }
+    if(foundJet){
+      if(ROOT::Math::VectorUtil::DeltaR(electron->p4(),SelectedJet->p4())>0.8){
+	foundElectron=true;
+	if(electron->pt()>ptElectron){
+	  SelectedElectron=electron;
+	  ptElectron=electron->pt();
+	}
+      }
+    }
+  }
+}
+
 float SemiLeptonicAnalyzer::MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
   float sumChargedHadronPt = muon->pfIsolationR04().sumChargedHadronPt;
   float sumNeutralHadronEt = muon->pfIsolationR04().sumNeutralHadronEt;
@@ -667,14 +1560,112 @@ float SemiLeptonicAnalyzer::MuonPFIso(pat::MuonCollection::const_iterator muon, 
   return iso;
 }
 
+
+float SemiLeptonicAnalyzer::ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho){
+  float chargedHadronIso = electron->chargedHadronIso();
+  float neutralHadronIso = electron->neutralHadronIso();
+  float photonIso = electron->photonIso();
+  float thiseta = fabs(electron->superCluster()->eta());
+  float Aeff=0.;
+  if(thiseta<1.0) Aeff=0.13;
+  if(thiseta>=1.0 && thiseta<1.479) Aeff=0.14;
+  if(thiseta>=1.479 && thiseta<2.0) Aeff=0.07;
+  if(thiseta>=2.0 && thiseta<2.2) Aeff=0.09;
+  if(thiseta>=2.2 && thiseta<2.3) Aeff=0.11;
+  if(thiseta>=2.3 && thiseta<2.4) Aeff=0.11;
+  if(thiseta>=2.4) Aeff=0.14;
+  float zero = 0.;
+  float iso = (chargedHadronIso + max(zero, neutralHadronIso + photonIso - rho*Aeff))/electron->pt();
+  return iso;
+}
+
+float SemiLeptonicAnalyzer::MuonCorrPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
+  float sumChargedHadronPt = muon->userIsolation(pat::PfChargedHadronIso);//pfIsolationR04().sumChargedHadronPt;
+  float sumNeutralHadronEt = muon->userIsolation(pat::PfNeutralHadronIso);//pfIsolationR04().sumNeutralHadronEt;
+  float sumPhotonEt = muon->userIsolation(pat::PfGammaIso);//pfIsolationR04().sumPhotonEt;
+  float sumPUPt = muon->userIsolation(pat::User2Iso);//pfIsolationR04().sumPUPt;
+  float iso = (sumChargedHadronPt+ max(0.,sumNeutralHadronEt+sumPhotonEt-0.5*sumPUPt))/muon->pt();
+  if(highpt){
+    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
+    iso = (sumChargedHadronPt+ max(0.,sumNeutralHadronEt+sumPhotonEt-0.5*sumPUPt))/cktTrack->pt();
+  }
+  return iso;
+}
+
+
+float SemiLeptonicAnalyzer::ElectronCorrPFIso(pat::ElectronCollection::const_iterator electron, float rho){
+  float chargedHadronIso = electron->userIsolation(pat::PfChargedHadronIso);//chargedHadronIso();
+  float neutralHadronIso = electron->userIsolation(pat::PfNeutralHadronIso);//neutralHadronIso();
+  float photonIso = electron->userIsolation(pat::PfGammaIso);//photonIso();
+  float thiseta = fabs(electron->superCluster()->eta());
+  float Aeff=0.;
+  if(thiseta<1.0) Aeff=0.13;
+  if(thiseta>=1.0 && thiseta<1.479) Aeff=0.14;
+  if(thiseta>=1.479 && thiseta<2.0) Aeff=0.07;
+  if(thiseta>=2.0 && thiseta<2.2) Aeff=0.09;
+  if(thiseta>=2.2 && thiseta<2.3) Aeff=0.11;
+  if(thiseta>=2.3 && thiseta<2.4) Aeff=0.11;
+  if(thiseta>=2.4) Aeff=0.14;
+  float zero = 0.;
+  float iso = (chargedHadronIso + max(zero, neutralHadronIso + photonIso - rho*Aeff))/electron->pt();
+  return iso;
+}
+
 void SemiLeptonicAnalyzer::BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & nbtagsL, int & nbtagsM, int & nbtagsT,
-				     pat::JetCollection::const_iterator SelectedJet){
+				    pat::JetCollection::const_iterator SelectedJet){
   for(pat::JetCollection::const_iterator ak5 = ak5jetCands->begin(); ak5 != ak5jetCands->end(); ++ak5) {
     if(ROOT::Math::VectorUtil::DeltaR(ak5->p4(),SelectedJet->p4())<0.8) continue;
     double discCSV = ak5->bDiscriminator("combinedSecondaryVertexBJetTags");
     if(discCSV>0.244) nbtagsL++; //loose working point
     if(discCSV>0.679) nbtagsM++; //medium working point
     if(discCSV>0.898) nbtagsT++; //tight working point
+  }
+}
+
+void SemiLeptonicAnalyzer::Efficiency(float & genEvent, bool isData, Handle<vector<reco::GenParticle> > genParts){
+  if(isData==false){
+    int ele = 0; int muo = 0;
+    vector<math::PtEtaPhiELorentzVector> genele;
+    for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
+      const reco::GenParticle & genPart = (*genParts)[ngenPart];
+      if(abs(genPart.pdgId())==15 && genPart.status()!=3){
+	for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	  const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	  if(abs(daughter->pdgId())==11 && daughter->status()==1) ele = ele + 1;
+	  if(abs(daughter->pdgId())==13 && daughter->status()==1) muo = muo + 1;
+	}
+      }
+    }
+    if(ele==2 && muo==0)      genEvent = 1;
+    else if(ele==1 && muo==1) genEvent = 2;
+    else if(ele==1 && muo==0) genEvent = 3;
+    else if(ele==0 && muo==2) genEvent = 4;
+    else if(ele==0 && muo==1) genEvent = 5;
+    else if(ele==0 && muo==0) genEvent = 6;
+    else                      genEvent = 7;
+  }
+}
+
+void SemiLeptonicAnalyzer::svfit(edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, LorentzVector SelectedTau, 
+				 LorentzVector SelectedMuon, TLorentzVector PrunedJet, float & MassSVFit, float & XMassSVFit, float & dRJetZSVFit, float & ptSVFit, 
+				 pat::JetCollection::const_iterator SelectedJet){
+  TMatrixD covMET(2, 2); // PFMET significance matrix
+  covMET[0][0] = (metRaw->front() ).getSignificanceMatrix()(0,0);
+  covMET[1][0] = (metRaw->front() ).getSignificanceMatrix()(1,0);
+  covMET[0][1] = (metRaw->front() ).getSignificanceMatrix()(0,1);
+  covMET[1][1] = (metRaw->front() ).getSignificanceMatrix()(1,1);
+  std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
+  measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kHadDecay, SelectedTau));
+  measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon));
+  NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
+  algo.addLogM(false);
+  algo.integrateMarkovChain();
+  if(algo.pt()>0){
+    TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
+    dRJetZSVFit=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+    XMassSVFit=(SVFitTauTau+PrunedJet).M();
+    MassSVFit=algo.getMass();
+    ptSVFit=algo.pt();
   }
 }
 
