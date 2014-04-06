@@ -1,0 +1,113 @@
+#!/bin/bash   
+
+folder=$1
+
+cd RISULTATI
+mkdir $folder
+cd $folder
+cp $CMSSW_BASE/src/Analyzer/EDBRTauAnalyzer/runOnQueue.sh .
+
+### analyzer - PERUGIA ###
+./runOnQueue.sh RunA 50 cms-medium analyzer RunA_SL PERUGIA data $folder
+./runOnQueue.sh RunB 50 cms-medium analyzer RunB_SL PERUGIA data $folder
+./runOnQueue.sh RunC 50 cms-medium analyzer RunC_SL PERUGIA data $folder
+./runOnQueue.sh RunD 50 cms-medium analyzer RunD_SL PERUGIA data $folder
+./runOnQueue.sh ZH1000 25 cms-short analyzer ZH1000_SL PERUGIA MC $folder
+./runOnQueue.sh ZH1500 25 cms-short analyzer ZH1500_SL PERUGIA MC $folder
+./runOnQueue.sh ZH2000 25 cms-short analyzer ZH2000_SL PERUGIA MC $folder
+./runOnQueue.sh ZH2500 25 cms-short analyzer ZH2500_SL PERUGIA MC $folder
+./runOnQueue.sh DY100 100 cms-medium analyzer DY100_SL PERUGIA MC $folder
+./runOnQueue.sh DY70 100 cms-medium analyzer DY70_SL PERUGIA MC $folder
+./runOnQueue.sh DYM50_100 100 cms-medium analyzer DYM50_100_SL PERUGIA MC $folder
+./runOnQueue.sh DYM50_70 100 cms-medium analyzer DYM50_70_SL PERUGIA MC $folder
+./runOnQueue.sh WW 100 cms-medium analyzer WW_SL PERUGIA MC $folder
+./runOnQueue.sh WZ 100 cms-medium analyzer WZ_SL PERUGIA MC $folder
+./runOnQueue.sh ZZ 100 cms-medium analyzer ZZ_SL PERUGIA MC $folder
+./runOnQueue.sh TT 100 cms-medium analyzer TT_SL PERUGIA MC $folder
+./runOnQueue.sh QCD250 100 cms-medium analyzer QCD250_SL PERUGIA MC $folder
+./runOnQueue.sh QCD500 100 cms-medium analyzer QCD500_SL PERUGIA MC $folder
+./runOnQueue.sh QCD1000 100 cms-medium analyzer QCD1000_SL PERUGIA MC $folder
+./runOnQueue.sh WJets 100 cms-medium analyzer WJets180_SL PERUGIA MC $folder
+##./runOnQueue.sh RunB_topup 10 cms-short analyzer RunB_topup_SL PERUGIA data $folder
+##./runOnQueue.sh RunC_topup 10 cms-short analyzer RunC_topup_SL PERUGIA data $folder
+##./runOnQueue.sh RunD_topup 10 cms-short analyzer RunD_topup_SL PERUGIA data $folder
+ qstat | grep run | wc -l
+
+### analyzer - ZURICH ###
+./runOnQueue.sh RunA 50 short analyzer RunA_SL ZURICH data $folder
+./runOnQueue.sh RunB 50 short analyzer RunB_SL ZURICH data $folder
+./runOnQueue.sh RunC 50 short analyzer RunC_SL ZURICH data $folder
+./runOnQueue.sh RunD 50 short analyzer RunD_SL ZURICH data $folder
+./runOnQueue.sh ZH1000 25 short analyzer ZH1000_SL ZURICH MC $folder
+./runOnQueue.sh ZH1500 25 short analyzer ZH1500_SL ZURICH MC $folder
+./runOnQueue.sh ZH2000 25 short analyzer ZH2000_SL ZURICH MC $folder
+./runOnQueue.sh ZH2500 25 short analyzer ZH2500_SL ZURICH MC $folder
+./runOnQueue.sh DY100 100 short analyzer DY100_SL ZURICH MC $folder
+./runOnQueue.sh DY70 100 short analyzer DY70_SL ZURICH MC $folder
+./runOnQueue.sh DYM50_100 100 short analyzer DYM50_100_SL ZURICH MC $folder
+./runOnQueue.sh DYM50_70 100 short analyzer DYM50_70_SL ZURICH MC $folder
+./runOnQueue.sh WW 100 short analyzer WW_SL ZURICH MC $folder
+./runOnQueue.sh WZ 100 short analyzer WZ_SL ZURICH MC $folder
+./runOnQueue.sh ZZ 100 short analyzer ZZ_SL ZURICH MC $folder
+./runOnQueue.sh TT 100 short analyzer TT_SL ZURICH MC $folder
+./runOnQueue.sh QCD250 100 short analyzer QCD250_SL ZURICH MC $folder
+./runOnQueue.sh QCD500 100 short analyzer QCD500_SL ZURICH MC $folder
+./runOnQueue.sh QCD1000 100 short analyzer QCD1000_SL ZURICH MC $folder
+./runOnQueue.sh WJets 100 short analyzer WJets180_SL ZURICH MC $folder
+##./runOnQueue.sh RunB_topup 10 short analyzer RunB_topup_SL ZURICH data $folder
+##./runOnQueue.sh RunC_topup 10 short analyzer RunC_topup_SL ZURICH data $folder
+##./runOnQueue.sh RunD_topup 10 short analyzer RunD_topup_SL ZURICH data $folder
+ qstat | grep run | wc -l
+
+
+#### QCD ANALYZER #
+#./runOnQueue.sh DY100 200 short QCD DY100_QCD ZURICH MC $folder
+#./runOnQueue.sh DY70 200 short QCD DY70_QCD ZURICH MC $folder
+#./runOnQueue.sh WW 200 short QCD WW_QCD ZURICH MC $folder
+#./runOnQueue.sh WZ 200 short QCD WZ_QCD ZURICH MC $folder
+#./runOnQueue.sh ZZ 200 short QCD ZZ_QCD ZURICH MC $folder
+#./runOnQueue.sh TT 200 short QCD TT_QCD ZURICH MC $folder
+#./runOnQueue.sh QCD250 200 short QCD QCD250_QCD ZURICH MC $folder
+#./runOnQueue.sh QCD500 200 short QCD QCD500_QCD ZURICH MC $folder
+#./runOnQueue.sh QCD1000 200 short QCD QCD1000_QCD ZURICH MC $folder
+#./runOnQueue.sh WJets 200 short QCD WJets180_QCD ZURICH MC $folder
+#./runOnQueue.sh ZH1000 25 short QCD ZH1000_QCD ZURICH MC $folder
+#./runOnQueue.sh ZH1500 25 short QCD ZH1500_QCD ZURICH MC $folder
+#./runOnQueue.sh ZH2000 25 short QCD ZH2000_QCD ZURICH MC $folder
+#./runOnQueue.sh ZH2500 25 short QCD ZH2500_QCD ZURICH MC $folder
+#./runOnQueue.sh RunA 100 short QCD RunA_QCD ZURICH data $folder
+#./runOnQueue.sh RunB_final 100 short QCD RunB_final_QCD ZURICH data $folder
+#./runOnQueue.sh RunC_final 100 short QCD RunC_final_QCD ZURICH data $folder
+#./runOnQueue.sh RunD_final 100 short QCD RunD_final_QCD ZURICH data $folder
+#./runOnQueue.sh RunB_topup 100 short QCD RunB_topup_QCD ZURICH data $folder
+#./runOnQueue.sh RunC_topup 100 short QCD RunC_topup_QCD ZURICH data $folder
+#./runOnQueue.sh RunD_topup 100 short QCD RunD_topup_QCD ZURICH data $folder
+#qstat | grep run | wc -l
+#
+#### fake rate ###
+#./runOnQueue.sh RunA 50 short FakeRate RunA_FakeRate ZURICH data $folder
+#./runOnQueue.sh RunB 50 short FakeRate RunB_FakeRate ZURICH data $folder
+#./runOnQueue.sh RunC 50 short FakeRate RunC_FakeRate ZURICH data $folder
+#./runOnQueue.sh RunD 50 short FakeRate RunD_FakeRate ZURICH data $folder
+#
+#### efficiency ###
+#./runOnQueue.sh ZH1000 25 short efficiency ZH1000_Eff ZURICH MC $folder
+#./runOnQueue.sh ZH1500 25 short efficiency ZH1500_Eff ZURICH MC $folder
+#./runOnQueue.sh ZH2000 25 short efficiency ZH2000_Eff ZURICH MC $folder
+#./runOnQueue.sh ZH2500 25 short efficiency ZH2500_Eff ZURICH MC $folder
+#qstat | grep run | wc -l
+#
+### tauMC ###
+#./runOnQueue.sh ZH1000 2 short tauMC ZH1000_tauMC ZURICH MC $folder
+#./runOnQueue.sh ZH1500 2 short tauMC ZH1500_tauMC ZURICH MC $folder
+#./runOnQueue.sh ZH2000 2 short tauMC ZH2000_tauMC ZURICH MC $folder
+#./runOnQueue.sh ZH2500 2 short tauMC ZH2500_tauMC ZURICH MC $folder
+#./runOnQueue.sh QCD1000 30 short tauMC QCD1000_tauMC ZURICH MC $folder
+#qstat | grep run | wc -l
+#
+### JetIdStudy ###
+#./runOnQueue.sh ZH1000 2 short JetIdStudy ZH1000_JetIdStudy ZURICH MC $folder
+#./runOnQueue.sh ZH1500 2 short JetIdStudy ZH1500_JetIdStudy ZURICH MC $folder
+#./runOnQueue.sh ZH2000 2 short JetIdStudy ZH2000_JetIdStudy ZURICH MC $folder
+#./runOnQueue.sh ZH2500 2 short JetIdStudy ZH2500_JetIdStudy ZURICH MC $folder
+#qstat | grep run | wc -l

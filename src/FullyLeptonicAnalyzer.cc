@@ -410,7 +410,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
   }
 
-  //SELECT THE ELCTRONS AND APPLY THE CUTS BETWEEN THE JET AND THE ELECTRONS in SR
+  //SELECT THE ELECTRONS AND APPLY THE CUTS BETWEEN THE JET AND THE ELECTRONS in SR
   int Nele = 0;
   vector<pat::ElectronCollection::const_iterator> SelectedInitialEle;
   vector<pat::ElectronCollection::const_iterator> SelectedEle;
@@ -422,7 +422,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     SelectedEle.push_back(SelectedInitialEle[i]);
   }
 
-  //SELECT THE ELCTRONS AND APPLY THE CUTS BETWEEN THE JET AND THE ELECTRONS in SB1
+  //SELECT THE ELECTRONS AND APPLY THE CUTS BETWEEN THE JET AND THE ELECTRONS in SB1
   int NSB1ele = 0;
   vector<pat::ElectronCollection::const_iterator> SelectedSB1Ele;
   for(unsigned int i=0; i<SelectedInitialEle.size(); i++){
@@ -432,7 +432,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     SelectedSB1Ele.push_back(SelectedInitialEle[i]);
   }
 
-  //SELECT THE ELCTRONS AND APPLY THE CUTS BETWEEN THE JET AND THE ELECTRONS in SB2
+  //SELECT THE ELECTRONS AND APPLY THE CUTS BETWEEN THE JET AND THE ELECTRONS in SB2
   int NSB2ele = 0;
   vector<pat::ElectronCollection::const_iterator> SelectedSB2Ele;
   for(unsigned int i=0; i<SelectedInitialEle.size(); i++){
@@ -492,6 +492,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   //DI-ELECTRON SELECTION - SR
   if(SelectedEle.size()>1 && SelectedJet.size()>0){
+    cout<<iEvent.id().event()<<"; electron1 pt "<<SelectedEle[0]->pt()<<"; electron2 pt "<<SelectedEle[1]->pt()<<"; jet pt "<<SelectedJet[jetInd]->pt()<<"; met "<<met->begin()->pt()<<endl;
     math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet[jetInd]->pt(),SelectedJet[jetInd]->eta(),SelectedJet[jetInd]->phi(),SelectedPrunedMass[jetInd]);
     TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
     //SVFIT
@@ -601,6 +602,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   //DI-MUON SELECTION - SR
   if(SelectedMuo.size()>1 && hasAtLeastOneHighPtMuo == true && SelectedJet.size()>0){
+    cout<<iEvent.id().event()<<"; muon1 pt "<<SelectedMuo[0]->pt()<<"; muon2 pt "<<SelectedMuo[1]->pt()<<"; jet pt "<<SelectedJet[jetInd]->pt()<<"; met "<<met->begin()->pt()<<endl;
     math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet[jetInd]->pt(),SelectedJet[jetInd]->eta(),SelectedJet[jetInd]->phi(),SelectedPrunedMass[jetInd]);
     TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
     //SVFIT
@@ -725,6 +727,7 @@ FullyLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     SelectedMuo.push_back(SelectedHighptMuo[i]);
   }
   if(SelectedEle.size()>0 && SelectedMuo.size()>0 && SelectedJet.size()>0){
+    cout<<iEvent.id().event()<<"; muon pt "<<SelectedMuo[0]->pt()<<"; electron pt "<<SelectedEle[0]->pt()<<"; jet pt "<<SelectedJet[jetInd]->pt()<<"; met "<<met->begin()->pt()<<endl;
     math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet[jetInd]->pt(),SelectedJet[jetInd]->eta(),SelectedJet[jetInd]->phi(),SelectedPrunedMass[jetInd]);
     TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
     //SVFIT

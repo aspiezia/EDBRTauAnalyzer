@@ -400,32 +400,32 @@ SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   float ptSB2TauElTau=-99; bool foundSB2TauElTau=false;
   pat::TauCollection::const_iterator SelectedSB2TauElTau;
   SelectTau(tauElTauHandle, SelectedSB2Jet, foundSB2TauElTau, SelectedSB2TauElTau, ptSB2TauElTau, foundSB2Jet); 
-
+  
   //MUON SELECTION - SR
   float ptMuon=-99; bool foundMuon=false;
   pat::MuonCollection::const_iterator SelectedMuon;
   SelectMuon(muoH, SelectedJet, foundMuon, SelectedMuon, ptMuon, foundJet, primaryVertex);
-
+  
   //MUON SELECTION - SB1
   float ptSB1Muon=-99; bool foundSB1Muon=false;
   pat::MuonCollection::const_iterator SelectedSB1Muon;
   SelectMuon(muoH, SelectedSB1Jet, foundSB1Muon, SelectedSB1Muon, ptSB1Muon, foundSB1Jet, primaryVertex);
-
+  
   //MUON SELECTION - SB2
   float ptSB2Muon=-99; bool foundSB2Muon=false;
   pat::MuonCollection::const_iterator SelectedSB2Muon;
   SelectMuon(muoH, SelectedSB2Jet, foundSB2Muon, SelectedSB2Muon, ptSB2Muon, foundSB2Jet, primaryVertex);
-
+  
   //ELECTRON SELECTION - SR
   float ptElectron=-99; bool foundElectron=false;
   pat::ElectronCollection::const_iterator SelectedElectron;
   SelectElectron(eleH, SelectedJet, foundElectron, SelectedElectron, ptElectron, foundJet, primaryVertex);
-
+  
   //ELECTRON SELECTION - SB1
   float ptSB1Electron=-99; bool foundSB1Electron=false;
   pat::ElectronCollection::const_iterator SelectedSB1Electron;
   SelectElectron(eleH, SelectedSB1Jet, foundSB1Electron, SelectedSB1Electron, ptSB1Electron, foundSB1Jet, primaryVertex);
-
+  
   //ELECTRON SELECTION - SB2
   float ptSB2Electron=-99; bool foundSB2Electron=false;
   pat::ElectronCollection::const_iterator SelectedSB2Electron;
@@ -434,17 +434,18 @@ SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //BTAG VETO - SR
   int nbtagsL=0; int nbtagsM=0; int nbtagsT=0;
   if(foundJet) BtagVeto(ak5jetCands, nbtagsL, nbtagsM, nbtagsT, SelectedJet);
-
+  
   //BTAG VETO - SB1
   int nSB1btagsL=0; int nSB1btagsM=0; int nSB1btagsT=0;
   if(foundSB1Jet) BtagVeto(ak5jetCands, nSB1btagsL, nSB1btagsM, nSB1btagsT, SelectedSB1Jet);
-
+  
   //BTAG VETO - SB2
   int nSB2btagsL=0; int nSB2btagsM=0; int nSB2btagsT=0;
   if(foundSB2Jet) BtagVeto(ak5jetCands, nSB2btagsL, nSB2btagsM, nSB2btagsT, SelectedSB2Jet);
-
+  
   //MU-TAU ANALYSIS
   if(foundJet && foundTauMuTau && foundMuon){ 
+    cout<<iEvent.id().event()<<"; muon pt "<<SelectedMuon->pt()<<"; tau pt "<<SelectedTauMuTau->pt()<<"; jet pt "<<SelectedJet->pt()<<"; met "<<met->begin()->pt()<<endl;
     //SVFIT
     math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
     TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
@@ -540,6 +541,7 @@ SemiLeptonicAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   //ELE-TAU ANALYSIS
   if(foundJet && foundTauElTau && foundElectron){
+    cout<<iEvent.id().event()<<"; electron pt "<<SelectedElectron->pt()<<"; tau pt "<<SelectedTauElTau->pt()<<"; jet pt "<<SelectedJet->pt()<<"; met "<<met->begin()->pt()<<endl;
     //SVFIT
     math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
     TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
@@ -1462,13 +1464,13 @@ void SemiLeptonicAnalyzer::SelectTau(edm::Handle<pat::TauCollection> tauHandle,
   for (pat::TauCollection::const_iterator patTau = tauHandle->begin(); patTau != tauHandle->end(); ++patTau ) {
     if(patTau->pt()<20) continue;
     if(abs(patTau->eta())>2.4) continue;
-    if(patTau->tauID("decayModeFinding")<0.5) continue;
+    if(patTau->tauID("decayModeFindingNewDMs")<0.5) continue;
     if(patTau->tauID("againstMuonLoose")<0.5) continue;
     if(patTau->tauID("againstElectronLoose")<0.5) continue;
-    if(patTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")<0.5) continue;
+    if(patTau->tauID("byVLooseIsolationMVA3newDMwoLT")<0.5) continue;
     if(foundJet){
       if(ROOT::Math::VectorUtil::DeltaR(patTau->p4(),SelectedJet->p4())>0.8){
-	foundTau=true;
+    	foundTau=true;
 	if(patTau->pt()>ptTau){
 	  SelectedTau=patTau;
 	  ptTau=patTau->pt();
@@ -1511,6 +1513,7 @@ void SemiLeptonicAnalyzer::SelectElectron(edm::Handle<pat::ElectronCollection> e
 					  pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
 					  pat::ElectronCollection::const_iterator & SelectedElectron,
 					  float & ptElectron, bool foundJet, reco::Vertex primaryVertex){
+  bool passEle=false;
   for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
     if(electron->pt()<10) continue;
     if(fabs(electron->superCluster()->eta())<=1.479){
@@ -1523,6 +1526,7 @@ void SemiLeptonicAnalyzer::SelectElectron(edm::Handle<pat::ElectronCollection> e
       if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
       if(electron->passConversionVeto()==0) continue;
       if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
+      passEle=true;
     }
     if(fabs(electron->superCluster()->eta())>1.479 && fabs(electron->superCluster()->eta())<2.5){
       if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.005) continue;
@@ -1534,8 +1538,9 @@ void SemiLeptonicAnalyzer::SelectElectron(edm::Handle<pat::ElectronCollection> e
       if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
       if(electron->passConversionVeto()==0) continue;
       if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
+      passEle=true;
     }
-    if(foundJet){
+    if(foundJet && passEle){
       if(ROOT::Math::VectorUtil::DeltaR(electron->p4(),SelectedJet->p4())>0.8){
 	foundElectron=true;
 	if(electron->pt()>ptElectron){
