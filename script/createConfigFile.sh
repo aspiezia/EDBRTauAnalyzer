@@ -179,9 +179,7 @@ if [ "$sample" == "data" ]; then
     echo "myLumis = LumiList.LumiList(filename = JSONfile).getCMSSWString().split(',')"
     echo "process.source.lumisToProcess.extend(myLumis)"
     echo ""
-    echo "process.p = cms.Path(process.badEventFilter * process.demo)"
 fi
-echo ""
 echo "process.p = cms.Path(process.badEventFilter * process.demo)"
 echo "#process.p = cms.Path(process.demo)"
 echo "process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )"
