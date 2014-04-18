@@ -171,6 +171,17 @@ echo 'process.TFileService = cms.Service("TFileService",'
 echo "        fileName = cms.string('output$index_OutputFile.root')"
 echo ")"
 echo ""
+if [ "$sample" == "data" ]; then
+    echo "import FWCore.PythonUtilities.LumiList as LumiList"
+    echo "import FWCore.ParameterSet.Types as CfgTypes"
+    echo "process.source.lumisToProcess = CfgTypes.untracked(CfgTypes.VLuminosityBlockRange())"
+    echo "JSONfile = '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt'"
+    echo "myLumis = LumiList.LumiList(filename = JSONfile).getCMSSWString().split(',')"
+    echo "process.source.lumisToProcess.extend(myLumis)"
+    echo ""
+    echo "process.p = cms.Path(process.badEventFilter * process.demo)"
+fi
+echo ""
 echo "process.p = cms.Path(process.badEventFilter * process.demo)"
 echo "#process.p = cms.Path(process.demo)"
 echo "process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )"
