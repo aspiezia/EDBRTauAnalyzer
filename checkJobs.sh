@@ -9,6 +9,7 @@ echo ""
 JOB=`grep "T---Report end\!" */* | wc -l`
 TOT=`ls -altrh */r*sh | wc -l`
 <<<<<<< HEAD
+<<<<<<< HEAD
 RUN=`qstat | grep spiezia | grep " R " | wc -l`
 PND=`qstat | grep spiezia | grep " Q " | wc -l`
 RES=`grep "Connection timed out" */r* | wc -l`
@@ -131,6 +132,8 @@ echo ""
 
 cd $CMSSW_BASE/src/Analyzer/EDBRTauAnalyzer/
 =======
+=======
+>>>>>>> 086a792b5f131977a50317a11d1c223075564460
 echo "NUMBER OF JOBS ENDED SUCCESSFULLY = $JOB/$TOT"
 echo ""
  
@@ -194,4 +197,7 @@ echo "TT:        $lines2/$lines1 root files are ready"
 echo ""
 
 cd -
+<<<<<<< HEAD
+>>>>>>> 086a792b5f131977a50317a11d1c223075564460
+=======
 >>>>>>> 086a792b5f131977a50317a11d1c223075564460
