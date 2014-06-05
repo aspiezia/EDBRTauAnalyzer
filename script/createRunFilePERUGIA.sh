@@ -9,7 +9,7 @@ echo 'date'
 echo 'hostname'
 echo 'pwd'
 echo 'ls'
-echo "cd /data06/users/spiezia/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/RISULTATI/$folder2/$folder"
+echo "cd /data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/RISULTATI/$folder2/$folder"
 echo 'source /afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
 echo 'export SCRAM_ARCH=slc5_amd64_gcc462'
 echo 'export VO_CMS_SW_DIR=/opt/exp_soft/cms'

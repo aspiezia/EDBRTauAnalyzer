@@ -1,0 +1,8 @@
+#!/bin/bash   
+
+root -b -q MassVisPlot.C
+root -b -q METPlot.C
+root -b -q ptLepPlot.C
+root -b -q BTagPlot.C
+root -b -q SvfitMassUpPlot.C
+root -b -q deltaRLepLepPlot.C

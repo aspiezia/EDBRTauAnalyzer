@@ -12,23 +12,21 @@
   using namespace std;
   bool save=true; 
   bool log=false;
-  float lep1PtCut=10; float tauPtCut=20; int bTagCut=0; float deltaRCutFL=10; float deltaRCutSL=10; float MassSvfitCut=10000; float METCutFL = 20; float METCutSL = 20; 
+  float lep1PtCut=10; float tauPtCut=20; int bTagCut=1; float deltaRCutFL=10; float deltaRCutSL=10; float MassSvfitCut=10000; float METCutFL = 100; float METCutSL = 50; 
   float MassVisCutSL=10;  
   float MassVisCutFL1=10; //ELE-MUO
   float MassVisCutFL2=10; //ELE-ELE e MUO-MUO
   bool beginning=true;
 
   vector<string> PLOT;              vector<int> BIN;   vector<float> MIN;  vector<float> MAX;   vector<float> MAXY;   vector<TString> AXIS;
-  PLOT.push_back("met");            BIN.push_back(50); MIN.push_back(0);   MAX.push_back(1000); MAXY.push_back(90);   AXIS.push_back("met [GeV]");
-
-  TH1F *METoptimization1  = new TH1F("METoptimization1", "METoptimization1", 62,19,329);
-  TH1F *METoptimization2  = new TH1F("METoptimization2", "METoptimization2", 62,19,329);
-  TH1F *METoptimization3  = new TH1F("METoptimization3", "METoptimization3", 62,19,329);
-  TH1F *METoptimization4  = new TH1F("METoptimization4", "METoptimization4", 62,19,329);
-  TH1F *SignalEfficiency1 = new TH1F("SignalEfficiency1","SignalEfficiency1",62,19,329);
-  TH1F *SignalEfficiency2 = new TH1F("SignalEfficiency2","SignalEfficiency2",62,19,329);
-  TH1F *BackgroundYield1  = new TH1F("BackgroundYield1", "BackgroundYield1", 62,19,329);
-  TH1F *BackgroundYield2  = new TH1F("BackgroundYield2", "BackgroundYield2", 62,19,329);
+  PLOT.push_back("dRLep1Lep2");      BIN.push_back(40); MIN.push_back(0);   MAX.push_back(6);   MAXY.push_back(60);   AXIS.push_back("#DeltaR (lep1,lep2)");
+  
+  TH1F *deltaRoptimization1  = new TH1F("deltaRoptimization1","deltaRoptimization1",50,-0.05,4.95);
+  TH1F *deltaRoptimization2  = new TH1F("deltaRoptimization2","deltaRoptimization2",50,-0.05,4.95);
+  TH1F *SignalEfficiency1    = new TH1F("SignalEfficiency1",  "SignalEfficiency1",  50,-0.05,4.95);
+  TH1F *SignalEfficiency2    = new TH1F("SignalEfficiency2",  "SignalEfficiency2",  50,-0.05,4.95);
+  TH1F *BackgroundYield1     = new TH1F("BackgroundYield1",   "BackgroundYield1",   50,-0.05,4.95);
+  TH1F *BackgroundYield2     = new TH1F("BackgroundYield2",   "BackgroundYield2",   50,-0.05,4.95);
 
   float max1 = 0;
   float max2 = 0;
@@ -41,9 +39,9 @@
       float ZH1000Integral = 0;
       float ZH2500Integral = 0;
       int KK=1;
-      float MET = 15;
-      for(int i=0; i<METoptimization1->GetXaxis()->GetNbins(); i++){
-	MET = MET + 5;
+      float deltaR = 5.0.;
+      for(int i=0; i<50; i++){
+	deltaR = deltaR - 0.1;
 	char *plot = PLOT[0].c_str();
 	TString name = PLOT[0];
 	int bin=BIN[0]; 
@@ -52,10 +50,10 @@
 	float maxy=MAXY[0];
 	TString axis = AXIS[0];
 
-	if(!SL && k==0) {maxy=2; }
-	if(!SL && k==1) {maxy=3; }
-	if(SL  && k==0) {maxy=5; }
-	if(SL  && k==1) {maxy=3; }
+	if(!SL && k==0) {maxy=4 ; }
+	if(!SL && k==1) {maxy=2 ; }
+	if(SL  && k==0) {maxy=12; }
+	if(SL  && k==1) {maxy=1 ; }
 
 	TH1F *ZH1000 = new TH1F("","",bin,min,max);
 	TH1F *ZH1500 = new TH1F("","",bin,min,max);
@@ -90,52 +88,52 @@
 	  if(bTagCut==4) {sprintf(BTAG, " && nbtagsM1<2");}
 	  if(bTagCut==5) {sprintf(BTAG, " && nbtagsT1<1");}
 	  if(bTagCut==6) {sprintf(BTAG, " && nbtagsT1<2");}
-	  char CUTPre[1000]; sprintf(CUTPre, "PUWeight*(trigger==1 && MassSvfit<%f %s",MassSvfitCut,BTAG);
+	  char CUTPre[1000]; sprintf(CUTPre, "PUWeight*(trigger==1 && MassSvfit<%f %s", MassSvfitCut,BTAG);
 	  char CUT [1000]; 
 	  char openTree[500];
 	  if(k==0){
 	    if(j==0){ 
 	      sprintf(openTree, "demo/TreeEleMuo"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && met>%f)",
-		      CUTPre,METCutFL,MassVisCutFL1,lep1PtCut,deltaRCutFL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && dRLep1Lep2<%f)",
+		      CUTPre,METCutFL,MassVisCutFL1,lep1PtCut,deltaRCutFL,deltaR);
 	    }else if(j==1){ 
 	      sprintf(openTree, "demo/TreeMuoMuo"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && met>%f)",
-		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && dRLep1Lep2<%f)",
+		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,deltaR);
 	    }else if(j==2){ 
 	      sprintf(openTree, "demo/TreeEleEle"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && met>%f)",
-		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && dRLep1Lep2<%f)",
+		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,deltaR);
 	    }else if(j==3){ 
 	      sprintf(openTree, "demo/TreeMuoTau");
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && met>%f)",
-		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && dRLep1Lep2<%f)",
+		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,deltaR);
 	    }else if(j==4){ 
 	      sprintf(openTree, "demo/TreeEleTau"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && met>%f)",
-		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>837  && XMassSVFit<1163 && dRLep1Lep2<%f)",
+		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,deltaR);
 	    }
 	  }else{
 	    if(j==0){ 
 	      sprintf(openTree, "demo/TreeEleMuo"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && met>%f)",
-		      CUTPre,METCutFL,MassVisCutFL1,lep1PtCut,deltaRCutFL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && dRLep1Lep2<%f)",
+		      CUTPre,METCutFL,MassVisCutFL1,lep1PtCut,deltaRCutFL,deltaR);
 	    }else if(j==1){ 
 	      sprintf(openTree, "demo/TreeMuoMuo"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && met>%f)",
-		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && dRLep1Lep2<%f)",
+		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,deltaR);
 	    }else if(j==2){ 
 	      sprintf(openTree, "demo/TreeEleEle"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && met>%f)",
-		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutSL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && dRLep1Lep2<%f)",
+		      CUTPre,METCutFL,MassVisCutFL2,lep1PtCut,deltaRCutFL,deltaR);
 	    }else if(j==3){ 
 	      sprintf(openTree, "demo/TreeMuoTau");
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && met>%f)",
-		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && dRLep1Lep2<%f)",
+		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,deltaR);
 	    }else if(j==4){ 
 	      sprintf(openTree, "demo/TreeEleTau"); 
-	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && met>%f)",
-		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,MET);
+	      sprintf(CUT, "%s && met>%f && MassVis>%f && lep1Pt>%f && dRLep1Lep2<%f && XMassSVFit>2125 && XMassSVFit<2875 && dRLep1Lep2<%f)",
+		      CUTPre,METCutSL,MassVisCutSL, tauPtCut, deltaRCutSL,deltaR);
 	    }
 	  }
 	
@@ -224,17 +222,6 @@
 	float w_WZ        = ( 33.210*19702./10000283.);
 	float w_ZZ        = (  8.059*19702./9799908.0);
 	float w_WJets180  = ( 23.500*19702./9739464.0);
-	float Bkg = (w_DY100*DY100->Integral() + w_DY70*DY70->Integral() + w_DYM50_100*DYM50_100->Integral() + 
-		     w_DYM50_70*DYM50_70->Integral() + 1.9*w_QCD250*QCD250->Integral() + 1.9*w_QCD500*QCD500->Integral() + 
-		     1.9*w_QCD1000*QCD1000->Integral() + w_TT*TT->Integral() + w_WW*WW->Integral() + w_WZ*WZ->Integral() + 
-		     w_ZZ*ZZ->Integral() + w_WJets180*WJets180->Integral()
-		     );
-	float BkgErr = sqrt(w_DY100*w_DY100*DY100->Integral() + w_DY70*w_DY70*DY70->Integral() + w_DYM50_100*w_DYM50_100*DYM50_100->Integral() + 
-			    w_DYM50_70*w_DYM50_70*DYM50_70->Integral() + 1.9*1.9*w_QCD250*w_QCD250*QCD250->Integral() + 1.9*1.9*w_QCD500*w_QCD500*QCD500->Integral() + 
-			    1.9*1.9*w_QCD1000*w_QCD1000*QCD1000->Integral() + w_TT*w_TT*TT->Integral() + w_WW*w_WW*WW->Integral() + w_WZ*w_WZ*WZ->Integral() + 
-			    w_ZZ*w_ZZ*ZZ->Integral() + w_WJets180*w_WJets180*WJets180->Integral()
-			    );
-	//cout<<MET<<"                        "<<Bkg<<" +/- "<<BkgErr<<endl;
 
 	DY100->Scale(w_DY100);
 	DY70->Scale(w_DY70);
@@ -268,23 +255,19 @@
 	if(i==0) ZH2500Integral = ZH2500->Integral(); //SEMI LEP - 2500
 	if(i==0) ZH1000Integral = ZH1000->Integral(); //SEMI LEP - 1000
 	if(k==0){
-	  METoptimization1->SetBinContent(KK, (ZH1000->Integral()/ZH1000Integral)/(1+sqrt(DY100->Integral())));
-	  METoptimization3->SetBinContent(KK, (ZH1000->Integral()/ZH1000Integral)/(1+sqrt(DY100->Integral() + BkgErr*BkgErr/(Bkg*Bkg))));
-	  SignalEfficiency1->SetBinContent(KK, ZH1000->Integral()/ZH1000Integral);
-	  BackgroundYield1->SetBinContent(KK, DY100->Integral());
-	  METoptimization1->SetBinError(KK, 0.00001);
-	  METoptimization3->SetBinError(KK, 0.00001);
-	  SignalEfficiency1->SetBinError(KK, 0.00001);
-	  BackgroundYield1->SetBinError(KK, 0.00001);
+	  deltaRoptimization1->SetBinContent(deltaRoptimization1->GetXaxis()->GetNbins()-KK, (ZH1000->Integral()/ZH1000Integral)/(1+sqrt(DY100->Integral())));
+	  SignalEfficiency1->SetBinContent(deltaRoptimization1->GetXaxis()->GetNbins()-KK, ZH1000->Integral()/ZH1000Integral);
+	  BackgroundYield1->SetBinContent(deltaRoptimization1->GetXaxis()->GetNbins()-KK, DY100->Integral());
+	  deltaRoptimization1->SetBinError(deltaRoptimization1->GetXaxis()->GetNbins()-KK, 0.00001);
+	  SignalEfficiency1->SetBinError(deltaRoptimization1->GetXaxis()->GetNbins()-KK, 0.00001);
+	  BackgroundYield1->SetBinError(deltaRoptimization1->GetXaxis()->GetNbins()-KK, 0.00001);
 	} else {
-	  METoptimization2->SetBinContent(KK, (ZH2500->Integral()/ZH2500Integral)/(1+sqrt(DY100->Integral())));
-	  METoptimization4->SetBinContent(KK, (ZH2500->Integral()/ZH2500Integral)/(1+sqrt(DY100->Integral() + BkgErr*BkgErr/(Bkg*Bkg))));
-	  SignalEfficiency2->SetBinContent(KK, ZH2500->Integral()/ZH2500Integral);
-	  BackgroundYield2->SetBinContent(KK, DY100->Integral());
-	  METoptimization2->SetBinError(KK, 0.00001);
-	  METoptimization4->SetBinError(KK, 0.00001);
-	  SignalEfficiency2->SetBinError(KK, 0.00001);
-	  BackgroundYield2->SetBinError(KK, 0.00001);
+	  deltaRoptimization2->SetBinContent(deltaRoptimization1->GetXaxis()->GetNbins()-KK, (ZH2500->Integral()/ZH2500Integral)/(1+sqrt(DY100->Integral())));
+	  SignalEfficiency2->SetBinContent(deltaRoptimization1->GetXaxis()->GetNbins()-KK, ZH2500->Integral()/ZH2500Integral);
+	  BackgroundYield2->SetBinContent(deltaRoptimization1->GetXaxis()->GetNbins()-KK, DY100->Integral());
+	  deltaRoptimization2->SetBinError(deltaRoptimization1->GetXaxis()->GetNbins()-KK, 0.00001);
+	  SignalEfficiency2->SetBinError(deltaRoptimization1->GetXaxis()->GetNbins()-KK, 0.00001);
+	  BackgroundYield2->SetBinError(deltaRoptimization1->GetXaxis()->GetNbins()-KK, 0.00001);
 	}
 	KK=KK+1;
       }
@@ -299,40 +282,40 @@
     char Met         [2];  sprintf(Met,         "%.0f", METCutSL);	   TString met          = Met         ;
     
     TCanvas* c2 = new TCanvas("c2","c2",0,0,800,600);
-    METoptimization1->Draw("E");
-    METoptimization1->SetMinimum(0.0);
-    METoptimization1->SetMaximum(0.4);
-    METoptimization1->SetMarkerStyle(21);
-    METoptimization1->SetLineColor(1);
-    METoptimization1->GetYaxis()->SetTitleSize(0.045);
-    METoptimization1->GetXaxis()->SetTitleSize(0.045);
-    METoptimization1->GetYaxis()->SetLabelSize(0.045);
-    METoptimization1->GetXaxis()->SetLabelSize(0.045);
-    METoptimization1->SetTitle("");
-    METoptimization1->GetXaxis()->SetTitle("MET [GeV] threshold");
-    METoptimization1->GetYaxis()->SetTitle("#epsilon_{S}/1+#sqrt{B}");
+    deltaRoptimization1->Draw("E");
+    deltaRoptimization1->SetMinimum(0.0);
+    deltaRoptimization1->SetMaximum(0.4);
+    deltaRoptimization1->SetMarkerStyle(21);
+    deltaRoptimization1->SetLineColor(1);
+    deltaRoptimization1->GetYaxis()->SetTitleSize(0.045);
+    deltaRoptimization1->GetXaxis()->SetTitleSize(0.045);
+    deltaRoptimization1->GetYaxis()->SetLabelSize(0.045);
+    deltaRoptimization1->GetXaxis()->SetLabelSize(0.045);
+    deltaRoptimization1->SetTitle("");
+    deltaRoptimization1->GetXaxis()->SetTitle("#DeltaR (lep1,lep2) threshold");
+    deltaRoptimization1->GetYaxis()->SetTitle("#epsilon_{S}/1+#sqrt{B}");
     if(save && !SL) 
-      c2->SaveAs("MET_1000_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
+      c2->SaveAs("dRLep1Lep2_1000_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
     if(save && SL)  
-      c2->SaveAs("MET_1000_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
+      c2->SaveAs("dRLep1Lep2_1000_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
     
     TCanvas* c3 = new TCanvas("c3","c3",0,0,800,600);
-    METoptimization2->Draw("E");
-    METoptimization2->SetMinimum(0.0);
-    METoptimization2->SetMaximum(0.5);
-    METoptimization2->SetMarkerStyle(21);
-    METoptimization2->SetLineColor(1);
-    METoptimization2->GetYaxis()->SetTitleSize(0.045);
-    METoptimization2->GetXaxis()->SetTitleSize(0.045);
-    METoptimization2->GetYaxis()->SetLabelSize(0.045);
-    METoptimization2->GetXaxis()->SetLabelSize(0.045);
-    METoptimization2->SetTitle("");
-    METoptimization2->GetXaxis()->SetTitle("MET [GeV] threshold");
-    METoptimization2->GetYaxis()->SetTitle("#epsilon_{S}/1+#sqrt{B}");
+    deltaRoptimization2->Draw("E");
+    deltaRoptimization2->SetMinimum(0.0);
+    deltaRoptimization2->SetMaximum(0.8);
+    deltaRoptimization2->SetMarkerStyle(21);
+    deltaRoptimization2->SetLineColor(1);
+    deltaRoptimization2->GetYaxis()->SetTitleSize(0.045);
+    deltaRoptimization2->GetXaxis()->SetTitleSize(0.045);
+    deltaRoptimization2->GetYaxis()->SetLabelSize(0.045);
+    deltaRoptimization2->GetXaxis()->SetLabelSize(0.045);
+    deltaRoptimization2->SetTitle("");
+    deltaRoptimization2->GetXaxis()->SetTitle("#DeltaR (lep1,lep2) threshold");
+    deltaRoptimization2->GetYaxis()->SetTitle("#epsilon_{S}/1+#sqrt{B}");
     if(save && !SL) 
-      c3->SaveAs("MET_2500_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
+      c3->SaveAs("dRLep1Lep2_2500_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
     if(save && SL)  
-      c3->SaveAs("MET_2500_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
+      c3->SaveAs("dRLep1Lep2_2500_OPTIMIZATION_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
 
     
     TCanvas* c4 = new TCanvas("c4","c4",0,0,800,600);
@@ -352,7 +335,7 @@
     SignalEfficiency1->GetYaxis()->SetLabelSize(0.045);
     SignalEfficiency1->GetXaxis()->SetLabelSize(0.045);
     SignalEfficiency1->SetTitle("");
-    SignalEfficiency1->GetXaxis()->SetTitle("MET [GeV] threshold");
+    SignalEfficiency1->GetXaxis()->SetTitle("#DeltaR (lep1,lep2) threshold");
     SignalEfficiency1->GetYaxis()->SetTitle("Signal Efficiency");
 
     c4->cd();
@@ -372,7 +355,7 @@
     BackgroundYield1->GetYaxis()->SetLabelSize(0.045);
     BackgroundYield1->GetXaxis()->SetLabelSize(0.045);
     BackgroundYield1->SetTitle("");
-    BackgroundYield1->GetXaxis()->SetTitle("MET [GeV] threshold");
+    BackgroundYield1->GetXaxis()->SetTitle("#DeltaR (lep1,lep2) threshold");
     BackgroundYield1->GetYaxis()->SetTitle("Background yield");
     BackgroundYield1->SetMarkerStyle(21);
     BackgroundYield1->SetMarkerColor(2);
@@ -396,9 +379,9 @@
     pl->Draw();
 
     if(save && !SL) 
-      c4->SaveAs("MET_1000_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
+      c4->SaveAs("dRLep1Lep2_1000_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
     if(save && SL)  
-      c4->SaveAs("MET_1000_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
+      c4->SaveAs("dRLep1Lep2_1000_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
 
     
     TCanvas* c5 = new TCanvas("c5","c5",0,0,800,600);
@@ -418,7 +401,7 @@
     SignalEfficiency2->GetYaxis()->SetLabelSize(0.045);
     SignalEfficiency2->GetXaxis()->SetLabelSize(0.045);
     SignalEfficiency2->SetTitle("");
-    SignalEfficiency2->GetXaxis()->SetTitle("MET [GeV] threshold");
+    SignalEfficiency2->GetXaxis()->SetTitle("#DeltaR (lep1,lep2) threshold");
     SignalEfficiency2->GetYaxis()->SetTitle("Signal Efficiency");
 
     c5->cd();
@@ -438,7 +421,7 @@
     BackgroundYield2->GetYaxis()->SetLabelSize(0.045);
     BackgroundYield2->GetXaxis()->SetLabelSize(0.045);
     BackgroundYield2->SetTitle("");
-    BackgroundYield2->GetXaxis()->SetTitle("MET [GeV] threshold");
+    BackgroundYield2->GetXaxis()->SetTitle("#DeltaR (lep1,lep2) threshold");
     BackgroundYield2->GetYaxis()->SetTitle("Background yield");
     BackgroundYield2->SetMarkerStyle(21);
     BackgroundYield2->SetMarkerColor(2);
@@ -462,8 +445,8 @@
     pl->Draw();
 
     if(save && !SL) 
-      c5->SaveAs("MET_2500_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
+      c5->SaveAs("dRLep1Lep2_2500_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_FL.pdf");
     if(save && SL)  
-      c5->SaveAs("MET_2500_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
+      c5->SaveAs("dRLep1Lep2_2500_MET"+met+"_lep1Pt"+lep1pt+"_tauPt"+taupt+"_btag"+btag+"_dR"+drcut+"_massSvfit"+masssvfitcut+"_massVis"+massviscut+"_SL.pdf");
   }
 }
