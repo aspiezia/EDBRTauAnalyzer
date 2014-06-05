@@ -213,7 +213,7 @@ SemiLeptonicAnalyzer::SemiLeptonicAnalyzer(const edm::ParameterSet& iConfig)
 
 
   // True number of interaction for data produced as in: https://twiki.cern.ch/twiki/bin/view/CMS/PileupJSONFileforData
-  TFile *da_=new TFile ("/shome/aspiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/MyDataPileupHistogram_True.root");
+  TFile *da_=new TFile ("/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/MyDataPileupHistogram_True.root");
   TH1F *da = (TH1F*) da_->Get("pileup");
   
   // MC distribution of true number of interactions as in: https://twiki.cern.ch/twiki/bin/view/CMS/Pileup_MC_Gen_Scenarios

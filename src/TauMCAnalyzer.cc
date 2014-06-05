@@ -304,8 +304,8 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<vector<reco::GenJet> > genjets;
   iEvent.getByLabel("ak5GenJetsNoNu", genjets);
 
-  Handle<reco::GenMETCollection> genMets;
-  iEvent.getByLabel("genMetTrue",genMets);
+  //Handle<reco::GenMETCollection> genMets;
+  //iEvent.getByLabel("genMetTrue",genMets);
 
   edm::Handle<pat::METCollection> met;
   iEvent.getByLabel(metColl_, met);
@@ -328,7 +328,8 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     if(abs(genPart.pdgId())==2212) continue;
     //if((!genPart.pt()>20)) continue;
     const reco::Candidate * mom = genPart.mother();
-    if(abs(genPart.pdgId())==15 && genPart.status()!=3 && (abs(mom->pdgId())==25 || abs(mom->pdgId())==15)){
+    int tauCharge=0;
+    if(abs(genPart.pdgId())==15 && genPart.status()!=3 && abs(mom->pdgId())==15 && genPart.pt()>20){
       math::PtEtaPhiELorentzVector gentau_prov;
       math::PtEtaPhiELorentzVector gentauHad_prov;
       bool genTauHadBool = false;
@@ -340,8 +341,9 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if(genPart.pdgId()==-15 && abs(daughter->pdgId())==11) tauele2 = true;
 	if(genPart.pdgId()==-15 && abs(daughter->pdgId())==13) taumuo2 = true;
 	if(abs(daughter->pdgId())!=11 && abs(daughter->pdgId())!=12 && abs(daughter->pdgId())!=13 && abs(daughter->pdgId())!=14 
-	   && abs(daughter->pdgId())!=15 && abs(daughter->pdgId())!=16){
+	   && abs(daughter->pdgId())!=15 && abs(daughter->pdgId())!=16 && abs(daughter->pdgId())!=22){
 	  gentauHad_prov=genPart.p4();
+	  tauCharge=genPart.pdgId();
 	  genTauHadBool = true;
 	}
       }
@@ -349,7 +351,7 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	const reco::Candidate * daughter = genPart.daughter(ndaugh);
 	if((abs(daughter->pdgId())==12 || abs(daughter->pdgId())==14 ||abs(daughter->pdgId())==16) && daughter->status()==1){
 	  gentau_prov    = gentau_prov    - daughter->p4();
-	  if(genTauHadBool) gentauHad_prov = gentauHad_prov - daughter->p4();
+	  if(genTauHadBool && genPart.pdgId()==tauCharge) gentauHad_prov = gentauHad_prov - daughter->p4();
 	}
       }
       gentau.push_back(gentau_prov);
@@ -357,13 +359,13 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
     //LOOK FOR THE ELECTRON
-    if(abs(genPart.pdgId())==11 && genPart.status()==1 && (abs(mom->pdgId())==15 || mom->status()!=3)){
+    if(abs(genPart.pdgId())==11 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10){
       genEle = genPart.p4();
       foundEle = true;
     }
 
     //LOOK FOR THE MUON
-    if(abs(genPart.pdgId())==13 && genPart.status()==1 && (abs(mom->pdgId())==15 || mom->status()!=3)){
+    if(abs(genPart.pdgId())==13 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10){
       genMuo = genPart.p4();
       foundMuo = true;
     }
@@ -466,12 +468,12 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     uno = 1;
     if(matchedCleaned) due=1;
     if(matchedCleaned && SelectedTauMuTau->pt()>20) tre=1;
-    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFinding")>0.5) qua=1;
-    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFinding")>0.5 && SelectedTauMuTau->tauID("againstMuonLoose")>0.5) cin=1;
-    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFinding")>0.5 && SelectedTauMuTau->tauID("againstMuonLoose")>0.5 && 
+    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFindingNewDMs")>0.5) qua=1;
+    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTauMuTau->tauID("againstMuonLoose")>0.5) cin=1;
+    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTauMuTau->tauID("againstMuonLoose")>0.5 && 
        SelectedTauMuTau->tauID("againstElectronLoose")>0.5) sei=1;
-    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFinding")>0.5 && SelectedTauMuTau->tauID("againstMuonLoose")>0.5 && 
-       SelectedTauMuTau->tauID("againstElectronLoose")>0.5 && SelectedTauMuTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")>0.5) set=1;
+    if(matchedCleaned && SelectedTauMuTau->pt()>20 && SelectedTauMuTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTauMuTau->tauID("againstMuonLoose")>0.5 && 
+       SelectedTauMuTau->tauID("againstElectronLoose")>0.5 && SelectedTauMuTau->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5) set=1;
     m_uno = uno;
     m_due = due;
     m_tre = tre;
@@ -483,12 +485,12 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     unoU = 1;
     if(matchedUsual) dueU=1;
     if(matchedUsual && SelectedTau->pt()>20) treU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5) quaU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5) cinU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5) quaU=1;
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5) cinU=1;
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
        SelectedTau->tauID("againstElectronLoose")>0.5) seiU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
-       SelectedTau->tauID("againstElectronLoose")>0.5 && SelectedTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")>0.5) setU=1;
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
+       SelectedTau->tauID("againstElectronLoose")>0.5 && SelectedTau->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5) setU=1;
     m_unoU = unoU;
     m_dueU = dueU;
     m_treU = treU;
@@ -508,6 +510,11 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  TauMatched=true;
 	}
       }
+
+      float deltaRReco=99.;
+      if(matchedMuo) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTauMuTau->p4(),recoMuo->p4());
+
+      /*
       //corrPFMET = rawPFMET + sum(rawJetPt-corrJetPt) [*]
       float PX = 0.;
       float PY = 0.;
@@ -555,9 +562,6 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(metSigmaParl > 0.) MEtPullParlZ=metErrParl/metSigmaParl;  
       if(metSigmaPerp > 0.) MEtPullPerpZ=metErrPerp/metSigmaPerp;
 
-      float deltaRReco=99.;
-      if(matchedMuo) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTauMuTau->p4(),recoMuo->p4());
-
       //SVFIT
       float MassSVFit = -1;
       float ptSVFit = -1;
@@ -573,7 +577,7 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  ptSVFit=algo.pt();
 	}
       }
-      
+
       m_MassSVFit=MassSVFit;
       m_ptSVFit=ptSVFit;
       m_MEtSigmaParlZ = metSigmaParl;
@@ -584,6 +588,8 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       m_metErrPerp    = metErrPerp;
       m_metGen        = genMets->begin()->pt();
       m_met           = sqrt(PX*PX+PY*PY);
+      */
+
       m_tauPtGen      = gentauHad[0].pt();
       m_tauEtaGen     = gentauHad[0].eta();
       m_tauMassGen    = gentauHad[0].mass();
@@ -678,6 +684,11 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  TauMatched=true;
 	}
       }
+
+      float deltaRReco=99.;
+      if(matchedMuo) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),recoMuo->p4());
+
+      /*
       //corrPFMET = rawPFMET + sum(rawJetPt-corrJetPt) [*]
       float PX = 0.;
       float PY = 0.;
@@ -725,9 +736,6 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(metSigmaParl > 0.) MEtPullParlZ=metErrParl/metSigmaParl;  
       if(metSigmaPerp > 0.) MEtPullPerpZ=metErrPerp/metSigmaPerp;
 
-      float deltaRReco=99.;
-      if(matchedMuo) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),recoMuo->p4());
-
       //SVFIT
       float MassSVFit = -1;
       float ptSVFit = -1;
@@ -754,6 +762,8 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       m_metErrPerp    = metErrPerp;
       m_metGen        = genMets->begin()->pt();
       m_met           = sqrt(PX*PX+PY*PY);
+      */
+
       m_tauPtGen      = gentauHad[0].pt();
       m_tauEtaGen     = gentauHad[0].eta();
       m_tauMassGen    = gentauHad[0].mass();
@@ -876,12 +886,12 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     uno = 1;
     if(matchedCleaned) due=1;
     if(matchedCleaned && SelectedTauElTau->pt()>20) tre=1;
-    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFinding")>0.5) qua=1;
-    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFinding")>0.5 && SelectedTauElTau->tauID("againstMuonLoose")>0.5) cin=1;
-    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFinding")>0.5 && SelectedTauElTau->tauID("againstMuonLoose")>0.5 && 
+    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFindingNewDMs")>0.5) qua=1;
+    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTauElTau->tauID("againstMuonLoose")>0.5) cin=1;
+    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTauElTau->tauID("againstMuonLoose")>0.5 && 
        SelectedTauElTau->tauID("againstElectronLoose")>0.5) sei=1;
-    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFinding")>0.5 && SelectedTauElTau->tauID("againstMuonLoose")>0.5 && 
-       SelectedTauElTau->tauID("againstElectronLoose")>0.5 && SelectedTauElTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")>0.5) set=1;
+    if(matchedCleaned && SelectedTauElTau->pt()>20 && SelectedTauElTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTauElTau->tauID("againstMuonLoose")>0.5 && 
+       SelectedTauElTau->tauID("againstElectronLoose")>0.5 && SelectedTauElTau->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5) set=1;
     m_uno = uno;
     m_due = due;
     m_tre = tre;
@@ -893,12 +903,12 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     unoU = 1;
     if(matchedUsual) dueU=1;
     if(matchedUsual && SelectedTau->pt()>20) treU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5) quaU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5) cinU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5) quaU=1;
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5) cinU=1;
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
        SelectedTau->tauID("againstElectronLoose")>0.5) seiU=1;
-    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFinding")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
-       SelectedTau->tauID("againstElectronLoose")>0.5 && SelectedTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")>0.5) setU=1;
+    if(matchedUsual && SelectedTau->pt()>20 && SelectedTau->tauID("decayModeFindingNewDMs")>0.5 && SelectedTau->tauID("againstMuonLoose")>0.5 && 
+       SelectedTau->tauID("againstElectronLoose")>0.5 && SelectedTau->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5) setU=1;
     m_unoU = unoU;
     m_dueU = dueU;
     m_treU = treU;
@@ -920,6 +930,11 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  TauMatched=true;
 	}
       }
+
+      float deltaRReco=99.;
+      if(matchedEle) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTauElTau->p4(),recoEle->p4());
+
+      /*
       //corrPFMET = rawPFMET + sum(rawJetPt-corrJetPt) [*]
       float PX = 0.;
       float PY = 0.;
@@ -967,9 +982,6 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(metSigmaParl > 0.) MEtPullParlZ=metErrParl/metSigmaParl;  
       if(metSigmaPerp > 0.) MEtPullPerpZ=metErrPerp/metSigmaPerp;
 
-      float deltaRReco=99.;
-      if(matchedEle) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTauElTau->p4(),recoEle->p4());
-
       //SVFIT
       float MassSVFit = -1;
       float ptSVFit = -1;
@@ -996,6 +1008,8 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       m_metErrPerp    = metErrPerp;
       m_metGen        = genMets->begin()->pt();
       m_met           = sqrt(PX*PX+PY*PY);
+      */
+
       m_tauPtGen      = gentauHad[0].pt();
       m_tauEtaGen     = gentauHad[0].eta();
       m_tauMassGen    = gentauHad[0].mass();
@@ -1090,6 +1104,11 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  TauMatched=true;
 	}
       }
+
+      float deltaRReco=99.;
+      if(matchedEle) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),recoEle->p4());
+
+      /*
       //corrPFMET = rawPFMET + sum(rawJetPt-corrJetPt) [*]
       float PX = 0.;
       float PY = 0.;
@@ -1137,9 +1156,6 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(metSigmaParl > 0.) MEtPullParlZ=metErrParl/metSigmaParl;  
       if(metSigmaPerp > 0.) MEtPullPerpZ=metErrPerp/metSigmaPerp;
 
-      float deltaRReco=99.;
-      if(matchedEle) deltaRReco=ROOT::Math::VectorUtil::DeltaR(SelectedTau->p4(),recoEle->p4());
-
       //SVFIT
       float MassSVFit = -1;
       float ptSVFit = -1;
@@ -1166,6 +1182,8 @@ TauMCAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       m_metErrPerp    = metErrPerp;
       m_metGen        = genMets->begin()->pt();
       m_met           = sqrt(PX*PX+PY*PY);
+      */
+
       m_tauPtGen      = gentauHad[0].pt();
       m_tauEtaGen     = gentauHad[0].eta();
       m_tauMassGen    = gentauHad[0].mass();

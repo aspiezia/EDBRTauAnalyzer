@@ -1,0 +1,2489 @@
+// -*- C++ -*-
+//
+// Package: Efficiency
+// Class: Efficiency
+//
+/**\class Efficiency Efficiency.cc ExoDiBosonResonances/EDBRTauAnalyzer/src/Efficiency.cc
+
+Description: [one line class summary]
+
+Implementation:
+[Notes on implementation]
+*/
+//
+// Original Author: Aniello Spiezia,21 1-007,+41227676459,
+// Created: Mon Sep 9 13:14:05 CEST 2013
+// $Id$
+//
+//
+
+
+// system include files
+#include <memory>
+// user include files
+#include "FWCore/Framework/interface/Frameworkfwd.h"
+#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+//new inclusion
+#include "TH1.h"
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "TauAnalysis/CandidateTools/interface/NSVfitStandaloneAlgorithm.h"
+#include "DataFormats/PatCandidates/interface/Jet.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/PatCandidates/interface/MET.h"
+#include "DataFormats/MuonReco/interface/MuonCocktails.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "Math/VectorUtil.h"
+#include "TMath.h"
+#include "TLorentzVector.h"
+//
+// class declaration
+//
+
+class Efficiency : public edm::EDAnalyzer {
+public:
+  explicit Efficiency(const edm::ParameterSet&);
+  ~Efficiency();
+  
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+  
+  
+private:
+  virtual void beginJob() ;
+  virtual void analyze(const edm::Event&, const edm::EventSetup&);
+  virtual void endJob() ;
+  
+  virtual void beginRun(edm::Run const&, edm::EventSetup const&);
+  virtual void endRun(edm::Run const&, edm::EventSetup const&);
+  virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
+  virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
+
+  //FUNCTION
+  void SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets, edm::Handle<pat::JetCollection> CA8JetsPruned, bool & foundSelectedJet,
+                 pat::JetCollection::const_iterator & SelectedJet, float & massZ, float & tau21Z, float & ptZ, float massMin, float massMax,
+		 bool foundJet, std::vector<reco::GenJet>::const_iterator GenJeT, bool & matched);
+  void SelectTau(edm::Handle<pat::TauCollection> tauHandle, pat::JetCollection::const_iterator SelectedJet, bool & foundTau, 
+		 pat::TauCollection::const_iterator & SelectedTau, float & ptTau, bool foundJet,
+		 bool foundPart, math::PtEtaPhiELorentzVector genPart, bool & matched);
+  void SelectElectronHEEP(edm::Handle<pat::ElectronCollection> eleH, pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+			  pat::ElectronCollection::const_iterator & SelectedEle, float & ptEle, bool foundJet, reco::Vertex primaryVertex,
+			  bool foundEle_et, bool & isoHEEP,  math::PtEtaPhiELorentzVector genEle_et, bool & matched, bool signal, float rho);
+  void SelectElectron(edm::Handle<pat::ElectronCollection> eleH, pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+		      pat::ElectronCollection::const_iterator & SelectedEle, float & ptEle, bool foundJet, reco::Vertex primaryVertex,
+		      bool foundEle_et, math::PtEtaPhiELorentzVector genEle_et, bool & matched, bool signal);
+  void SelectHighptMuon(edm::Handle<pat::MuonCollection> muoH, pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+			pat::MuonCollection::const_iterator & SelectedMuon, float & ptMuon, bool foundJet, reco::Vertex primaryVertex,
+			bool foundMuo, math::PtEtaPhiELorentzVector genMuo_mt, bool & matched, bool signal);
+  void SelectTightMuon(edm::Handle<pat::MuonCollection> muoH, pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+		       pat::MuonCollection::const_iterator & SelectedMuon, float & ptMuon, bool foundJet, reco::Vertex primaryVertex,
+		       bool foundMuo, math::PtEtaPhiELorentzVector genMuo_mt, bool & matched, bool signal);
+  void SelectTrackerMuon(edm::Handle<pat::MuonCollection> muoH, bool & foundMuon, pat::MuonCollection::const_iterator & SelectedMuon, float & ptEle, 
+			 reco::Vertex primaryVertex, pat::JetCollection::const_iterator SelectedJet, 
+			 bool foundJet, bool foundMuo1_mm, math::PtEtaPhiELorentzVector genMuo1_mm, bool & matched);
+  void SelectTrackerGlobalID(pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2, 
+			     bool matched1, bool matched2, reco::Vertex primaryVertex, bool & hasAtLeastOneHighPtMuo);
+  
+  float MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
+  float ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho);
+  float MuonCorrPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
+  float ElectronCorrPFIso(pat::ElectronCollection::const_iterator electron, float rho);
+  float MuonDETIso(pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2, bool secondMuon);
+  bool ElectronDETIso(pat::ElectronCollection::const_iterator electron, float rho);
+
+
+  TTree *Tree; 
+  TTree *TreeQCDMuon; 
+  TTree *TreeQCDElectron; 
+ 
+  float m_JetMuon_Pt;
+  float m_JetMuon_Eta;
+  float m_JetMuon_PFIso;
+  float m_JetMuon_CorrPFIso;
+  float m_JetElectron_Pt;
+  float m_JetElectron_Eta;
+  float m_JetElectron_PFIso;
+  float m_JetElectron_CorrPFIso;
+
+  int   m_genEle;
+  int   m_genMuo;
+  int   m_matchedEle;
+  int   m_matchedEleHEEP;
+  int   m_matchedTightMuo;
+  int   m_matchedHighptMuo;
+  int   m_recoEle;
+  int   m_recoEleHEEP;
+  int   m_recoTightMuo;
+  int   m_recoHighptMuo;
+  float m_genEle_Pt;
+  float m_genEle_Eta;
+  float m_genMuo_Pt;
+  float m_genMuo_Eta;
+  float m_recoEle_Pt;
+  float m_recoEle_Eta;
+  float m_recoEleHEEP_Pt;
+  float m_recoEleHEEP_Eta;
+  float m_recoTightMuo_Pt;
+  float m_recoTightMuo_Eta;
+  float m_recoHighptMuo_Pt;
+  float m_recoHighptMuo_Eta;
+  float m_recoEle_PFIso;
+  float m_recoEle_CorrPFIso;
+  float m_recoEle_DETIso;
+  float m_recoEleHEEP_PFIso;
+  float m_recoEleHEEP_CorrPFIso;
+  float m_recoEleHEEP_DETIso;
+  float m_recoEleHEEP_Iso;
+  int   m_recoEleHEEP_int;
+  float m_recoTightMuo_PFIso;
+  float m_recoTightMuo_CorrPFIso;
+  float m_recoHighptMuo_PFIso;
+  float m_recoHighptMuo_CorrPFIso;
+
+  int   m_Nele;
+  int   m_Nmuo;
+  int   m_genJet;
+  int   m_genTau_et;
+  int   m_genTau_mt;
+  int   m_genEle_et;
+  int   m_genEle1_ee;
+  int   m_genEle2_ee;
+  int   m_genEle_em;
+  int   m_genMuo_mt;
+  int   m_genMuo1_mm;
+  int   m_genMuo2_mm;
+  int   m_genMuo_em;
+  int   m_matchedJet;
+  int   m_matchedTau_et;
+  int   m_matchedTau_mt;
+  int   m_matchedEle_et;
+  int   m_matchedEle1_ee;
+  int   m_matchedEle2_ee;
+  int   m_matchedEle_em;
+  int   m_matchedEleHEEP_et;
+  int   m_matchedEleHEEP1_ee;
+  int   m_matchedEleHEEP2_ee;
+  int   m_matchedEleHEEP_em;
+  int   m_matchedTightMuo_mt;
+  int   m_matchedTightMuo1_mm;
+  int   m_matchedTightMuo2_mm;
+  int   m_matchedTightMuo_em;
+  int   m_matchedHighptMuo_mt;
+  int   m_matchedHighptMuo1_mm;
+  int   m_matchedHighptMuo2_mm;
+  int   m_matchedHighptMuo_em;
+  int   m_matchedTrackerMuo1_mm;
+  int   m_matchedTrackerMuo2_mm;
+  int   m_recoJet;
+  int   m_recoTau_mt;
+  int   m_recoTau_et;
+  int   m_recoEle_et;
+  int   m_recoEle1_ee;
+  int   m_recoEle2_ee;
+  int   m_recoEle_em;
+  int   m_recoEleHEEP_et;
+  int   m_recoEleHEEP1_ee;
+  int   m_recoEleHEEP2_ee;
+  int   m_recoEleHEEP_em;
+  int   m_recoTightMuo_mt;
+  int   m_recoTightMuo1_mm;
+  int   m_recoTightMuo2_mm;
+  int   m_recoTightMuo_em;
+  int   m_recoHighptMuo_mt;
+  int   m_recoHighptMuo1_mm;
+  int   m_recoHighptMuo2_mm;
+  int   m_recoHighptMuo_em;
+  int   m_recoTrackerMuo1_mm;
+  int   m_recoTrackerMuo2_mm;
+  int   m_hasAtLeastOneHighPtMuo;
+  float m_genJet_Pt;
+  float m_genJet_Eta;
+  float m_genTau_et_Pt;
+  float m_genTau_et_Eta;
+  float m_genTau_mt_Pt;
+  float m_genTau_mt_eta;
+  float m_genEle_et_Pt;
+  float m_genEle_et_Eta;
+  float m_genEle1_ee_Pt;
+  float m_genEle1_ee_Eta;
+  float m_genEle2_ee_Pt;
+  float m_genEle2_ee_Eta;
+  float m_genEle_em_Pt;
+  float m_genEle_em_Eta;
+  float m_genMuo_mt_Pt;
+  float m_genMuo_mt_Eta;
+  float m_genMuo1_mm_Pt;
+  float m_genMuo1_mm_Eta;
+  float m_genMuo2_mm_Pt;
+  float m_genMuo2_mm_Eta;
+  float m_genMuo_em_Pt;
+  float m_genMuo_em_Eta;
+  float m_recoJet_Pt;
+  float m_recoJet_Eta;
+  float m_recoTau_et_Pt;
+  float m_recoTau_et_Eta;
+  float m_recoTau_mt_Pt;
+  float m_recoTau_mt_eta;
+  float m_recoEle_et_Pt;
+  float m_recoEle_et_Eta;
+  float m_recoEle1_ee_Pt;
+  float m_recoEle1_ee_Eta;
+  float m_recoEle2_ee_Pt;
+  float m_recoEle2_ee_Eta;
+  float m_recoEle_em_Pt;
+  float m_recoEle_em_Eta;
+  float m_recoEleHEEP_et_Pt;
+  float m_recoEleHEEP_et_Eta;
+  float m_recoEleHEEP1_ee_Pt;
+  float m_recoEleHEEP1_ee_Eta;
+  float m_recoEleHEEP2_ee_Pt;
+  float m_recoEleHEEP2_ee_Eta;
+  float m_recoEleHEEP_em_Pt;
+  float m_recoEleHEEP_em_Eta;
+  float m_recoTightMuo_mt_Pt;
+  float m_recoTightMuo_mt_Eta;
+  float m_recoTightMuo1_mm_Pt;
+  float m_recoTightMuo1_mm_Eta;
+  float m_recoTightMuo2_mm_Pt;
+  float m_recoTightMuo2_mm_Eta;
+  float m_recoTightMuo_em_Pt;
+  float m_recoTightMuo_em_Eta;
+  float m_recoHighptMuo_mt_Pt;
+  float m_recoHighptMuo_mt_Eta;
+  float m_recoHighptMuo1_mm_Pt;
+  float m_recoHighptMuo1_mm_Eta;
+  float m_recoHighptMuo2_mm_Pt;
+  float m_recoHighptMuo2_mm_Eta;
+  float m_recoHighptMuo_em_Pt;
+  float m_recoHighptMuo_em_Eta;
+  float m_recoTrackerMuo1_mm_Pt;
+  float m_recoTrackerMuo1_mm_Eta;
+  float m_recoTrackerMuo2_mm_Pt;
+  float m_recoTrackerMuo2_mm_Eta;
+  float m_recoEle_et_PFIso;
+  float m_recoEle1_ee_PFIso;
+  float m_recoEle2_ee_PFIso;
+  float m_recoEle_em_PFIso;
+  float m_recoEle_et_CorrPFIso;
+  float m_recoEle1_ee_CorrPFIso;
+  float m_recoEle2_ee_CorrPFIso;
+  float m_recoEle_em_CorrPFIso;
+  int m_recoEle_et_DETIso;
+  int m_recoEle1_ee_DETIso;
+  int m_recoEle2_ee_DETIso;
+  int m_recoEle_em_DETIso;
+  float m_recoEleHEEP_et_PFIso;
+  float m_recoEleHEEP1_ee_PFIso;
+  float m_recoEleHEEP2_ee_PFIso;
+  float m_recoEleHEEP_em_PFIso;
+  float m_recoEleHEEP_et_CorrPFIso;
+  float m_recoEleHEEP1_ee_CorrPFIso;
+  float m_recoEleHEEP2_ee_CorrPFIso;
+  float m_recoEleHEEP_em_CorrPFIso;
+  int m_recoEleHEEP_et_DETIso;
+  int m_recoEleHEEP1_ee_DETIso;
+  int m_recoEleHEEP2_ee_DETIso;
+  int m_recoEleHEEP_em_DETIso;
+  int m_recoEleHEEP_et_Iso;
+  int m_recoEleHEEP1_ee_Iso;
+  int m_recoEleHEEP2_ee_Iso;
+  int m_recoEleHEEP_em_Iso;
+  int m_recoEleHEEP_et_int;
+  int m_recoEleHEEP1_ee_int;
+  int m_recoEleHEEP2_ee_int;
+  int m_recoEleHEEP_em_int;
+  float m_recoTightMuo_mt_PFIso;
+  float m_recoTightMuo_mt_CorrPFIso;
+  float m_recoTightMuo1_mm_PFIso;
+  float m_recoTightMuo1_mm_CorrPFIso;
+  float m_recoTightMuo1_mm_DetIso;
+  float m_recoTightMuo2_mm_PFIso;
+  float m_recoTightMuo2_mm_CorrPFIso;
+  float m_recoTightMuo2_mm_DetIso;
+  float m_recoTightMuo_em_PFIso;
+  float m_recoTightMuo_em_CorrPFIso;
+  float m_recoHighptMuo_mt_PFIso;
+  float m_recoHighptMuo_mt_CorrPFIso;
+  float m_recoHighptMuo1_mm_PFIso;
+  float m_recoHighptMuo1_mm_CorrPFIso;
+  float m_recoHighptMuo1_mm_DetIso;
+  float m_recoHighptMuo2_mm_PFIso;
+  float m_recoHighptMuo2_mm_CorrPFIso;
+  float m_recoHighptMuo2_mm_DetIso;
+  float m_recoHighptMuo_em_PFIso;
+  float m_recoHighptMuo_em_CorrPFIso;
+  float m_recoTrackerMuo1_mm_PFIso;
+  float m_recoTrackerMuo1_mm_CorrPFIso;
+  float m_recoTrackerMuo1_mm_DetIso;
+  float m_recoTrackerMuo2_mm_PFIso;
+  float m_recoTrackerMuo2_mm_CorrPFIso;
+  float m_recoTrackerMuo2_mm_DetIso;
+  float m_reco_em_deltaR;
+  float m_reco_et_deltaR;
+  float m_reco_ee_deltaR;
+  float m_reco_mt_deltaR;
+  float m_reco_mm_deltaR;
+  float m_gen_em_deltaR;
+  float m_gen_et_deltaR;
+  float m_gen_ee_deltaR;
+  float m_gen_mt_deltaR;
+  float m_gen_mm_deltaR;
+  float m_dRJet;
+  float m_dRTau_et;
+  float m_dRTau_mt;
+  float m_dREle_et;
+  float m_dREle1_ee;
+  float m_dREle2_ee;
+  float m_dREle_em;
+  float m_dRMuo_mt;
+  float m_dRMuo1_mm;
+  float m_dRMuo2_mm;
+  float m_dRMuo_em;
+
+  edm::LumiReWeighting LumiWeights_;
+  bool isData; 
+  edm::InputTag vtxColl_;
+  edm::InputTag jetColl_;
+  edm::InputTag jetPrunedColl_;
+  edm::InputTag metColl_;
+  edm::InputTag electronColl_;
+  edm::InputTag muonColl_;
+  edm::InputTag tauMuTauColl_;
+  edm::InputTag tauElTauColl_;
+  edm::InputTag metRawColl_;
+  edm::InputTag uncorrmetColl_;
+  edm::InputTag ak5JetColl_;
+  int NeventsTOT_;
+  double xsec_;
+  double lumi_;
+
+  // ----------member data ---------------------------
+};
+
+using namespace edm;
+using namespace std;
+using NSVfitStandalone::Vector;
+using NSVfitStandalone::LorentzVector;
+using NSVfitStandalone::MeasuredTauLepton;
+
+
+//
+// constants, enums and typedefs
+//
+
+//
+// static data member definitions
+//
+
+//
+// constructors and destructor
+//
+Efficiency::Efficiency(const edm::ParameterSet& iConfig)
+
+{
+  //now do what ever initialization is needed
+  isData = iConfig.getUntrackedParameter<bool>("isData_");
+  vtxColl_ = iConfig.getParameter<edm::InputTag>("vtxColl"); 
+  jetColl_ = iConfig.getParameter<edm::InputTag>("jetColl"); 
+  jetPrunedColl_ = iConfig.getParameter<edm::InputTag>("jetPrunedColl"); 
+  metColl_ = iConfig.getParameter<edm::InputTag>("metColl"); 
+  electronColl_ = iConfig.getParameter<edm::InputTag>("electronColl"); 
+  muonColl_ = iConfig.getParameter<edm::InputTag>("muonColl"); 
+  tauMuTauColl_ = iConfig.getParameter<edm::InputTag>("tauMuTauColl");
+  tauElTauColl_ = iConfig.getParameter<edm::InputTag>("tauElTauColl"); 
+  metRawColl_ = iConfig.getParameter<edm::InputTag>("metRawColl"); 
+  uncorrmetColl_ = iConfig.getParameter<edm::InputTag>("uncorrmetColl"); 
+  ak5JetColl_ = iConfig.getParameter<edm::InputTag>("ak5JetColl");
+  NeventsTOT_ = iConfig.getParameter<int>( "NeventsTOT" );
+  xsec_= iConfig.getParameter<double>( "xsec" );
+  lumi_= iConfig.getParameter<double>( "lumi" );
+
+}
+
+
+Efficiency::~Efficiency()
+{
+ 
+  // do anything here that needs to be done at desctruction time
+  // (e.g. close files, deallocate resources etc.)
+
+}
+
+
+//
+// member functions
+//
+
+// ------------ method called for each event ------------
+void
+Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+
+  edm::Handle<reco::VertexCollection> vertices;
+  iEvent.getByLabel(vtxColl_, vertices);
+  reco::Vertex primaryVertex;
+  primaryVertex = vertices->at(0);
+
+  edm::Handle<pat::JetCollection> CA8JetswithQjets;
+  iEvent.getByLabel(jetColl_, CA8JetswithQjets);
+  edm::Handle<pat::JetCollection> CA8JetsPruned;
+  iEvent.getByLabel(jetPrunedColl_, CA8JetsPruned);
+
+  edm::Handle<pat::ElectronCollection> eleH;
+  iEvent.getByLabel(electronColl_, eleH);
+
+  edm::Handle<pat::MuonCollection> muoH;
+  iEvent.getByLabel(muonColl_, muoH);
+
+  edm::Handle<pat::METCollection> met;
+  iEvent.getByLabel(metColl_, met);
+
+  edm::Handle<pat::METCollection> metRaw;
+  iEvent.getByLabel(metRawColl_, metRaw);
+
+  edm::Handle<pat::METCollection> uncorrmet;
+  iEvent.getByLabel(uncorrmetColl_, uncorrmet);
+
+  edm::Handle<pat::JetCollection> ak5jetCands;
+  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
+
+  Handle<pat::TauCollection> tauMuTauHandle;
+  iEvent.getByLabel(tauMuTauColl_,tauMuTauHandle);
+
+  Handle<pat::TauCollection> tauElTauHandle;
+  iEvent.getByLabel(tauElTauColl_,tauElTauHandle);
+
+  edm::Handle<double> rhoHandle;
+  iEvent.getByLabel("kt6PFJets", "rho", rhoHandle);
+  float rho = *(rhoHandle.product());
+
+  Handle<vector<reco::GenParticle> > genParts;
+  iEvent.getByLabel("genParticles", genParts);
+
+  edm::Handle<vector<reco::GenJet> > genjets;
+  iEvent.getByLabel("ak5GenJetsNoNu", genjets);
+
+  
+  //DEFINING THE GEN EVENT
+  int ele = 0; int muo = 0;
+  for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
+    const reco::GenParticle & genPart = (*genParts)[ngenPart];
+    if(abs(genPart.pdgId())==2212) continue;
+    const reco::Candidate * mom = genPart.mother();
+    if(abs(genPart.pdgId())==15 && genPart.status()!=3 && (abs(mom->pdgId())==25 || abs(mom->pdgId())==15)){
+      for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	if(abs(daughter->pdgId())==11 && daughter->status()==1) ele = ele + 1;
+	if(abs(daughter->pdgId())==13 && daughter->status()==1) muo = muo + 1;
+      }
+    }
+  }
+  
+  math::PtEtaPhiELorentzVector genZ;       bool foundGenZ    = false;
+  math::PtEtaPhiELorentzVector genTau_et;  bool foundGenTau_et  = false;
+  math::PtEtaPhiELorentzVector genTau_mt;  bool foundGenTau_mt  = false;
+  math::PtEtaPhiELorentzVector genMuo_mt;  bool foundGenMuo_mt  = false;
+  math::PtEtaPhiELorentzVector genMuo1_mm; bool foundGenMuo1_mm = false;
+  math::PtEtaPhiELorentzVector genMuo2_mm; bool foundGenMuo2_mm = false;
+  math::PtEtaPhiELorentzVector genMuo_em;  bool foundGenMuo_em = false;
+  math::PtEtaPhiELorentzVector genEle_et;  bool foundGenEle_et  = false;
+  math::PtEtaPhiELorentzVector genEle1_ee; bool foundGenEle1_ee = false;
+  math::PtEtaPhiELorentzVector genEle2_ee; bool foundGenEle2_ee = false;
+  math::PtEtaPhiELorentzVector genEle_em;  bool foundGenEle_em = false;
+  math::PtEtaPhiELorentzVector genEle;     bool foundGenEle = false;
+  math::PtEtaPhiELorentzVector genMuo;     bool foundGenMuo = false;
+  for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
+    const reco::GenParticle & genPart = (*genParts)[ngenPart];
+    if(abs(genPart.pdgId())==2212) continue;
+    const reco::Candidate * mom = genPart.mother();
+    //cout<<genPart.pdgId()<<" "<<genPart.status()<<" "<<mom->pdgId()<<endl;
+  
+    //LOOK FOR THE ELECTRON - DRELL-YAN
+    if(abs(genPart.pdgId())==11 && genPart.status()!=3 && (abs(mom->pdgId())==23 || abs(mom->pdgId())==11)) {
+      genEle = genPart.p4();
+      foundGenEle = true;
+    }
+  
+    //LOOK FOR THE MUON - DRELL-YAN
+    if(abs(genPart.pdgId())==13 && genPart.status()!=3 && (abs(mom->pdgId())==23 || abs(mom->pdgId())==13)) {
+      genMuo = genPart.p4();
+      foundGenMuo = true;
+    }
+  
+    //LOOK FOR THE Z
+    if(abs(genPart.pdgId())==23 && genPart.status()!=3) {
+      genZ = genPart.p4();
+      foundGenZ = true;
+    }
+  
+    //LOOK FOR THE HADRONIC TAU - MUOTAU
+    int tauChargeMT=0;
+    if((ele==0 && muo==1) && abs(genPart.pdgId())==15 && genPart.status()!=3 && abs(mom->pdgId())==15 && genPart.pt()>20 && fabs(genPart.eta())<2.3){
+	
+      for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	if(abs(daughter->pdgId())!=11 && abs(daughter->pdgId())!=12 && abs(daughter->pdgId())!=13 && abs(daughter->pdgId())!=14 
+	   && abs(daughter->pdgId())!=15 && abs(daughter->pdgId())!=16 && abs(daughter->pdgId())!=22){
+	  genTau_mt=genPart.p4();
+	  tauChargeMT=genPart.pdgId();
+	  foundGenTau_mt = true;
+	}
+      }
+      for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	if((abs(daughter->pdgId())==12 || abs(daughter->pdgId())==14 ||abs(daughter->pdgId())==16) && daughter->status()==1){
+	  if(foundGenTau_mt && genPart.pdgId()==tauChargeMT) genTau_mt = genTau_mt - daughter->p4();
+	}
+      }
+    }
+  
+    //LOOK FOR THE HADRONIC TAU - ELETAU
+    int tauChargeET=0;
+    if((ele==1 && muo==0) && abs(genPart.pdgId())==15 && genPart.status()!=3 && abs(mom->pdgId())==15 && genPart.pt()>20 && fabs(genPart.eta())<2.3){
+      for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	if(abs(daughter->pdgId())!=11 && abs(daughter->pdgId())!=12 && abs(daughter->pdgId())!=13 && abs(daughter->pdgId())!=14 
+	   && abs(daughter->pdgId())!=15 && abs(daughter->pdgId())!=16 && abs(daughter->pdgId())!=22){
+	  genTau_et=genPart.p4();
+	  tauChargeET=genPart.pdgId();
+	  foundGenTau_et = true;
+	}
+      }
+      for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	if((abs(daughter->pdgId())==12 || abs(daughter->pdgId())==14 ||abs(daughter->pdgId())==16) && daughter->status()==1){
+	  if(foundGenTau_et && genPart.pdgId()==tauChargeET) genTau_et = genTau_et - daughter->p4();
+	}
+      }
+    }
+
+    //LOOK FOR THE ELECTRON - ELETAU
+    if((ele==1 && muo==0) && abs(genPart.pdgId())==11 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.5){
+      genEle_et = genPart.p4();
+      foundGenEle_et = true;
+    }
+
+    //LOOK FOR THE MUON - MUOTAU
+    if((ele==0 && muo==1) && abs(genPart.pdgId())==13 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.4){
+      genMuo_mt = genPart.p4();
+      foundGenMuo_mt = true;
+    }
+  
+    //LOOK FOR THE ELECTRONS - ELEELE
+    if((ele==2 && muo==0) && genPart.pdgId()==11  && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.5){
+      genEle1_ee = genPart.p4();
+      foundGenEle1_ee = true;
+    }
+    if((ele==2 && muo==0) && genPart.pdgId()==-11 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.5){
+      genEle2_ee = genPart.p4();
+      foundGenEle2_ee = true;
+    }
+
+    //LOOK FOR THE MUONS - MUOMUO
+    if((ele==0 && muo==2) && genPart.pdgId()==13  && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.4){
+      genMuo1_mm = genPart.p4();
+      foundGenMuo1_mm = true;
+    }
+    if((ele==0 && muo==2) && genPart.pdgId()==-13 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.4){
+      genMuo2_mm = genPart.p4();
+      foundGenMuo2_mm = true;
+    }
+
+    //LOOK FOR THE MUON - ELEMUO
+    if((ele==1 && muo==1) && abs(genPart.pdgId())==13  && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.4){
+      genMuo_em = genPart.p4();
+      foundGenMuo_em = true;
+    }
+
+    //LOOK FOR THE ELECTRON - ELEMUO
+    if((ele==1 && muo==1) && abs(genPart.pdgId())==11 && genPart.status()==1 && abs(mom->pdgId())==15 && genPart.pt()>10 && fabs(genPart.eta())<2.5){
+      genEle_em = genPart.p4();
+      foundGenEle_em = true;
+    }
+  }
+
+  //MATCH THE GEN Z TO THE GEN JET
+  vector<reco::GenJet>::const_iterator genJet; bool foundGenJet=false;
+  for(vector<reco::GenJet>::const_iterator genjet=genjets->begin(); genjet!=genjets->end(); genjet++){
+    if(foundGenZ) {if(ROOT::Math::VectorUtil::DeltaR(genZ,genjet->p4())<0.3) {genJet=genjet; foundGenJet=true;}}
+  }
+
+  //ORDER PT OF LEPTONS
+  math::PtEtaPhiELorentzVector genEle_prov;
+  if(foundGenEle1_ee && foundGenEle2_ee){
+    if(genEle1_ee.pt()<genEle2_ee.pt()){
+      genEle_prov=genEle1_ee;
+      genEle1_ee=genEle2_ee;
+      genEle2_ee=genEle_prov;
+    }
+  }
+  math::PtEtaPhiELorentzVector genMuo_prov;
+  if(foundGenMuo1_mm && foundGenMuo2_mm){
+    if(genMuo1_mm.pt()<genMuo2_mm.pt()){
+      genMuo_prov=genMuo1_mm;
+      genMuo1_mm=genMuo2_mm;
+      genMuo2_mm=genMuo_prov;
+    }
+  }
+
+  
+  //JET SELECTION
+  pat::JetCollection::const_iterator SelectedJet; bool matchedJet = false;
+  float massZ=-9999; float ptZ=-999; bool foundSelectedJet=false; float tau21Z=-9999;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSelectedJet, SelectedJet, massZ, tau21Z, ptZ, 70, 110, foundGenJet, genJet, matchedJet);
+  
+  //TAU SELECTION - MT
+  float ptTau_mt=-99; bool foundSelectedTau_mt=false;
+  pat::TauCollection::const_iterator SelectedTau_mt; bool matchedTau_mt = false;
+  SelectTau(tauMuTauHandle, SelectedJet, foundSelectedTau_mt, SelectedTau_mt, ptTau_mt, foundSelectedJet, foundGenTau_mt, genTau_mt, matchedTau_mt);
+  
+  //TAU SELECTION - ET
+  float ptTau_et=-99; bool foundSelectedTau_et=false;
+  pat::TauCollection::const_iterator SelectedTau_et; bool matchedTau_et = false;
+  SelectTau(tauElTauHandle, SelectedJet, foundSelectedTau_et, SelectedTau_et, ptTau_et, foundSelectedJet, foundGenTau_et, genTau_et, matchedTau_et); 
+  
+  //ELECTRON SELECTION - ET
+  float ptEle_et=-99; bool foundSelectedEle_et=false;
+  pat::ElectronCollection::const_iterator SelectedEle_et; bool matchedEle_et = false;
+  SelectElectron(eleH, SelectedJet, foundSelectedEle_et, SelectedEle_et, ptEle_et, foundSelectedJet, primaryVertex, foundGenEle_et, genEle_et, matchedEle_et,true);
+  float ptEleHEEP_et=-99; bool foundSelectedEleHEEP_et=false; bool isoHEEP_et=false;
+  pat::ElectronCollection::const_iterator SelectedEleHEEP_et; bool matchedEleHEEP_et = false;
+  SelectElectronHEEP(eleH,SelectedJet,foundSelectedEleHEEP_et,SelectedEleHEEP_et,ptEleHEEP_et,foundSelectedJet,primaryVertex,foundGenEle_et,isoHEEP_et,genEle_et,matchedEleHEEP_et,true,rho);
+  
+  //ELECTRON SELECTION - EE1
+  float ptEle1_ee=-99; bool foundSelectedEle1_ee=false;
+  pat::ElectronCollection::const_iterator SelectedEle1_ee; bool matchedEle1_ee = false;
+  SelectElectron(eleH, SelectedJet, foundSelectedEle1_ee, SelectedEle1_ee, ptEle1_ee, foundSelectedJet, primaryVertex, foundGenEle1_ee, genEle1_ee, matchedEle1_ee,true);
+  float ptEleHEEP1_ee=-99; bool foundSelectedEleHEEP1_ee=false; bool isoHEEP_ee1=false;
+  pat::ElectronCollection::const_iterator SelectedEleHEEP1_ee; bool matchedEleHEEP1_ee = false;
+  SelectElectronHEEP(eleH,SelectedJet,foundSelectedEleHEEP1_ee,SelectedEleHEEP1_ee,ptEleHEEP1_ee,foundSelectedJet,primaryVertex,foundGenEle1_ee,isoHEEP_ee1,genEle1_ee,matchedEleHEEP1_ee,true,rho);
+  
+  //ELECTRON SELECTION - EE2
+  float ptEle2_ee=-99; bool foundSelectedEle2_ee=false;
+  pat::ElectronCollection::const_iterator SelectedEle2_ee; bool matchedEle2_ee = false;
+  SelectElectron(eleH,SelectedJet,foundSelectedEle2_ee,SelectedEle2_ee,ptEle2_ee,foundSelectedJet,primaryVertex,foundGenEle2_ee,genEle2_ee,matchedEle2_ee,true);
+  float ptEleHEEP2_ee=-99; bool foundSelectedEleHEEP2_ee=false; bool isoHEEP_ee2=false;
+  pat::ElectronCollection::const_iterator SelectedEleHEEP2_ee; bool matchedEleHEEP2_ee = false;
+  SelectElectronHEEP(eleH,SelectedJet,foundSelectedEleHEEP2_ee,SelectedEleHEEP2_ee,ptEleHEEP2_ee,foundSelectedJet,primaryVertex,foundGenEle2_ee,isoHEEP_ee2,genEle2_ee,matchedEleHEEP2_ee,true,rho);
+  
+  //ELECTRON SELECTION - EM
+  float ptEle_em=-99; bool foundSelectedEle_em=false;
+  pat::ElectronCollection::const_iterator SelectedEle_em; bool matchedEle_em = false;
+  SelectElectron(eleH,SelectedJet,foundSelectedEle_em,SelectedEle_em,ptEle_em,foundSelectedJet,primaryVertex,foundGenEle_em,genEle_em,matchedEle_em,true);
+  float ptEleHEEP_em=-99; bool foundSelectedEleHEEP_em=false; bool isoHEEP_em=false;
+  pat::ElectronCollection::const_iterator SelectedEleHEEP_em; bool matchedEleHEEP_em = false;
+  SelectElectronHEEP(eleH,SelectedJet,foundSelectedEleHEEP_em,SelectedEleHEEP_em,ptEleHEEP_em,foundSelectedJet,primaryVertex,foundGenEle_em,isoHEEP_em,genEle_em,matchedEleHEEP_em,true,rho);
+
+  //MUON SELECTION - MT
+  float ptHighptMuon_mt=-99; bool foundSelectedHighptMuo_mt=false;
+  pat::MuonCollection::const_iterator SelectedHighptMuon_mt; bool matchedHighptMuo_mt = false;
+  SelectHighptMuon(muoH,SelectedJet,foundSelectedHighptMuo_mt,SelectedHighptMuon_mt,ptHighptMuon_mt,foundSelectedJet,primaryVertex,foundGenMuo_mt,genMuo_mt,matchedHighptMuo_mt,true);
+  float ptTightMuon_mt=-99; bool foundSelectedTightMuo_mt=false;
+  pat::MuonCollection::const_iterator SelectedTightMuon_mt; bool matchedTightMuo_mt = false;
+  SelectTightMuon(muoH,SelectedJet,foundSelectedTightMuo_mt,SelectedTightMuon_mt,ptTightMuon_mt,foundSelectedJet,primaryVertex,foundGenMuo_mt,genMuo_mt,matchedTightMuo_mt,true);
+  
+  //MUON SELECTION - MM1
+  float ptTrackerMuon1_mm=-99; bool foundSelectedTrackerMuo1_mm=false;
+  pat::MuonCollection::const_iterator SelectedTrackerMuon1_mm; bool matchedTrackerMuo1_mm = false;
+  SelectTrackerMuon(muoH,foundSelectedTrackerMuo1_mm,SelectedTrackerMuon1_mm,ptTrackerMuon1_mm,primaryVertex,SelectedJet,foundSelectedJet,foundGenMuo1_mm,genMuo1_mm,matchedTrackerMuo1_mm);
+  float ptHighptMuon1_mm=-99; bool foundSelectedHighptMuo1_mm=false;
+  pat::MuonCollection::const_iterator SelectedHighptMuon1_mm; bool matchedHighptMuo1_mm = false;
+  SelectHighptMuon(muoH,SelectedJet,foundSelectedHighptMuo1_mm,SelectedHighptMuon1_mm,ptHighptMuon1_mm,foundSelectedJet,primaryVertex,foundGenMuo1_mm,genMuo1_mm,matchedHighptMuo1_mm,true);
+  float ptTightMuon1_mm=-99; bool foundSelectedTightMuo1_mm=false;
+  pat::MuonCollection::const_iterator SelectedTightMuon1_mm; bool matchedTightMuo1_mm = false;
+  SelectTightMuon(muoH,SelectedJet,foundSelectedTightMuo1_mm,SelectedTightMuon1_mm,ptTightMuon1_mm,foundSelectedJet,primaryVertex,foundGenMuo1_mm,genMuo1_mm,matchedTightMuo1_mm,true);
+
+  //MUON SELECTION - MM2
+  float ptTrackerMuon2_mm=-99; bool foundSelectedTrackerMuo2_mm=false;
+  pat::MuonCollection::const_iterator SelectedTrackerMuon2_mm; bool matchedTrackerMuo2_mm = false;
+  SelectTrackerMuon(muoH,foundSelectedTrackerMuo2_mm,SelectedTrackerMuon2_mm,ptTrackerMuon2_mm,primaryVertex,SelectedJet,foundSelectedJet,foundGenMuo2_mm,genMuo2_mm,matchedTrackerMuo2_mm);
+  float ptHighptMuon2_mm=-99; bool foundSelectedHighptMuo2_mm=false;
+  pat::MuonCollection::const_iterator SelectedHighptMuon2_mm; bool matchedHighptMuo2_mm = false;
+  SelectHighptMuon(muoH,SelectedJet,foundSelectedHighptMuo2_mm,SelectedHighptMuon2_mm,ptHighptMuon2_mm,foundSelectedJet,primaryVertex,foundGenMuo2_mm,genMuo2_mm,matchedHighptMuo2_mm,true);
+  float ptTightMuon2_mm=-99; bool foundSelectedTightMuo2_mm=false;
+  pat::MuonCollection::const_iterator SelectedTightMuon2_mm; bool matchedTightMuo2_mm = false;
+  SelectTightMuon(muoH,SelectedJet,foundSelectedTightMuo2_mm,SelectedTightMuon2_mm,ptTightMuon2_mm,foundSelectedJet,primaryVertex,foundGenMuo2_mm,genMuo2_mm,matchedTightMuo2_mm,true);
+
+  //MUON-MUON SELECTION
+  bool hasAtLeastOneHighPtMuo=false;
+  SelectTrackerGlobalID(SelectedTrackerMuon1_mm,SelectedTrackerMuon2_mm,foundSelectedTrackerMuo1_mm,foundSelectedTrackerMuo2_mm,primaryVertex,hasAtLeastOneHighPtMuo);
+
+  //MUON SELECTION - EM
+  float ptHighptMuon_em=-99; bool foundSelectedHighptMuo_em=false;
+  pat::MuonCollection::const_iterator SelectedHighptMuon_em; bool matchedHighptMuo_em = false;
+  SelectHighptMuon(muoH,SelectedJet,foundSelectedHighptMuo_em,SelectedHighptMuon_em,ptHighptMuon_em,foundSelectedJet,primaryVertex,foundGenMuo_em,genMuo_em,matchedHighptMuo_em,true);
+  float ptTightMuon_em=-99; bool foundSelectedTightMuo_em=false;
+  pat::MuonCollection::const_iterator SelectedTightMuon_em; bool matchedTightMuo_em = false;
+  SelectTightMuon(muoH,SelectedJet,foundSelectedTightMuo_em,SelectedTightMuon_em,ptTightMuon_em,foundSelectedJet,primaryVertex,foundGenMuo_em,genMuo_em,matchedTightMuo_em,true);
+
+
+  
+  //ELECTRON SELECTION - DRELL-YAN
+  float ptEle=-99; bool foundSelectedEle=false;
+  pat::ElectronCollection::const_iterator SelectedEle; bool matchedEle = false;
+  SelectElectron(eleH,SelectedJet,foundSelectedEle,SelectedEle,ptEle,foundSelectedJet,primaryVertex,foundGenEle,genEle,matchedEle,false);
+  float ptEleHEEP=-99; bool foundSelectedEleHEEP=false; bool isoHEEP=false;
+  pat::ElectronCollection::const_iterator SelectedEleHEEP; bool matchedEleHEEP = false;
+  SelectElectronHEEP(eleH,SelectedJet,foundSelectedEleHEEP,SelectedEleHEEP,ptEleHEEP,foundSelectedJet,primaryVertex,foundGenEle,isoHEEP,genEle,matchedEleHEEP,false,rho);
+  //MUON SELECTION - DRELL-YAN
+  float ptHighptMuon=-99; bool foundSelectedHighptMuo=false;
+  pat::MuonCollection::const_iterator SelectedHighptMuon; bool matchedHighptMuo = false;
+  SelectHighptMuon(muoH,SelectedJet,foundSelectedHighptMuo,SelectedHighptMuon,ptHighptMuon,foundSelectedJet,primaryVertex,foundGenMuo,genMuo,matchedHighptMuo,false);
+  float ptTightMuon=-99; bool foundSelectedTightMuo=false;
+  pat::MuonCollection::const_iterator SelectedTightMuon; bool matchedTightMuo = false;
+  SelectTightMuon(muoH,SelectedJet,foundSelectedTightMuo,SelectedTightMuon,ptTightMuon,foundSelectedJet,primaryVertex,foundGenMuo,genMuo,matchedTightMuo,false);
+
+  //----------------------------------------------------------------------------------------------------------------------------------------//
+  float genEle_Pt  = -99.;
+  float genEle_Eta = -99.;
+  float genMuo_Pt  = -99.;
+  float genMuo_Eta = -99.;
+  float recoEle_Pt   = -99.;
+  float recoEle_Eta  = -99.;
+  float recoEleHEEP_Pt   = -99.;
+  float recoEleHEEP_Eta  = -99.;
+  float recoTightMuo_Pt   = -99.;
+  float recoTightMuo_Eta  = -99.;
+  float recoHighptMuo_Pt   = -99.;
+  float recoHighptMuo_Eta  = -99.;
+  float recoEle_PFIso      = -99.;
+  float recoEle_CorrPFIso  = -99.;
+  bool recoEle_DETIso  = false;
+  float recoEleHEEP_PFIso      = -99.;
+  float recoEleHEEP_CorrPFIso  = -99.;
+  bool recoEleHEEP_DETIso      = false;
+  bool recoEleHEEP_Iso         = false;
+  int  recoEleHEEP_int         = -99;
+  float recoTightMuo_PFIso      = -99.;
+  float recoTightMuo_CorrPFIso  = -99.;
+  float recoHighptMuo_PFIso      = -99.;
+  float recoHighptMuo_CorrPFIso  = -99.;
+
+  float genJet_Pt   = -99.;
+  float genJet_Eta  = -99.;
+  float genTau_mt_Pt   = -99.;
+  float genTau_mt_eta  = -99.;
+  float genTau_et_Pt   = -99.;
+  float genTau_et_Eta  = -99.;
+  float genEle_et_Pt   = -99.;
+  float genEle_et_Eta  = -99.;
+  float genEle1_ee_Pt  = -99.;
+  float genEle1_ee_Eta = -99.;
+  float genEle2_ee_Pt  = -99.;
+  float genEle2_ee_Eta = -99.;
+  float genEle_em_Pt  = -99.;
+  float genEle_em_Eta = -99.;
+  float genMuo_mt_Pt   = -99.;
+  float genMuo_mt_Eta  = -99.;
+  float genMuo1_mm_Pt  = -99.;
+  float genMuo1_mm_Eta = -99.;
+  float genMuo2_mm_Pt  = -99.;
+  float genMuo2_mm_Eta = -99.;
+  float genMuo_em_Pt  = -99.;
+  float genMuo_em_Eta = -99.;
+
+  float recoJet_Pt   = -99.;
+  float recoJet_Eta  = -99.;
+  float recoTau_et_Pt   = -99.;
+  float recoTau_et_Eta  = -99.;
+  float recoTau_mt_Pt   = -99.;
+  float recoTau_mt_eta  = -99.;
+  float recoEle_et_Pt   = -99.;
+  float recoEle_et_Eta  = -99.;
+  float recoEle1_ee_Pt  = -99.;
+  float recoEle1_ee_Eta = -99.;
+  float recoEle2_ee_Pt  = -99.;
+  float recoEle2_ee_Eta = -99.;
+  float recoEle_em_Pt   = -99.;
+  float recoEle_em_Eta  = -99.;
+  float recoEleHEEP_et_Pt   = -99.;
+  float recoEleHEEP_et_Eta  = -99.;
+  float recoEleHEEP1_ee_Pt  = -99.;
+  float recoEleHEEP1_ee_Eta = -99.;
+  float recoEleHEEP2_ee_Pt  = -99.;
+  float recoEleHEEP2_ee_Eta = -99.;
+  float recoEleHEEP_em_Pt   = -99.;
+  float recoEleHEEP_em_Eta  = -99.;
+  float recoTightMuo_mt_Pt   = -99.;
+  float recoTightMuo_mt_Eta  = -99.;
+  float recoTightMuo1_mm_Pt  = -99.;
+  float recoTightMuo1_mm_Eta = -99.;
+  float recoTightMuo2_mm_Pt  = -99.;
+  float recoTightMuo2_mm_Eta = -99.;
+  float recoTightMuo_em_Pt   = -99.;
+  float recoTightMuo_em_Eta  = -99.;
+  float recoHighptMuo_mt_Pt   = -99.;
+  float recoHighptMuo_mt_Eta  = -99.;
+  float recoHighptMuo1_mm_Pt  = -99.;
+  float recoHighptMuo1_mm_Eta = -99.;
+  float recoHighptMuo2_mm_Pt  = -99.;
+  float recoHighptMuo2_mm_Eta = -99.;
+  float recoHighptMuo_em_Pt   = -99.;
+  float recoHighptMuo_em_Eta  = -99.;
+  float recoTrackerMuo1_mm_Pt  = -99.;
+  float recoTrackerMuo1_mm_Eta = -99.;
+  float recoTrackerMuo2_mm_Pt  = -99.;
+  float recoTrackerMuo2_mm_Eta = -99.;
+  float recoEle_et_PFIso      = -99.;
+  float recoEle1_ee_PFIso     = -99.;
+  float recoEle2_ee_PFIso     = -99.;
+  float recoEle_em_PFIso      = -99.;
+  float recoEle_et_CorrPFIso  = -99.;
+  float recoEle1_ee_CorrPFIso = -99.;
+  float recoEle2_ee_CorrPFIso = -99.;
+  float recoEle_em_CorrPFIso  = -99.;
+  bool recoEle_et_DETIso  = false;
+  bool recoEle1_ee_DETIso = false;
+  bool recoEle2_ee_DETIso = false;
+  bool recoEle_em_DETIso  = false;
+  float recoEleHEEP_et_PFIso      = -99.;
+  float recoEleHEEP1_ee_PFIso     = -99.;
+  float recoEleHEEP2_ee_PFIso     = -99.;
+  float recoEleHEEP_em_PFIso      = -99.;
+  float recoEleHEEP_et_CorrPFIso  = -99.;
+  float recoEleHEEP1_ee_CorrPFIso = -99.;
+  float recoEleHEEP2_ee_CorrPFIso = -99.;
+  float recoEleHEEP_em_CorrPFIso  = -99.;
+  bool recoEleHEEP_et_DETIso  = false;
+  bool recoEleHEEP1_ee_DETIso = false;
+  bool recoEleHEEP2_ee_DETIso = false;
+  bool recoEleHEEP_em_DETIso  = false;
+  bool recoEleHEEP_et_Iso  = false;
+  bool recoEleHEEP1_ee_Iso = false;
+  bool recoEleHEEP2_ee_Iso = false;
+  bool recoEleHEEP_em_Iso  = false;
+  int recoEleHEEP_et_int  = -99;
+  int recoEleHEEP1_ee_int = -99;
+  int recoEleHEEP2_ee_int = -99;
+  int recoEleHEEP_em_int  = -99;
+  float recoTightMuo_mt_PFIso      = -99.;
+  float recoTightMuo_mt_CorrPFIso  = -99.;
+  float recoTightMuo1_mm_PFIso     = -99.;
+  float recoTightMuo1_mm_CorrPFIso = -99.;
+  float recoTightMuo1_mm_DetIso    = -99.;
+  float recoTightMuo2_mm_PFIso     = -99.;
+  float recoTightMuo2_mm_CorrPFIso = -99.;
+  float recoTightMuo2_mm_DetIso    = -99.;
+  float recoTightMuo_em_PFIso      = -99.;
+  float recoTightMuo_em_CorrPFIso  = -99.;
+  float recoHighptMuo_mt_PFIso      = -99.;
+  float recoHighptMuo_mt_CorrPFIso  = -99.;
+  float recoHighptMuo1_mm_PFIso     = -99.;
+  float recoHighptMuo1_mm_CorrPFIso = -99.;
+  float recoHighptMuo1_mm_DetIso    = -99.;
+  float recoHighptMuo2_mm_PFIso     = -99.;
+  float recoHighptMuo2_mm_CorrPFIso = -99.;
+  float recoHighptMuo2_mm_DetIso    = -99.;
+  float recoHighptMuo_em_PFIso      = -99.;
+  float recoHighptMuo_em_CorrPFIso  = -99.;
+  float recoTrackerMuo1_mm_PFIso     = -99.;
+  float recoTrackerMuo1_mm_CorrPFIso = -99.;
+  float recoTrackerMuo1_mm_DetIso    = -99.;
+  float recoTrackerMuo2_mm_PFIso     = -99.;
+  float recoTrackerMuo2_mm_CorrPFIso = -99.;
+  float recoTrackerMuo2_mm_DetIso    = -99.;
+  float reco_em_deltaR = -99;
+  float reco_et_deltaR = -99;
+  float reco_ee_deltaR = -99;
+  float reco_mt_deltaR = -99;
+  float reco_mm_deltaR = -99;
+  float gen_em_deltaR = -99;
+  float gen_et_deltaR = -99;
+  float gen_ee_deltaR = -99;
+  float gen_mt_deltaR = -99;
+  float gen_mm_deltaR = -99;
+
+  float dRJet   = 99.;
+  float dRTau_et   = 99.;
+  float dRTau_mt   = 99.;
+  float dREle_et   = 99.;
+  float dREle1_ee  = 99.;
+  float dREle2_ee  = 99.;
+  float dREle_em  = 99.;
+  float dRMuo_mt   = 99.;
+  float dRMuo1_mm  = 99.;
+  float dRMuo2_mm  = 99.;
+  float dRMuo_em  = 99.;
+
+  if(foundGenJet){
+    genJet_Pt = genJet->pt();
+    genJet_Eta = genJet->eta();
+  }
+  if(foundGenTau_et){
+    genTau_et_Pt = genTau_et.pt();
+    genTau_et_Eta = genTau_et.eta();
+  }
+  if(foundGenTau_mt){
+    genTau_mt_Pt = genTau_mt.pt();
+    genTau_mt_eta = genTau_mt.eta();
+  }
+  if(foundGenEle_et){
+    genEle_et_Pt = genEle_et.pt();
+    genEle_et_Eta = genEle_et.eta();
+  }
+  if(foundGenEle1_ee){
+    genEle1_ee_Pt = genEle1_ee.pt();
+    genEle1_ee_Eta = genEle1_ee.eta();
+  }
+  if(foundGenEle2_ee){
+    genEle2_ee_Pt = genEle2_ee.pt();
+    genEle2_ee_Eta = genEle2_ee.eta();
+  }
+  if(foundGenEle_em){
+    genEle_em_Pt = genEle_em.pt();
+    genEle_em_Eta = genEle_em.eta();
+  }
+  if(foundGenMuo_mt){
+    genMuo_mt_Pt = genMuo_mt.pt();
+    genMuo_mt_Eta = genMuo_mt.eta();
+  }
+  if(foundGenMuo1_mm){
+    genMuo1_mm_Pt = genMuo1_mm.pt();
+    genMuo1_mm_Eta = genMuo1_mm.eta();
+  }
+  if(foundGenMuo2_mm){
+    genMuo2_mm_Pt = genMuo2_mm.pt();
+    genMuo2_mm_Eta = genMuo2_mm.eta();
+  }
+  if(foundGenMuo_em){
+    genMuo_em_Pt = genMuo_em.pt();
+    genMuo_em_Eta = genMuo_em.eta();
+  }
+
+
+  if(foundSelectedJet){
+    recoJet_Pt = SelectedJet->pt();
+    recoJet_Eta = SelectedJet->eta();
+  }
+  if(foundSelectedTau_mt){
+    recoTau_mt_Pt = SelectedTau_mt->pt();
+    recoTau_mt_eta = SelectedTau_mt->eta();
+  }
+  if(foundSelectedTau_et){
+    recoTau_et_Pt = SelectedTau_et->pt();
+    recoTau_et_Eta = SelectedTau_et->eta();
+  }
+
+  if(foundSelectedEle_et){
+    recoEle_et_Pt = SelectedEle_et->pt();
+    recoEle_et_Eta = SelectedEle_et->eta();
+    recoEle_et_PFIso=ElectronPFIso(SelectedEle_et, rho);
+    recoEle_et_CorrPFIso=ElectronCorrPFIso(SelectedEle_et, rho);
+    recoEle_et_DETIso=ElectronDETIso(SelectedEle_et, rho);
+  }
+  if(foundSelectedEle1_ee){
+    recoEle1_ee_Pt = SelectedEle1_ee->pt();
+    recoEle1_ee_Eta = SelectedEle1_ee->eta();
+    recoEle1_ee_PFIso=ElectronPFIso(SelectedEle1_ee, rho);
+    recoEle1_ee_CorrPFIso=ElectronCorrPFIso(SelectedEle1_ee, rho);
+    recoEle1_ee_DETIso=ElectronDETIso(SelectedEle1_ee, rho);
+  }
+  if(foundSelectedEle2_ee){
+    recoEle2_ee_Pt = SelectedEle2_ee->pt();
+    recoEle2_ee_Eta = SelectedEle2_ee->eta();
+    recoEle2_ee_PFIso=ElectronPFIso(SelectedEle2_ee, rho);
+    recoEle2_ee_CorrPFIso=ElectronCorrPFIso(SelectedEle2_ee, rho);
+    recoEle2_ee_DETIso=ElectronDETIso(SelectedEle2_ee, rho);
+  }
+  if(foundSelectedEle_em){
+    recoEle_em_Pt = SelectedEle_em->pt();
+    recoEle_em_Eta = SelectedEle_em->eta();
+    recoEle_em_PFIso=ElectronPFIso(SelectedEle_em, rho);
+    recoEle_em_CorrPFIso=ElectronCorrPFIso(SelectedEle_em, rho);
+    recoEle_em_DETIso=ElectronDETIso(SelectedEle_em, rho);
+  }
+
+  if(foundSelectedEleHEEP_et){
+    recoEleHEEP_et_Pt = SelectedEleHEEP_et->pt();
+    recoEleHEEP_et_Eta = SelectedEleHEEP_et->eta();
+    recoEleHEEP_et_PFIso=ElectronPFIso(SelectedEleHEEP_et, rho);
+    recoEleHEEP_et_CorrPFIso=ElectronCorrPFIso(SelectedEleHEEP_et, rho);
+    recoEleHEEP_et_DETIso=ElectronDETIso(SelectedEleHEEP_et, rho);
+    recoEleHEEP_et_Iso=isoHEEP_et;
+    recoEleHEEP_et_int=SelectedEleHEEP_et->userInt("HEEPId");
+  }
+  if(foundSelectedEleHEEP1_ee){
+    recoEleHEEP1_ee_Pt = SelectedEleHEEP1_ee->pt();
+    recoEleHEEP1_ee_Eta = SelectedEleHEEP1_ee->eta();
+    recoEleHEEP1_ee_PFIso=ElectronPFIso(SelectedEleHEEP1_ee, rho);
+    recoEleHEEP1_ee_CorrPFIso=ElectronCorrPFIso(SelectedEleHEEP1_ee, rho);
+    recoEleHEEP1_ee_DETIso=ElectronDETIso(SelectedEleHEEP1_ee, rho);
+    recoEleHEEP1_ee_Iso=isoHEEP_ee1;
+    recoEleHEEP1_ee_int=SelectedEleHEEP1_ee->userInt("HEEPId");
+  }
+  if(foundSelectedEleHEEP2_ee){
+    recoEleHEEP2_ee_Pt = SelectedEleHEEP2_ee->pt();
+    recoEleHEEP2_ee_Eta = SelectedEleHEEP2_ee->eta();
+    recoEleHEEP2_ee_PFIso=ElectronPFIso(SelectedEleHEEP2_ee, rho);
+    recoEleHEEP2_ee_CorrPFIso=ElectronCorrPFIso(SelectedEleHEEP2_ee, rho);
+    recoEleHEEP2_ee_DETIso=ElectronDETIso(SelectedEleHEEP2_ee, rho);
+    recoEleHEEP2_ee_Iso=isoHEEP_ee2;
+    recoEleHEEP2_ee_int=SelectedEleHEEP2_ee->userInt("HEEPId");
+  }
+  if(foundSelectedEleHEEP_em){
+    recoEleHEEP_em_Pt = SelectedEleHEEP_em->pt();
+    recoEleHEEP_em_Eta = SelectedEleHEEP_em->eta();
+    recoEleHEEP_em_PFIso=ElectronPFIso(SelectedEleHEEP_em, rho);
+    recoEleHEEP_em_CorrPFIso=ElectronCorrPFIso(SelectedEleHEEP_em, rho);
+    recoEleHEEP_em_DETIso=ElectronDETIso(SelectedEleHEEP_em, rho);
+    recoEleHEEP_em_Iso=isoHEEP_em;
+    recoEleHEEP_em_int=SelectedEleHEEP_em->userInt("HEEPId");
+  }
+
+  if(foundSelectedTightMuo_mt){
+    recoTightMuo_mt_Pt = SelectedTightMuon_mt->pt();
+    recoTightMuo_mt_Eta =SelectedTightMuon_mt->eta();
+    recoTightMuo_mt_PFIso=MuonPFIso(SelectedTightMuon_mt,true);
+    recoTightMuo_mt_CorrPFIso=MuonCorrPFIso(SelectedTightMuon_mt,true);
+  }
+  if(foundSelectedTightMuo1_mm){
+    recoTightMuo1_mm_Pt = SelectedTightMuon1_mm->pt();
+    recoTightMuo1_mm_Eta =SelectedTightMuon1_mm->eta();
+    recoTightMuo1_mm_PFIso=MuonPFIso(SelectedTightMuon1_mm,true);
+    recoTightMuo1_mm_CorrPFIso=MuonCorrPFIso(SelectedTightMuon1_mm,true);
+    recoTightMuo1_mm_DetIso=MuonDETIso(SelectedTightMuon1_mm,SelectedTightMuon2_mm, foundSelectedTightMuo2_mm);
+  }
+  if(foundSelectedTightMuo2_mm){
+    recoTightMuo2_mm_Pt = SelectedTightMuon2_mm->pt();
+    recoTightMuo2_mm_Eta =SelectedTightMuon2_mm->eta();
+    recoTightMuo2_mm_PFIso=MuonPFIso(SelectedTightMuon2_mm,true);
+    recoTightMuo2_mm_CorrPFIso=MuonCorrPFIso(SelectedTightMuon2_mm,true);
+    recoTightMuo2_mm_DetIso=MuonDETIso(SelectedTightMuon2_mm,SelectedTightMuon1_mm, foundSelectedTightMuo1_mm);
+  }
+  if(foundSelectedTightMuo_em){
+    recoTightMuo_em_Pt = SelectedTightMuon_em->pt();
+    recoTightMuo_em_Eta = SelectedTightMuon_em->eta();
+    recoTightMuo_em_PFIso=MuonPFIso(SelectedTightMuon_em,true);
+    recoTightMuo_em_CorrPFIso=MuonCorrPFIso(SelectedTightMuon_em,true);
+  }
+
+  if(foundSelectedHighptMuo_mt){
+    recoHighptMuo_mt_Pt = SelectedHighptMuon_mt->pt();
+    recoHighptMuo_mt_Eta =SelectedHighptMuon_mt->eta();
+    recoHighptMuo_mt_PFIso=MuonPFIso(SelectedHighptMuon_mt,true);
+    recoHighptMuo_mt_CorrPFIso=MuonCorrPFIso(SelectedHighptMuon_mt,true);
+  }
+  if(foundSelectedHighptMuo1_mm){
+    recoHighptMuo1_mm_Pt = SelectedHighptMuon1_mm->pt();
+    recoHighptMuo1_mm_Eta =SelectedHighptMuon1_mm->eta();
+    recoHighptMuo1_mm_PFIso=MuonPFIso(SelectedHighptMuon1_mm,true);
+    recoHighptMuo1_mm_CorrPFIso=MuonCorrPFIso(SelectedHighptMuon1_mm,true);
+    recoHighptMuo1_mm_DetIso=MuonDETIso(SelectedHighptMuon1_mm,SelectedHighptMuon2_mm, foundSelectedHighptMuo2_mm);
+  }
+  if(foundSelectedHighptMuo2_mm){
+    recoHighptMuo2_mm_Pt = SelectedHighptMuon2_mm->pt();
+    recoHighptMuo2_mm_Eta =SelectedHighptMuon2_mm->eta();
+    recoHighptMuo2_mm_PFIso=MuonPFIso(SelectedHighptMuon2_mm,true);
+    recoHighptMuo2_mm_CorrPFIso=MuonCorrPFIso(SelectedHighptMuon2_mm,true);
+    recoHighptMuo2_mm_DetIso=MuonDETIso(SelectedHighptMuon2_mm,SelectedHighptMuon1_mm, foundSelectedHighptMuo1_mm);
+  }
+  if(foundSelectedHighptMuo_em){
+    recoHighptMuo_em_Pt = SelectedHighptMuon_em->pt();
+    recoHighptMuo_em_Eta = SelectedHighptMuon_em->eta();
+    recoHighptMuo_em_PFIso=MuonPFIso(SelectedHighptMuon_em,true);
+    recoHighptMuo_em_CorrPFIso=MuonCorrPFIso(SelectedHighptMuon_em,true);
+  }
+
+  if(foundSelectedTrackerMuo1_mm){
+    recoTrackerMuo1_mm_Pt = SelectedTrackerMuon1_mm->pt();
+    recoTrackerMuo1_mm_Eta =SelectedTrackerMuon1_mm->eta();
+    recoTrackerMuo1_mm_PFIso=MuonPFIso(SelectedTrackerMuon1_mm,true);
+    recoTrackerMuo1_mm_CorrPFIso=MuonCorrPFIso(SelectedTrackerMuon1_mm,true);
+    recoTrackerMuo1_mm_DetIso=MuonDETIso(SelectedTrackerMuon1_mm,SelectedTrackerMuon2_mm, foundSelectedTrackerMuo2_mm);
+  }
+  if(foundSelectedTrackerMuo2_mm){
+    recoTrackerMuo2_mm_Pt = SelectedTrackerMuon2_mm->pt();
+    recoTrackerMuo2_mm_Eta =SelectedTrackerMuon2_mm->eta();
+    recoTrackerMuo2_mm_PFIso=MuonPFIso(SelectedTrackerMuon2_mm,true);
+    recoTrackerMuo2_mm_CorrPFIso=MuonCorrPFIso(SelectedTrackerMuon2_mm,true);
+    recoTrackerMuo2_mm_DetIso=MuonDETIso(SelectedTrackerMuon2_mm,SelectedTrackerMuon1_mm, foundSelectedTrackerMuo1_mm);
+  }
+
+  if(foundSelectedEle_em && foundSelectedHighptMuo_em)            reco_em_deltaR=ROOT::Math::VectorUtil::DeltaR(SelectedEle_em->p4(),SelectedHighptMuon_em->p4());
+  if(foundSelectedEle_et && foundSelectedTau_et)                  reco_et_deltaR=ROOT::Math::VectorUtil::DeltaR(SelectedEle_et->p4(),SelectedTau_et->p4());
+  if(foundSelectedHighptMuo_mt && foundSelectedTau_mt)            reco_mt_deltaR=ROOT::Math::VectorUtil::DeltaR(SelectedHighptMuon_mt->p4(),SelectedTau_mt->p4());
+  if(foundSelectedTrackerMuo1_mm && foundSelectedTrackerMuo2_mm)  reco_mm_deltaR=ROOT::Math::VectorUtil::DeltaR(SelectedTrackerMuon1_mm->p4(),SelectedTrackerMuon2_mm->p4());
+  if(foundSelectedEle1_ee && foundSelectedEle2_ee)                reco_ee_deltaR=ROOT::Math::VectorUtil::DeltaR(SelectedEle1_ee->p4(),SelectedEle2_ee->p4());
+  if(foundGenEle_em && foundGenMuo_em)    gen_em_deltaR=ROOT::Math::VectorUtil::DeltaR(genEle_em,genMuo_em);
+  if(foundGenEle_et && foundGenTau_et)    gen_et_deltaR=ROOT::Math::VectorUtil::DeltaR(genEle_et,genTau_et);
+  if(foundGenMuo_mt && foundGenTau_mt)    gen_mt_deltaR=ROOT::Math::VectorUtil::DeltaR(genMuo_mt,genTau_mt);
+  if(foundGenMuo1_mm && foundGenMuo2_mm)  gen_mm_deltaR=ROOT::Math::VectorUtil::DeltaR(genMuo1_mm,genMuo2_mm);
+  if(foundGenEle1_ee && foundGenEle2_ee)  gen_ee_deltaR=ROOT::Math::VectorUtil::DeltaR(genEle1_ee,genEle2_ee);
+  
+  if(foundSelectedJet     && foundGenJet)     dRJet     = ROOT::Math::VectorUtil::DeltaR(genJet->p4(),SelectedJet->p4());
+  if(foundSelectedTau_mt  && foundGenTau_mt)  dRTau_mt  = ROOT::Math::VectorUtil::DeltaR(genTau_mt,   SelectedTau_mt->p4());
+  if(foundSelectedTau_et  && foundGenTau_et)  dRTau_et  = ROOT::Math::VectorUtil::DeltaR(genTau_et,   SelectedTau_et->p4());
+  if(foundSelectedEle_et  && foundGenEle_et)  dREle_et  = ROOT::Math::VectorUtil::DeltaR(genEle_et,   SelectedEle_et->p4());
+  if(foundSelectedEle1_ee && foundGenEle1_ee) dREle1_ee = ROOT::Math::VectorUtil::DeltaR(genEle1_ee,  SelectedEle1_ee->p4());
+  if(foundSelectedEle2_ee && foundGenEle2_ee) dREle2_ee = ROOT::Math::VectorUtil::DeltaR(genEle2_ee,  SelectedEle2_ee->p4());
+  if(foundSelectedEle_em  && foundGenEle_em)  dREle_em  = ROOT::Math::VectorUtil::DeltaR(genEle_em,   SelectedEle_em->p4());
+  if(foundSelectedHighptMuo_mt  && foundGenMuo_mt)   dRMuo_mt  = ROOT::Math::VectorUtil::DeltaR(genMuo_mt,   SelectedHighptMuon_mt->p4());
+  if(foundSelectedTrackerMuo1_mm && foundGenMuo1_mm) dRMuo1_mm = ROOT::Math::VectorUtil::DeltaR(genMuo1_mm,  SelectedTrackerMuon1_mm->p4());
+  if(foundSelectedTrackerMuo2_mm && foundGenMuo2_mm) dRMuo2_mm = ROOT::Math::VectorUtil::DeltaR(genMuo2_mm,  SelectedTrackerMuon2_mm->p4());
+  if(foundSelectedHighptMuo_em  && foundGenMuo_em)   dRMuo_em  = ROOT::Math::VectorUtil::DeltaR(genMuo_em,   SelectedHighptMuon_em->p4());
+ 
+
+  //DRELLYAN
+  if(foundGenEle){
+    genEle_Pt = genEle.pt();
+    genEle_Eta = genEle.eta();
+  }
+  if(foundGenMuo){
+    genMuo_Pt = genMuo.pt();
+    genMuo_Eta = genMuo.eta();
+  }
+  if(foundSelectedEle){
+    recoEle_Pt = SelectedEle->pt();
+    recoEle_Eta = SelectedEle->eta();
+    recoEle_PFIso=ElectronPFIso(SelectedEle, rho);
+    recoEle_CorrPFIso=ElectronCorrPFIso(SelectedEle, rho);
+    recoEle_DETIso=ElectronDETIso(SelectedEle, rho);
+  }
+  if(foundSelectedEleHEEP){
+    recoEleHEEP_Pt = SelectedEleHEEP->pt();
+    recoEleHEEP_Eta = SelectedEleHEEP->eta();
+    recoEleHEEP_PFIso=ElectronPFIso(SelectedEleHEEP, rho);
+    recoEleHEEP_CorrPFIso=ElectronCorrPFIso(SelectedEleHEEP, rho);
+    recoEleHEEP_DETIso=ElectronDETIso(SelectedEleHEEP, rho);
+    recoEleHEEP_Iso=isoHEEP;
+    recoEleHEEP_int=SelectedEleHEEP->userInt("HEEPId");
+  }
+  if(foundSelectedTightMuo){
+    recoTightMuo_Pt = SelectedTightMuon->pt();
+    recoTightMuo_Eta = SelectedTightMuon->eta();
+    recoTightMuo_PFIso=MuonPFIso(SelectedTightMuon,true);
+    recoTightMuo_CorrPFIso=MuonCorrPFIso(SelectedTightMuon,true);
+  }
+  if(foundSelectedHighptMuo){
+    recoHighptMuo_Pt = SelectedHighptMuon->pt();
+    recoHighptMuo_Eta = SelectedHighptMuon->eta();
+    recoHighptMuo_PFIso=MuonPFIso(SelectedHighptMuon,true);
+    recoHighptMuo_CorrPFIso=MuonCorrPFIso(SelectedHighptMuon,true);
+  }
+  m_genEle  = (int)foundGenEle;
+  m_genMuo  = (int)foundGenMuo;
+  m_matchedEle  = (int)matchedEle;
+  m_matchedEleHEEP  = (int)matchedEleHEEP;
+  m_matchedTightMuo    = (int)matchedTightMuo;
+  m_matchedHighptMuo   = (int)matchedHighptMuo;
+  m_recoEle  = (int)foundSelectedEle;
+  m_recoEleHEEP  = (int)foundSelectedEleHEEP;
+  m_recoTightMuo    = (int)foundSelectedTightMuo;
+  m_recoHighptMuo   = (int)foundSelectedHighptMuo;
+  m_genEle_Pt  = genEle_Pt;
+  m_genEle_Eta = genEle_Eta;
+  m_genMuo_Pt  = genMuo_Pt;
+  m_genMuo_Eta = genMuo_Eta;
+  m_recoEle_Pt  = recoEle_Pt;
+  m_recoEle_Eta = recoEle_Eta;
+  m_recoEleHEEP_Pt  = recoEleHEEP_Pt;
+  m_recoEleHEEP_Eta = recoEleHEEP_Eta;
+  m_recoTightMuo_Pt   = recoTightMuo_Pt;
+  m_recoTightMuo_Eta  = recoTightMuo_Eta;
+  m_recoHighptMuo_Pt   = recoHighptMuo_Pt;
+  m_recoHighptMuo_Eta  = recoHighptMuo_Eta;
+  m_recoEle_PFIso  = recoEle_PFIso;
+  m_recoEleHEEP_PFIso  = recoEleHEEP_PFIso;
+  m_recoEle_CorrPFIso = recoEle_CorrPFIso;
+  m_recoEleHEEP_CorrPFIso = recoEleHEEP_CorrPFIso;
+  m_recoEle_DETIso =  (int)recoEle_DETIso;
+  m_recoEleHEEP_DETIso =  (int)recoEleHEEP_DETIso;
+  m_recoEleHEEP_Iso =  (int)recoEleHEEP_Iso;
+  m_recoEleHEEP_int =  (int)recoEleHEEP_int;
+  m_recoTightMuo_PFIso  = recoTightMuo_PFIso;
+  m_recoTightMuo_CorrPFIso = recoTightMuo_CorrPFIso;
+  m_recoHighptMuo_PFIso  = recoHighptMuo_PFIso;
+  m_recoHighptMuo_CorrPFIso = recoHighptMuo_CorrPFIso;
+
+
+
+  m_Nele = (int)ele;
+  m_Nmuo = (int)muo;
+  m_genJet   = (int)foundGenJet;
+  m_genTau_et   = (int)foundGenTau_et;
+  m_genTau_mt   = (int)foundGenTau_mt;
+  m_genEle_et   = (int)foundGenEle_et;
+  m_genEle1_ee  = (int)foundGenEle1_ee;
+  m_genEle2_ee  = (int)foundGenEle2_ee;
+  m_genEle_em  = (int)foundGenEle_em;
+  m_genMuo_mt   = (int)foundGenMuo_mt;
+  m_genMuo1_mm  = (int)foundGenMuo1_mm;
+  m_genMuo2_mm  = (int)foundGenMuo2_mm;
+  m_genMuo_em  = (int)foundGenMuo_em;
+  m_matchedJet   = (int)matchedJet;
+  m_matchedTau_et   = (int)matchedTau_et;
+  m_matchedTau_mt   = (int)matchedTau_mt;
+  m_matchedEle_et   = (int)matchedEle_et;
+  m_matchedEle1_ee  = (int)matchedEle1_ee;
+  m_matchedEle2_ee  = (int)matchedEle2_ee;
+  m_matchedEle_em  = (int)matchedEle_em;
+  m_matchedEleHEEP_et   = (int)matchedEleHEEP_et;
+  m_matchedEleHEEP1_ee  = (int)matchedEleHEEP1_ee;
+  m_matchedEleHEEP2_ee  = (int)matchedEleHEEP2_ee;
+  m_matchedEleHEEP_em  = (int)matchedEleHEEP_em;
+  m_matchedTightMuo_mt    = (int)matchedTightMuo_mt;
+  m_matchedTightMuo1_mm   = (int)matchedTightMuo1_mm;
+  m_matchedTightMuo2_mm   = (int)matchedTightMuo2_mm;
+  m_matchedTightMuo_em    = (int)matchedTightMuo_em;
+  m_matchedHighptMuo_mt   = (int)matchedHighptMuo_mt;
+  m_matchedHighptMuo1_mm  = (int)matchedHighptMuo1_mm;
+  m_matchedHighptMuo2_mm  = (int)matchedHighptMuo2_mm;
+  m_matchedHighptMuo_em   = (int)matchedHighptMuo_em;
+  m_matchedTrackerMuo1_mm = (int)matchedTrackerMuo1_mm;
+  m_matchedTrackerMuo2_mm = (int)matchedTrackerMuo2_mm;
+  m_recoJet  = (int)foundSelectedJet;
+  m_recoTau_mt  = (int)foundSelectedTau_mt;
+  m_recoTau_et  = (int)foundSelectedTau_et;
+  m_recoEle_et  = (int)foundSelectedEle_et;
+  m_recoEle1_ee = (int)foundSelectedEle1_ee;
+  m_recoEle2_ee = (int)foundSelectedEle2_ee;
+  m_recoEle_em  = (int)foundSelectedEle_em;
+  m_recoEleHEEP_et  = (int)foundSelectedEleHEEP_et;
+  m_recoEleHEEP1_ee = (int)foundSelectedEleHEEP1_ee;
+  m_recoEleHEEP2_ee = (int)foundSelectedEleHEEP2_ee;
+  m_recoEleHEEP_em  = (int)foundSelectedEleHEEP_em;
+  m_recoTightMuo_mt    = (int)foundSelectedTightMuo_mt;
+  m_recoTightMuo1_mm   = (int)foundSelectedTightMuo1_mm;
+  m_recoTightMuo2_mm   = (int)foundSelectedTightMuo2_mm;
+  m_recoTightMuo_em    = (int)foundSelectedTightMuo_em;
+  m_recoHighptMuo_mt   = (int)foundSelectedHighptMuo_mt;
+  m_recoHighptMuo1_mm  = (int)foundSelectedHighptMuo1_mm;
+  m_recoHighptMuo2_mm  = (int)foundSelectedHighptMuo2_mm;
+  m_recoHighptMuo_em   = (int)foundSelectedHighptMuo_em;
+  m_recoTrackerMuo1_mm = (int)foundSelectedTrackerMuo1_mm;
+  m_recoTrackerMuo2_mm = (int)foundSelectedTrackerMuo2_mm;
+  m_hasAtLeastOneHighPtMuo = (int)hasAtLeastOneHighPtMuo;
+  m_genJet_Pt   = genJet_Pt;
+  m_genJet_Eta  = genJet_Eta;
+  m_genTau_et_Pt   = genTau_et_Pt;
+  m_genTau_et_Eta  = genTau_et_Eta;
+  m_genTau_mt_Pt   = genTau_mt_Pt;
+  m_genTau_mt_eta  = genTau_mt_eta;
+  m_genEle_et_Pt   = genEle_et_Pt;
+  m_genEle_et_Eta  = genEle_et_Eta;
+  m_genEle1_ee_Pt  = genEle1_ee_Pt;
+  m_genEle1_ee_Eta = genEle1_ee_Eta;
+  m_genEle2_ee_Pt  = genEle2_ee_Pt;
+  m_genEle2_ee_Eta = genEle2_ee_Eta;
+  m_genEle_em_Pt  = genEle_em_Pt;
+  m_genEle_em_Eta = genEle_em_Eta;
+  m_genMuo_mt_Pt   = genMuo_mt_Pt;
+  m_genMuo_mt_Eta  = genMuo_mt_Eta;
+  m_genMuo1_mm_Pt  = genMuo1_mm_Pt;
+  m_genMuo1_mm_Eta = genMuo1_mm_Eta;
+  m_genMuo2_mm_Pt  = genMuo2_mm_Pt;
+  m_genMuo2_mm_Eta = genMuo2_mm_Eta;
+  m_genMuo_em_Pt  = genMuo_em_Pt;
+  m_genMuo_em_Eta = genMuo_em_Eta;
+  m_recoJet_Pt   = recoJet_Pt;
+  m_recoJet_Eta  = recoJet_Eta;
+  m_recoTau_et_Pt   = recoTau_et_Pt;
+  m_recoTau_et_Eta  = recoTau_et_Eta;
+  m_recoTau_mt_Pt   = recoTau_mt_Pt;
+  m_recoTau_mt_eta  = recoTau_mt_eta;
+  m_recoEle_et_Pt   = recoEle_et_Pt;
+  m_recoEle_et_Eta  = recoEle_et_Eta;
+  m_recoEle1_ee_Pt  = recoEle1_ee_Pt;
+  m_recoEle1_ee_Eta = recoEle1_ee_Eta;
+  m_recoEle2_ee_Pt  = recoEle2_ee_Pt;
+  m_recoEle2_ee_Eta = recoEle2_ee_Eta;
+  m_recoEle_em_Pt  = recoEle_em_Pt;
+  m_recoEle_em_Eta = recoEle_em_Eta;
+  m_recoEleHEEP_et_Pt   = recoEleHEEP_et_Pt;
+  m_recoEleHEEP_et_Eta  = recoEleHEEP_et_Eta;
+  m_recoEleHEEP1_ee_Pt  = recoEleHEEP1_ee_Pt;
+  m_recoEleHEEP1_ee_Eta = recoEleHEEP1_ee_Eta;
+  m_recoEleHEEP2_ee_Pt  = recoEleHEEP2_ee_Pt;
+  m_recoEleHEEP2_ee_Eta = recoEleHEEP2_ee_Eta;
+  m_recoEleHEEP_em_Pt  = recoEleHEEP_em_Pt;
+  m_recoEleHEEP_em_Eta = recoEleHEEP_em_Eta;
+  m_recoTightMuo_mt_Pt   = recoTightMuo_mt_Pt;
+  m_recoTightMuo_mt_Eta  = recoTightMuo_mt_Eta;
+  m_recoTightMuo1_mm_Pt  = recoTightMuo1_mm_Pt;
+  m_recoTightMuo1_mm_Eta = recoTightMuo1_mm_Eta;
+  m_recoTightMuo2_mm_Pt  = recoTightMuo2_mm_Pt;
+  m_recoTightMuo2_mm_Eta = recoTightMuo2_mm_Eta;
+  m_recoTightMuo_em_Pt   = recoTightMuo_em_Pt;
+  m_recoTightMuo_em_Eta  = recoTightMuo_em_Eta;
+  m_recoHighptMuo_mt_Pt   = recoHighptMuo_mt_Pt;
+  m_recoHighptMuo_mt_Eta  = recoHighptMuo_mt_Eta;
+  m_recoHighptMuo1_mm_Pt  = recoHighptMuo1_mm_Pt;
+  m_recoHighptMuo1_mm_Eta = recoHighptMuo1_mm_Eta;
+  m_recoHighptMuo2_mm_Pt  = recoHighptMuo2_mm_Pt;
+  m_recoHighptMuo2_mm_Eta = recoHighptMuo2_mm_Eta;
+  m_recoHighptMuo_em_Pt   = recoHighptMuo_em_Pt;
+  m_recoHighptMuo_em_Eta  = recoHighptMuo_em_Eta;
+  m_recoTrackerMuo1_mm_Pt  = recoTrackerMuo1_mm_Pt;
+  m_recoTrackerMuo1_mm_Eta = recoTrackerMuo1_mm_Eta;
+  m_recoTrackerMuo2_mm_Pt  = recoTrackerMuo2_mm_Pt;
+  m_recoTrackerMuo2_mm_Eta = recoTrackerMuo2_mm_Eta;
+  m_recoEle_et_PFIso   = recoEle_et_PFIso;
+  m_recoEle1_ee_PFIso  = recoEle1_ee_PFIso;
+  m_recoEle2_ee_PFIso  = recoEle2_ee_PFIso;
+  m_recoEle_em_PFIso  = recoEle_em_PFIso;
+  m_recoEleHEEP_et_PFIso   = recoEleHEEP_et_PFIso;
+  m_recoEleHEEP1_ee_PFIso  = recoEleHEEP1_ee_PFIso;
+  m_recoEleHEEP2_ee_PFIso  = recoEleHEEP2_ee_PFIso;
+  m_recoEleHEEP_em_PFIso  = recoEleHEEP_em_PFIso;
+  m_recoEle_et_CorrPFIso  = recoEle_et_CorrPFIso;
+  m_recoEle1_ee_CorrPFIso = recoEle1_ee_CorrPFIso;
+  m_recoEle2_ee_CorrPFIso = recoEle2_ee_CorrPFIso;
+  m_recoEle_em_CorrPFIso = recoEle_em_CorrPFIso;
+  m_recoEleHEEP_et_CorrPFIso  = recoEleHEEP_et_CorrPFIso;
+  m_recoEleHEEP1_ee_CorrPFIso = recoEleHEEP1_ee_CorrPFIso;
+  m_recoEleHEEP2_ee_CorrPFIso = recoEleHEEP2_ee_CorrPFIso;
+  m_recoEleHEEP_em_CorrPFIso = recoEleHEEP_em_CorrPFIso;
+  m_recoEle_et_DETIso  = (int)recoEle_et_DETIso;
+  m_recoEle1_ee_DETIso = (int)recoEle1_ee_DETIso;
+  m_recoEle2_ee_DETIso = (int)recoEle2_ee_DETIso;
+  m_recoEle_em_DETIso =  (int)recoEle_em_DETIso;
+  m_recoEleHEEP_et_DETIso  = (int)recoEleHEEP_et_DETIso;
+  m_recoEleHEEP1_ee_DETIso = (int)recoEleHEEP1_ee_DETIso;
+  m_recoEleHEEP2_ee_DETIso = (int)recoEleHEEP2_ee_DETIso;
+  m_recoEleHEEP_em_DETIso =  (int)recoEleHEEP_em_DETIso;
+  m_recoEleHEEP_et_Iso  = (int)recoEleHEEP_et_Iso;
+  m_recoEleHEEP1_ee_Iso = (int)recoEleHEEP1_ee_Iso;
+  m_recoEleHEEP2_ee_Iso = (int)recoEleHEEP2_ee_Iso;
+  m_recoEleHEEP_em_Iso =  (int)recoEleHEEP_em_Iso;
+  m_recoEleHEEP_et_int  = (int)recoEleHEEP_et_int;
+  m_recoEleHEEP1_ee_int = (int)recoEleHEEP1_ee_int;
+  m_recoEleHEEP2_ee_int = (int)recoEleHEEP2_ee_int;
+  m_recoEleHEEP_em_int =  (int)recoEleHEEP_em_int;
+  m_recoTightMuo_mt_PFIso   = recoTightMuo_mt_PFIso;
+  m_recoTightMuo_mt_CorrPFIso  = recoTightMuo_mt_CorrPFIso;
+  m_recoTightMuo1_mm_PFIso  = recoTightMuo1_mm_PFIso;
+  m_recoTightMuo1_mm_CorrPFIso = recoTightMuo1_mm_CorrPFIso;
+  m_recoTightMuo2_mm_PFIso  = recoTightMuo2_mm_PFIso;
+  m_recoTightMuo2_mm_CorrPFIso = recoTightMuo2_mm_CorrPFIso;
+  m_recoTightMuo_em_PFIso  = recoTightMuo_em_PFIso;
+  m_recoTightMuo_em_CorrPFIso = recoTightMuo_em_CorrPFIso;
+  m_recoHighptMuo_mt_PFIso   = recoHighptMuo_mt_PFIso;
+  m_recoHighptMuo_mt_CorrPFIso  = recoHighptMuo_mt_CorrPFIso;
+  m_recoHighptMuo1_mm_PFIso  = recoHighptMuo1_mm_PFIso;
+  m_recoHighptMuo1_mm_CorrPFIso = recoHighptMuo1_mm_CorrPFIso;
+  m_recoHighptMuo2_mm_PFIso  = recoHighptMuo2_mm_PFIso;
+  m_recoHighptMuo2_mm_CorrPFIso = recoHighptMuo2_mm_CorrPFIso;
+  m_recoHighptMuo_em_PFIso  = recoHighptMuo_em_PFIso;
+  m_recoHighptMuo_em_CorrPFIso = recoHighptMuo_em_CorrPFIso;
+  m_recoTrackerMuo1_mm_PFIso  = recoTrackerMuo1_mm_PFIso;
+  m_recoTrackerMuo1_mm_CorrPFIso = recoTrackerMuo1_mm_CorrPFIso;
+  m_recoTrackerMuo2_mm_PFIso  = recoTrackerMuo2_mm_PFIso;
+  m_recoTrackerMuo2_mm_CorrPFIso = recoTrackerMuo2_mm_CorrPFIso;
+  m_recoTightMuo1_mm_DetIso   = recoTightMuo1_mm_DetIso;
+  m_recoTightMuo2_mm_DetIso   = recoTightMuo2_mm_DetIso;
+  m_recoHighptMuo1_mm_DetIso  = recoHighptMuo1_mm_DetIso;
+  m_recoHighptMuo2_mm_DetIso  = recoHighptMuo2_mm_DetIso;
+  m_recoTrackerMuo1_mm_DetIso = recoTrackerMuo1_mm_DetIso;
+  m_recoTrackerMuo2_mm_DetIso = recoTrackerMuo2_mm_DetIso;
+  m_reco_em_deltaR = reco_em_deltaR; 
+  m_reco_et_deltaR = reco_et_deltaR;
+  m_reco_ee_deltaR = reco_ee_deltaR;
+  m_reco_mt_deltaR = reco_mt_deltaR;
+  m_reco_mm_deltaR = reco_mm_deltaR;
+  m_gen_em_deltaR = gen_em_deltaR; 
+  m_gen_et_deltaR = gen_et_deltaR;
+  m_gen_ee_deltaR = gen_ee_deltaR;
+  m_gen_mt_deltaR = gen_mt_deltaR;
+  m_gen_mm_deltaR = gen_mm_deltaR;
+  m_dRJet       = dRJet;
+  m_dRTau_et  = dRTau_et;
+  m_dRTau_mt  = dRTau_mt;
+  m_dREle_et   = dREle_et;
+  m_dREle1_ee  = dREle1_ee;
+  m_dREle2_ee  = dREle2_ee;
+  m_dREle_em  = dREle_em;
+  m_dRMuo_mt   = dRMuo_mt;
+  m_dRMuo1_mm  = dRMuo1_mm;
+  m_dRMuo2_mm  = dRMuo2_mm;
+  m_dRMuo_em  = dRMuo_em;
+  Tree->Fill();
+
+  //MUON ISOLATION FOR QCD JETS
+  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+    m_JetMuon_Pt        = muon->pt();
+    m_JetMuon_Eta       = muon->eta();
+    m_JetMuon_PFIso     = MuonPFIso(muon,true);
+    m_JetMuon_CorrPFIso = MuonCorrPFIso(muon,true);
+    TreeQCDMuon->Fill();
+  }
+
+  //ELECTRON ISOLATION FOR QCD JETS
+  for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
+    m_JetElectron_Pt        = electron->pt();
+    m_JetElectron_Eta       = electron->eta();
+    m_JetElectron_PFIso     = ElectronPFIso(electron, rho);
+    m_JetElectron_CorrPFIso = ElectronCorrPFIso(electron, rho);
+    TreeQCDElectron->Fill();
+  }
+
+#ifdef THIS_IS_AN_EVENT_EXAMPLE
+  Handle<ExampleData> pIn;
+  iEvent.getByLabel("example",pIn);
+#endif
+#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
+  ESHandle<SetupData> pSetup;
+  iSetup.get<SetupRecord>().get(pSetup);
+#endif
+}
+
+
+// ------------ method called once each job just before starting event loop ------------
+void
+Efficiency::beginJob()
+{
+  Service<TFileService> fs;
+
+  TreeQCDMuon = fs->make<TTree>("TreeQCDMuon", "TreeQCDMuon");
+  TreeQCDMuon->Branch("JetMuon_Pt",        &m_JetMuon_Pt,        "JetMuon_Pt/f");
+  TreeQCDMuon->Branch("JetMuon_Eta",       &m_JetMuon_Eta,       "JetMuon_Eta/f");
+  TreeQCDMuon->Branch("JetMuon_PFIso",     &m_JetMuon_PFIso,     "JetMuon_PFIso/f");
+  TreeQCDMuon->Branch("JetMuon_CorrPFIso", &m_JetMuon_CorrPFIso, "JetMuon_CorrPFIso/f");
+
+  TreeQCDElectron = fs->make<TTree>("TreeQCDElectron", "TreeQCDElectron");
+  TreeQCDElectron->Branch("JetElectron_Pt",        &m_JetElectron_Pt,        "JetElectron_Pt/f");
+  TreeQCDElectron->Branch("JetElectron_Eta",       &m_JetElectron_Eta,       "JetElectron_Eta/f");
+  TreeQCDElectron->Branch("JetElectron_PFIso",     &m_JetElectron_PFIso,     "JetElectron_PFIso/f");
+  TreeQCDElectron->Branch("JetElectron_CorrPFIso", &m_JetElectron_CorrPFIso, "JetElectron_CorrPFIso/f");
+
+  Tree = fs->make<TTree>("Tree", "Tree");
+  Tree->Branch("genEle", &m_genEle, "genEle/i");
+  Tree->Branch("genMuo", &m_genMuo, "genMuo/i");
+  Tree->Branch("matchedEle", &m_matchedEle, "matchedEle/i");
+  Tree->Branch("matchedEleHEEP", &m_matchedEleHEEP, "matchedEleHEEP/i");
+  Tree->Branch("matchedTightMuo", &m_matchedTightMuo, "matchedTightMuo/i");
+  Tree->Branch("matchedHighptMuo", &m_matchedHighptMuo, "matchedHighptMuo/i");
+  Tree->Branch("recoEle", &m_recoEle, "recoEle/i");
+  Tree->Branch("recoEleHEEP", &m_recoEleHEEP, "recoEleHEEP/i");
+  Tree->Branch("recoTightMuo",  &m_recoTightMuo,  "recoTightMuo/i");
+  Tree->Branch("recoHighptMuo",  &m_recoHighptMuo,  "recoHighptMuo/i");
+  Tree->Branch("genEle_Pt", &m_genEle_Pt, "genEle_Pt/f");
+  Tree->Branch("genEle_Eta", &m_genEle_Eta, "genEle_Eta/f");
+  Tree->Branch("genMuo_Pt", &m_genMuo_Pt, "genMuo_Pt/f");
+  Tree->Branch("genMuo_Eta", &m_genMuo_Eta, "genMuo_Eta/f");
+  Tree->Branch("recoEle_Pt", &m_recoEle_Pt, "recoEle_Pt/f");
+  Tree->Branch("recoEle_Eta", &m_recoEle_Eta, "recoEle_Eta/f");
+  Tree->Branch("recoEleHEEP_Pt", &m_recoEleHEEP_Pt, "recoEleHEEP_Pt/f");
+  Tree->Branch("recoEleHEEP_Eta", &m_recoEleHEEP_Eta, "recoEleHEEP_Eta/f");
+  Tree->Branch("recoTightMuo_Pt", &m_recoTightMuo_Pt, "recoTightMuo_Pt/f");
+  Tree->Branch("recoTightMuo_Eta", &m_recoTightMuo_Eta, "recoTightMuo_Eta/f");
+  Tree->Branch("recoHighptMuo_Pt", &m_recoHighptMuo_Pt, "recoHighptMuo_Pt/f");
+  Tree->Branch("recoHighptMuo_Eta", &m_recoHighptMuo_Eta, "recoHighptMuo_Eta/f");
+  Tree->Branch("recoEle_PFIso", &m_recoEle_PFIso, "recoEle_PFIso/f");
+  Tree->Branch("recoEle_CorrPFIso", &m_recoEle_CorrPFIso, "recoEle_CorrPFIso/f");
+  Tree->Branch("recoEle_DETIso", &m_recoEle_DETIso, "recoEle_DETIso/i");
+  Tree->Branch("recoEleHEEP_PFIso", &m_recoEleHEEP_PFIso, "recoEleHEEP_PFIso/f");
+  Tree->Branch("recoEleHEEP_CorrPFIso", &m_recoEleHEEP_CorrPFIso, "recoEleHEEP_CorrPFIso/f");
+  Tree->Branch("recoEleHEEP_DETIso", &m_recoEleHEEP_DETIso, "recoEleHEEP_DETIso/i");
+  Tree->Branch("recoEleHEEP_Iso", &m_recoEleHEEP_Iso, "recoEleHEEP_Iso/i");
+  Tree->Branch("recoEleHEEP_int", &m_recoEleHEEP_int, "recoEleHEEP_int/i");
+  Tree->Branch("recoTightMuo_PFIso", &m_recoTightMuo_PFIso, "recoTightMuo_PFIso/f");
+  Tree->Branch("recoTightMuo_CorrPFIso", &m_recoTightMuo_CorrPFIso, "recoTightMuo_CorrPFIso/f");
+  Tree->Branch("recoHighptMuo_PFIso", &m_recoHighptMuo_PFIso, "recoHighptMuo_PFIso/f");
+  Tree->Branch("recoHighptMuo_CorrPFIso", &m_recoHighptMuo_CorrPFIso, "recoHighptMuo_CorrPFIso/f");
+  Tree->Branch("Nele", &m_Nele, "Nele/i");
+  Tree->Branch("Nmuo", &m_Nmuo, "Nmuo/i");
+  Tree->Branch("genJet", &m_genJet, "genJet/i");
+  Tree->Branch("genTau_et", &m_genTau_et, "genTau_et/i");
+  Tree->Branch("genTau_mt", &m_genTau_mt, "genTau_mt/i");
+  Tree->Branch("genEle_et", &m_genEle_et, "genEle_et/i");
+  Tree->Branch("genEle1_ee", &m_genEle1_ee, "genEle1_ee/i");
+  Tree->Branch("genEle2_ee", &m_genEle2_ee, "genEle2_ee/i");
+  Tree->Branch("genEle_em", &m_genEle_em, "genEle_em/i");
+  Tree->Branch("genMuo_mt", &m_genMuo_mt, "genMuo_mt/i");
+  Tree->Branch("genMuo1_mm", &m_genMuo1_mm, "genMuo1_mm/i");
+  Tree->Branch("genMuo2_mm", &m_genMuo2_mm, "genMuo2_mm/i");
+  Tree->Branch("genMuo_em", &m_genMuo_em, "genMuo_em/i");
+  Tree->Branch("matchedJet", &m_matchedJet, "matchedJet/i");
+  Tree->Branch("matchedTau_et", &m_matchedTau_et, "matchedTau_et/i");
+  Tree->Branch("matchedTau_mt", &m_matchedTau_mt, "matchedTau_mt/i");
+  Tree->Branch("matchedEle_et", &m_matchedEle_et, "matchedEle_et/i");
+  Tree->Branch("matchedEle1_ee", &m_matchedEle1_ee, "matchedEle1_ee/i");
+  Tree->Branch("matchedEle2_ee", &m_matchedEle2_ee, "matchedEle2_ee/i");
+  Tree->Branch("matchedEle_em", &m_matchedEle_em, "matchedEle_em/i");
+  Tree->Branch("matchedEleHEEP_et", &m_matchedEleHEEP_et, "matchedEleHEEP_et/i");
+  Tree->Branch("matchedEleHEEP1_ee", &m_matchedEleHEEP1_ee, "matchedEleHEEP1_ee/i");
+  Tree->Branch("matchedEleHEEP2_ee", &m_matchedEleHEEP2_ee, "matchedEleHEEP2_ee/i");
+  Tree->Branch("matchedEleHEEP_em", &m_matchedEleHEEP_em, "matchedEleHEEP_em/i");
+  Tree->Branch("matchedTightMuo_mt", &m_matchedTightMuo_mt, "matchedTightMuo_mt/i");
+  Tree->Branch("matchedTightMuo1_mm", &m_matchedTightMuo1_mm, "matchedTightMuo1_mm/i");
+  Tree->Branch("matchedTightMuo2_mm", &m_matchedTightMuo2_mm, "matchedTightMuo2_mm/i");
+  Tree->Branch("matchedTightMuo_em", &m_matchedTightMuo_em, "matchedTightMuo_em/i");
+  Tree->Branch("matchedHighptMuo_mt", &m_matchedHighptMuo_mt, "matchedHighptMuo_mt/i");
+  Tree->Branch("matchedHighptMuo1_mm", &m_matchedHighptMuo1_mm, "matchedHighptMuo1_mm/i");
+  Tree->Branch("matchedHighptMuo2_mm", &m_matchedHighptMuo2_mm, "matchedHighptMuo2_mm/i");
+  Tree->Branch("matchedHighptMuo_em", &m_matchedHighptMuo_em, "matchedHighptMuo_em/i");
+  Tree->Branch("matchedTrackerMuo1_mm", &m_matchedTrackerMuo1_mm, "matchedTrackerMuo1_mm/i");
+  Tree->Branch("matchedTrackerMuo2_mm", &m_matchedTrackerMuo2_mm, "matchedTrackerMuo2_mm/i");
+  Tree->Branch("recoJet", &m_recoJet, "recoJet/i");
+  Tree->Branch("recoTau_mt", &m_recoTau_mt, "recoTau_mt/i");
+  Tree->Branch("recoTau_et", &m_recoTau_et, "recoTau_et/i");
+  Tree->Branch("recoEle_et", &m_recoEle_et, "recoEle_et/i");
+  Tree->Branch("recoEle1_ee", &m_recoEle1_ee, "recoEle1_ee/i");
+  Tree->Branch("recoEle2_ee", &m_recoEle2_ee, "recoEle2_ee/i");
+  Tree->Branch("recoEle_em", &m_recoEle_em, "recoEle_em/i");
+  Tree->Branch("recoEleHEEP_et", &m_recoEleHEEP_et, "recoEleHEEP_et/i");
+  Tree->Branch("recoEleHEEP1_ee", &m_recoEleHEEP1_ee, "recoEleHEEP1_ee/i");
+  Tree->Branch("recoEleHEEP2_ee", &m_recoEleHEEP2_ee, "recoEleHEEP2_ee/i");
+  Tree->Branch("recoEleHEEP_em", &m_recoEleHEEP_em, "recoEleHEEP_em/i");
+  Tree->Branch("recoTightMuo_mt",  &m_recoTightMuo_mt,  "recoTightMuo_mt/i");
+  Tree->Branch("recoTightMuo1_mm", &m_recoTightMuo1_mm, "recoTightMuo1_mm/i");
+  Tree->Branch("recoTightMuo2_mm", &m_recoTightMuo2_mm, "recoTightMuo2_mm/i");
+  Tree->Branch("recoTightMuo_em",  &m_recoTightMuo_em,  "recoTightMuo_em/i");
+  Tree->Branch("recoHighptMuo_mt",  &m_recoHighptMuo_mt,  "recoHighptMuo_mt/i");
+  Tree->Branch("recoHighptMuo1_mm", &m_recoHighptMuo1_mm, "recoHighptMuo1_mm/i");
+  Tree->Branch("recoHighptMuo2_mm", &m_recoHighptMuo2_mm, "recoHighptMuo2_mm/i");
+  Tree->Branch("recoHighptMuo_em",  &m_recoHighptMuo_em,  "recoHighptMuo_em/i");
+  Tree->Branch("recoTrackerMuo1_mm", &m_recoTrackerMuo1_mm, "recoTrackerMuo1_mm/i");
+  Tree->Branch("recoTrackerMuo2_mm", &m_recoTrackerMuo2_mm, "recoTrackerMuo2_mm/i");
+  Tree->Branch("hasAtLeastOneHighPtMuo", &m_hasAtLeastOneHighPtMuo, "hasAtLeastOneHighPtMuo/i");
+  Tree->Branch("genJet_Pt", &m_genJet_Pt, "genJet_Pt/f");
+  Tree->Branch("genJet_Eta", &m_genJet_Eta, "genJet_Eta/f");
+  Tree->Branch("genTau_et_Pt", &m_genTau_et_Pt, "genTau_et_Pt/f");
+  Tree->Branch("genTau_et_Eta", &m_genTau_et_Eta, "genTau_et_Eta/f");
+  Tree->Branch("genTau_mt_Pt", &m_genTau_mt_Pt, "genTau_mt_Pt/f");
+  Tree->Branch("genTau_mt_eta", &m_genTau_mt_eta, "genTau_mt_eta/f");
+  Tree->Branch("genEle_et_Pt", &m_genEle_et_Pt, "genEle_et_Pt/f");
+  Tree->Branch("genEle_et_Eta", &m_genEle_et_Eta, "genEle_et_Eta/f");
+  Tree->Branch("genEle1_ee_Pt", &m_genEle1_ee_Pt, "genEle1_ee_Pt/f");
+  Tree->Branch("genEle1_ee_Eta", &m_genEle1_ee_Eta, "genEle1_ee_Eta/f");
+  Tree->Branch("genEle2_ee_Pt", &m_genEle2_ee_Pt, "genEle2_ee_Pt/f");
+  Tree->Branch("genEle2_ee_Eta", &m_genEle2_ee_Eta, "genEle2_ee_Eta/f");
+  Tree->Branch("genEle_em_Pt", &m_genEle_em_Pt, "genEle_em_Pt/f");
+  Tree->Branch("genEle_em_Eta", &m_genEle_em_Eta, "genEle_em_Eta/f");
+  Tree->Branch("genMuo_mt_Pt", &m_genMuo_mt_Pt, "genMuo_mt_Pt/f");
+  Tree->Branch("genMuo_mt_Eta", &m_genMuo_mt_Eta, "genMuo_mt_Eta/f");
+  Tree->Branch("genMuo1_mm_Pt", &m_genMuo1_mm_Pt, "genMuo1_mm_Pt/f");
+  Tree->Branch("genMuo1_mm_Eta", &m_genMuo1_mm_Eta, "genMuo1_mm_Eta/f");
+  Tree->Branch("genMuo2_mm_Pt", &m_genMuo2_mm_Pt, "genMuo2_mm_Pt/f");
+  Tree->Branch("genMuo2_mm_Eta", &m_genMuo2_mm_Eta, "genMuo2_mm_Eta/f");
+  Tree->Branch("genMuo_em_Pt", &m_genMuo_em_Pt, "genMuo_em_Pt/f");
+  Tree->Branch("genMuo_em_Eta", &m_genMuo_em_Eta, "genMuo_em_Eta/f");
+  Tree->Branch("recoJet_Pt", &m_recoJet_Pt, "recoJet_Pt/f");
+  Tree->Branch("recoJet_Eta", &m_recoJet_Eta, "recoJet_Eta/f");
+  Tree->Branch("recoTau_et_Pt", &m_recoTau_et_Pt, "recoTau_et_Pt/f");
+  Tree->Branch("recoTau_et_Eta",&m_recoTau_et_Eta,"recoTau_et_Eta/f");
+  Tree->Branch("recoTau_mt_Pt", &m_recoTau_mt_Pt, "recoTau_mt_Pt/f");
+  Tree->Branch("recoTau_mt_eta",&m_recoTau_mt_eta,"recoTau_mt_eta/f");
+  Tree->Branch("recoEle_et_Pt", &m_recoEle_et_Pt, "recoEle_et_Pt/f");
+  Tree->Branch("recoEle_et_Eta", &m_recoEle_et_Eta, "recoEle_et_Eta/f");
+  Tree->Branch("recoEle1_ee_Pt", &m_recoEle1_ee_Pt, "recoEle1_ee_Pt/f");
+  Tree->Branch("recoEle1_ee_Eta", &m_recoEle1_ee_Eta, "recoEle1_ee_Eta/f");
+  Tree->Branch("recoEle2_ee_Pt", &m_recoEle2_ee_Pt, "recoEle2_ee_Pt/f");
+  Tree->Branch("recoEle2_ee_Eta", &m_recoEle2_ee_Eta, "recoEle2_ee_Eta/f");
+  Tree->Branch("recoEle_em_Pt", &m_recoEle_em_Pt, "recoEle_em_Pt/f");
+  Tree->Branch("recoEle_em_Eta", &m_recoEle_em_Eta, "recoEle_em_Eta/f");
+  Tree->Branch("recoEleHEEP_et_Pt", &m_recoEleHEEP_et_Pt, "recoEleHEEP_et_Pt/f");
+  Tree->Branch("recoEleHEEP_et_Eta", &m_recoEleHEEP_et_Eta, "recoEleHEEP_et_Eta/f");
+  Tree->Branch("recoEleHEEP1_ee_Pt", &m_recoEleHEEP1_ee_Pt, "recoEleHEEP1_ee_Pt/f");
+  Tree->Branch("recoEleHEEP1_ee_Eta", &m_recoEleHEEP1_ee_Eta, "recoEleHEEP1_ee_Eta/f");
+  Tree->Branch("recoEleHEEP2_ee_Pt", &m_recoEleHEEP2_ee_Pt, "recoEleHEEP2_ee_Pt/f");
+  Tree->Branch("recoEleHEEP2_ee_Eta", &m_recoEleHEEP2_ee_Eta, "recoEleHEEP2_ee_Eta/f");
+  Tree->Branch("recoEleHEEP_em_Pt", &m_recoEleHEEP_em_Pt, "recoEleHEEP_em_Pt/f");
+  Tree->Branch("recoEleHEEP_em_Eta", &m_recoEleHEEP_em_Eta, "recoEleHEEP_em_Eta/f");
+  Tree->Branch("recoTightMuo_mt_Pt", &m_recoTightMuo_mt_Pt, "recoTightMuo_mt_Pt/f");
+  Tree->Branch("recoTightMuo_mt_Eta", &m_recoTightMuo_mt_Eta, "recoTightMuo_mt_Eta/f");
+  Tree->Branch("recoTightMuo1_mm_Pt", &m_recoTightMuo1_mm_Pt, "recoTightMuo1_mm_Pt/f");
+  Tree->Branch("recoTightMuo1_mm_Eta", &m_recoTightMuo1_mm_Eta, "recoTightMuo1_mm_Eta/f");
+  Tree->Branch("recoTightMuo2_mm_Pt", &m_recoTightMuo2_mm_Pt, "recoTightMuo2_mm_Pt/f");
+  Tree->Branch("recoTightMuo2_mm_Eta", &m_recoTightMuo2_mm_Eta, "recoTightMuo2_mm_Eta/f");
+  Tree->Branch("recoTightMuo_em_Pt", &m_recoTightMuo_em_Pt, "recoTightMuo_em_Pt/f");
+  Tree->Branch("recoTightMuo_em_Eta", &m_recoTightMuo_em_Eta, "recoTightMuo_em_Eta/f");
+  Tree->Branch("recoHighptMuo_mt_Pt", &m_recoHighptMuo_mt_Pt, "recoHighptMuo_mt_Pt/f");
+  Tree->Branch("recoHighptMuo_mt_Eta", &m_recoHighptMuo_mt_Eta, "recoHighptMuo_mt_Eta/f");
+  Tree->Branch("recoHighptMuo1_mm_Pt", &m_recoHighptMuo1_mm_Pt, "recoHighptMuo1_mm_Pt/f");
+  Tree->Branch("recoHighptMuo1_mm_Eta", &m_recoHighptMuo1_mm_Eta, "recoHighptMuo1_mm_Eta/f");
+  Tree->Branch("recoHighptMuo2_mm_Pt", &m_recoHighptMuo2_mm_Pt, "recoHighptMuo2_mm_Pt/f");
+  Tree->Branch("recoHighptMuo2_mm_Eta", &m_recoHighptMuo2_mm_Eta, "recoHighptMuo2_mm_Eta/f");
+  Tree->Branch("recoHighptMuo_em_Pt", &m_recoHighptMuo_em_Pt, "recoHighptMuo_em_Pt/f");
+  Tree->Branch("recoHighptMuo_em_Eta", &m_recoHighptMuo_em_Eta, "recoHighptMuo_em_Eta/f");
+  Tree->Branch("recoTrackerMuo1_mm_Pt", &m_recoTrackerMuo1_mm_Pt, "recoTrackerMuo1_mm_Pt/f");
+  Tree->Branch("recoTrackerMuo1_mm_Eta", &m_recoTrackerMuo1_mm_Eta, "recoTrackerMuo1_mm_Eta/f");
+  Tree->Branch("recoTrackerMuo2_mm_Pt", &m_recoTrackerMuo2_mm_Pt, "recoTrackerMuo2_mm_Pt/f");
+  Tree->Branch("recoTrackerMuo2_mm_Eta", &m_recoTrackerMuo2_mm_Eta, "recoTrackerMuo2_mm_Eta/f");
+  Tree->Branch("recoEle_et_PFIso", &m_recoEle_et_PFIso, "recoEle_et_PFIso/f");
+  Tree->Branch("recoEle1_ee_PFIso", &m_recoEle1_ee_PFIso, "recoEle1_ee_PFIso/f");
+  Tree->Branch("recoEle2_ee_PFIso", &m_recoEle2_ee_PFIso, "recoEle2_ee_PFIso/f");
+  Tree->Branch("recoEle_em_PFIso", &m_recoEle_em_PFIso, "recoEle_em_PFIso/f");
+  Tree->Branch("recoEle_et_CorrPFIso", &m_recoEle_et_CorrPFIso, "recoEle_et_CorrPFIso/f");
+  Tree->Branch("recoEle1_ee_CorrPFIso", &m_recoEle1_ee_CorrPFIso, "recoEle1_ee_CorrPFIso/f");
+  Tree->Branch("recoEle2_ee_CorrPFIso", &m_recoEle2_ee_CorrPFIso, "recoEle2_ee_CorrPFIso/f");
+  Tree->Branch("recoEle_em_CorrPFIso", &m_recoEle_em_CorrPFIso, "recoEle_em_CorrPFIso/f");
+  Tree->Branch("recoEle_et_DETIso", &m_recoEle_et_DETIso, "recoEle_et_DETIso/i");
+  Tree->Branch("recoEle1_ee_DETIso", &m_recoEle1_ee_DETIso, "recoEle1_ee_DETIso/i");
+  Tree->Branch("recoEle2_ee_DETIso", &m_recoEle2_ee_DETIso, "recoEle2_ee_DETIso/i");
+  Tree->Branch("recoEle_em_DETIso", &m_recoEle_em_DETIso, "recoEle_em_DETIso/i");
+  Tree->Branch("recoEleHEEP_et_PFIso", &m_recoEleHEEP_et_PFIso, "recoEleHEEP_et_PFIso/f");
+  Tree->Branch("recoEleHEEP1_ee_PFIso", &m_recoEleHEEP1_ee_PFIso, "recoEleHEEP1_ee_PFIso/f");
+  Tree->Branch("recoEleHEEP2_ee_PFIso", &m_recoEleHEEP2_ee_PFIso, "recoEleHEEP2_ee_PFIso/f");
+  Tree->Branch("recoEleHEEP_em_PFIso", &m_recoEleHEEP_em_PFIso, "recoEleHEEP_em_PFIso/f");
+  Tree->Branch("recoEleHEEP_et_CorrPFIso", &m_recoEleHEEP_et_CorrPFIso, "recoEleHEEP_et_CorrPFIso/f");
+  Tree->Branch("recoEleHEEP1_ee_CorrPFIso", &m_recoEleHEEP1_ee_CorrPFIso, "recoEleHEEP1_ee_CorrPFIso/f");
+  Tree->Branch("recoEleHEEP2_ee_CorrPFIso", &m_recoEleHEEP2_ee_CorrPFIso, "recoEleHEEP2_ee_CorrPFIso/f");
+  Tree->Branch("recoEleHEEP_em_CorrPFIso", &m_recoEleHEEP_em_CorrPFIso, "recoEleHEEP_em_CorrPFIso/f");
+  Tree->Branch("recoEleHEEP_et_DETIso", &m_recoEleHEEP_et_DETIso, "recoEleHEEP_et_DETIso/i");
+  Tree->Branch("recoEleHEEP1_ee_DETIso", &m_recoEleHEEP1_ee_DETIso, "recoEleHEEP1_ee_DETIso/i");
+  Tree->Branch("recoEleHEEP2_ee_DETIso", &m_recoEleHEEP2_ee_DETIso, "recoEleHEEP2_ee_DETIso/i");
+  Tree->Branch("recoEleHEEP_em_DETIso", &m_recoEleHEEP_em_DETIso, "recoEleHEEP_em_DETIso/i");
+  Tree->Branch("recoEleHEEP_et_Iso", &m_recoEleHEEP_et_Iso, "recoEleHEEP_et_Iso/i");
+  Tree->Branch("recoEleHEEP1_ee_Iso", &m_recoEleHEEP1_ee_Iso, "recoEleHEEP1_ee_Iso/i");
+  Tree->Branch("recoEleHEEP2_ee_Iso", &m_recoEleHEEP2_ee_Iso, "recoEleHEEP2_ee_Iso/i");
+  Tree->Branch("recoEleHEEP_em_Iso", &m_recoEleHEEP_em_Iso, "recoEleHEEP_em_Iso/i");
+  Tree->Branch("recoEleHEEP_et_int", &m_recoEleHEEP_et_int, "recoEleHEEP_et_int/i");
+  Tree->Branch("recoEleHEEP1_ee_int", &m_recoEleHEEP1_ee_int, "recoEleHEEP1_ee_int/i");
+  Tree->Branch("recoEleHEEP2_ee_int", &m_recoEleHEEP2_ee_int, "recoEleHEEP2_ee_int/i");
+  Tree->Branch("recoEleHEEP_em_int", &m_recoEleHEEP_em_int, "recoEleHEEP_em_int/i");
+  Tree->Branch("recoTightMuo_mt_PFIso", &m_recoTightMuo_mt_PFIso, "recoTightMuo_mt_PFIso/f");
+  Tree->Branch("recoTightMuo_mt_CorrPFIso", &m_recoTightMuo_mt_CorrPFIso, "recoTightMuo_mt_CorrPFIso/f");
+  Tree->Branch("recoTightMuo1_mm_PFIso", &m_recoTightMuo1_mm_PFIso, "recoTightMuo1_mm_PFIso/f");
+  Tree->Branch("recoTightMuo1_mm_CorrPFIso", &m_recoTightMuo1_mm_CorrPFIso, "recoTightMuo1_mm_CorrPFIso/f");
+  Tree->Branch("recoTightMuo2_mm_PFIso", &m_recoTightMuo2_mm_PFIso, "recoTightMuo2_mm_PFIso/f");
+  Tree->Branch("recoTightMuo2_mm_CorrPFIso", &m_recoTightMuo2_mm_CorrPFIso, "recoTightMuo2_mm_CorrPFIso/f");
+  Tree->Branch("recoTightMuo_em_PFIso", &m_recoTightMuo_em_PFIso, "recoTightMuo_em_PFIso/f");
+  Tree->Branch("recoTightMuo_em_CorrPFIso", &m_recoTightMuo_em_CorrPFIso, "recoTightMuo_em_CorrPFIso/f");
+  Tree->Branch("recoHighptMuo_mt_PFIso", &m_recoHighptMuo_mt_PFIso, "recoHighptMuo_mt_PFIso/f");
+  Tree->Branch("recoHighptMuo_mt_CorrPFIso", &m_recoHighptMuo_mt_CorrPFIso, "recoHighptMuo_mt_CorrPFIso/f");
+  Tree->Branch("recoHighptMuo1_mm_PFIso", &m_recoHighptMuo1_mm_PFIso, "recoHighptMuo1_mm_PFIso/f");
+  Tree->Branch("recoHighptMuo1_mm_CorrPFIso", &m_recoHighptMuo1_mm_CorrPFIso, "recoHighptMuo1_mm_CorrPFIso/f");
+  Tree->Branch("recoHighptMuo2_mm_PFIso", &m_recoHighptMuo2_mm_PFIso, "recoHighptMuo2_mm_PFIso/f");
+  Tree->Branch("recoHighptMuo2_mm_CorrPFIso", &m_recoHighptMuo2_mm_CorrPFIso, "recoHighptMuo2_mm_CorrPFIso/f");
+  Tree->Branch("recoHighptMuo_em_PFIso", &m_recoHighptMuo_em_PFIso, "recoHighptMuo_em_PFIso/f");
+  Tree->Branch("recoHighptMuo_em_CorrPFIso", &m_recoHighptMuo_em_CorrPFIso, "recoHighptMuo_em_CorrPFIso/f");
+  Tree->Branch("recoTrackerMuo1_mm_PFIso", &m_recoTrackerMuo1_mm_PFIso, "recoTrackerMuo1_mm_PFIso/f");
+  Tree->Branch("recoTrackerMuo1_mm_CorrPFIso", &m_recoTrackerMuo1_mm_CorrPFIso, "recoTrackerMuo1_mm_CorrPFIso/f");
+  Tree->Branch("recoTrackerMuo2_mm_PFIso", &m_recoTrackerMuo2_mm_PFIso, "recoTrackerMuo2_mm_PFIso/f");
+  Tree->Branch("recoTrackerMuo2_mm_CorrPFIso", &m_recoTrackerMuo2_mm_CorrPFIso, "recoTrackerMuo2_mm_CorrPFIso/f");
+  Tree->Branch("recoTightMuo1_mm_DetIso",   &m_recoTightMuo1_mm_DetIso,   "recoTightMuo1_mm_DetIso/f");
+  Tree->Branch("recoTightMuo2_mm_DetIso",   &m_recoTightMuo2_mm_DetIso,   "recoTightMuo2_mm_DetIso/f");
+  Tree->Branch("recoHighptMuo1_mm_DetIso",  &m_recoHighptMuo1_mm_DetIso,  "recoHighptMuo1_mm_DetIso/f");
+  Tree->Branch("recoHighptMuo2_mm_DetIso",  &m_recoHighptMuo2_mm_DetIso,  "recoHighptMuo2_mm_DetIso/f");
+  Tree->Branch("recoTrackerMuo1_mm_DetIso", &m_recoTrackerMuo1_mm_DetIso, "recoTrackerMuo1_mm_DetIso/f");
+  Tree->Branch("recoTrackerMuo2_mm_DetIso", &m_recoTrackerMuo2_mm_DetIso, "recoTrackerMuo2_mm_DetIso/f");
+  Tree->Branch("reco_em_deltaR", &m_reco_em_deltaR, "reco_em_deltaR/f");
+  Tree->Branch("reco_et_deltaR", &m_reco_et_deltaR, "reco_et_deltaR/f");
+  Tree->Branch("reco_ee_deltaR", &m_reco_ee_deltaR, "reco_ee_deltaR/f");
+  Tree->Branch("reco_mt_deltaR", &m_reco_mt_deltaR, "reco_mt_deltaR/f");
+  Tree->Branch("reco_mm_deltaR", &m_reco_mm_deltaR, "reco_mm_deltaR/f");
+  Tree->Branch("gen_em_deltaR", &m_gen_em_deltaR, "gen_em_deltaR/f");
+  Tree->Branch("gen_et_deltaR", &m_gen_et_deltaR, "gen_et_deltaR/f");
+  Tree->Branch("gen_ee_deltaR", &m_gen_ee_deltaR, "gen_ee_deltaR/f");
+  Tree->Branch("gen_mt_deltaR", &m_gen_mt_deltaR, "gen_mt_deltaR/f");
+  Tree->Branch("gen_mm_deltaR", &m_gen_mm_deltaR, "gen_mm_deltaR/f");
+  Tree->Branch("dRJet", &m_dRJet, "dRJet/f");
+  Tree->Branch("dRTau_et", &m_dRTau_et, "dRTau_et/f");
+  Tree->Branch("dRTau_mt", &m_dRTau_mt, "dRTau_mt/f");
+  Tree->Branch("dREle_et", &m_dREle_et, "dREle_et/f");
+  Tree->Branch("dREle1_ee", &m_dREle1_ee, "dREle1_ee/f");
+  Tree->Branch("dREle2_ee", &m_dREle2_ee, "dREle2_ee/f");
+  Tree->Branch("dREle_em", &m_dREle_em, "dREle_em/f");
+  Tree->Branch("dRMuo_mt", &m_dRMuo_mt, "dRMuo_mt/f");
+  Tree->Branch("dRMuo1_mm", &m_dRMuo1_mm, "dRMuo1_mm/f");
+  Tree->Branch("dRMuo2_mm", &m_dRMuo2_mm, "dRMuo2_mm/f");
+  Tree->Branch("dRMuo_em", &m_dRMuo_em, "dRMuo_em/f");
+
+}
+
+// ------------ method called once each job just after ending the event loop ------------
+void
+Efficiency::endJob()
+{
+}
+
+// ------------ method called when starting to processes a run ------------
+void
+Efficiency::beginRun(edm::Run const&, edm::EventSetup const&)
+{
+}
+
+// ------------ method called when ending the processing of a run ------------
+void
+Efficiency::endRun(edm::Run const&, edm::EventSetup const&)
+{
+}
+
+// ------------ method called when starting to processes a luminosity block ------------
+void
+Efficiency::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+{
+}
+
+// ------------ method called when ending the processing of a luminosity block ------------
+void
+Efficiency::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+{
+}
+
+// ------------ method fills 'descriptions' with the allowed parameters for the module ------------
+void
+Efficiency::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  //The following says we do not know what parameters are allowed so do no validation
+  // Please change this to state exactly what you do use, even if it is no parameters
+  edm::ParameterSetDescription desc;
+  desc.setUnknown();
+  descriptions.addDefault(desc);
+}
+
+void Efficiency::SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets,
+			   edm::Handle<pat::JetCollection> CA8JetsPruned,
+			   bool & foundSelectedJet,
+			   pat::JetCollection::const_iterator & SelectedJet,
+			   float & massZ, float & tau21Z, float & ptZ,
+			   float massMin, float massMax,
+			   bool foundGenJet, vector<reco::GenJet>::const_iterator genJet, bool & matched){
+
+  if(foundGenJet){
+    float dRGenReco = 9999.;
+    pat::JetCollection::const_iterator SelectedJet_prov;
+    for(pat::JetCollection::const_iterator jet = CA8JetswithQjets->begin(); jet != CA8JetswithQjets->end(); ++jet) {
+      if(ROOT::Math::VectorUtil::DeltaR(jet->p4(),genJet->p4())<0.3 && ROOT::Math::VectorUtil::DeltaR(jet->p4(),genJet->p4())<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(jet->p4(),genJet->p4());
+	SelectedJet_prov = jet;
+	matched = true;
+      }
+    }
+    if(matched){
+      float dRmin = 9999.; float mass = 0.;
+      for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
+	float dRtmp = ROOT::Math::VectorUtil::DeltaR(SelectedJet_prov->p4(),jetPruned->p4());
+	if(dRtmp<dRmin && dRtmp<0.8 ){//matching failed if greater than jet radius
+	  dRmin=dRtmp;
+	  mass=jetPruned->mass();
+	}
+      }
+      if(SelectedJet_prov->muonEnergyFraction()<0.99 && 
+	 SelectedJet_prov->photonEnergyFraction()<0.99 &&
+	 SelectedJet_prov->chargedEmEnergyFraction()<0.99 && 
+	 SelectedJet_prov->neutralHadronEnergyFraction()<0.99 &&
+	 SelectedJet_prov->chargedHadronEnergyFraction()>0.00 && 
+	 SelectedJet_prov->pt()>400 && 
+	 fabs(SelectedJet_prov->eta())<2.4 && 
+	 (mass>massMin && mass<massMax) && 
+	 (SelectedJet_prov->userFloat("tau2")/SelectedJet_prov->userFloat("tau1"))<0.75){
+	foundSelectedJet=true;
+	massZ=mass;
+	ptZ=SelectedJet_prov->pt();
+	tau21Z=SelectedJet_prov->userFloat("tau2")/SelectedJet_prov->userFloat("tau1");
+	SelectedJet=SelectedJet_prov;
+      }
+    }
+  }
+}
+
+void Efficiency::SelectTau(edm::Handle<pat::TauCollection> tauHandle,
+			   pat::JetCollection::const_iterator SelectedJet,
+			   bool & foundTau,
+			   pat::TauCollection::const_iterator & SelectedTau,
+			   float & ptTau, bool foundJet,
+			   bool foundGenPart, math::PtEtaPhiELorentzVector genPart, bool & matched){
+  if(foundGenPart){
+    float dRGenReco = 9999.;
+    pat::TauCollection::const_iterator SelectedTau_prov;
+    for (pat::TauCollection::const_iterator patTau = tauHandle->begin(); patTau != tauHandle->end(); ++patTau ) {
+      if(ROOT::Math::VectorUtil::DeltaR(patTau->p4(),genPart)<0.3 && ROOT::Math::VectorUtil::DeltaR(patTau->p4(),genPart)<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(patTau->p4(),genPart);
+	SelectedTau_prov = patTau;
+	matched = true;
+      }
+    }
+    if(matched){
+      foundTau=true;
+      SelectedTau=SelectedTau_prov;
+      ptTau=SelectedTau_prov->pt();
+      //if(SelectedTau_prov->pt()>20 && 
+      //	 fabs(SelectedTau_prov->eta())<2.4 &&
+      //	 SelectedTau_prov->tauID("decayModeFindingNewDMs")>0.5 && 
+      //	 SelectedTau_prov->tauID("againstMuonLoose")>0.5 && 
+      //	 SelectedTau_prov->tauID("againstElectronLoose")>0.5 &&
+      //	 SelectedTau_prov->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5){
+      //	if(foundJet){
+      //	  if(ROOT::Math::VectorUtil::DeltaR(SelectedTau_prov->p4(),SelectedJet->p4())>0.8){
+      //	    foundTau=true;
+      //	    SelectedTau=SelectedTau_prov;
+      //	    ptTau=SelectedTau_prov->pt();
+      //	  }
+      //	}
+      //}
+    }
+  }
+}
+
+void Efficiency::SelectHighptMuon(edm::Handle<pat::MuonCollection> muoH,
+			    pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+			    pat::MuonCollection::const_iterator & SelectedMuon,
+			    float & ptMuon, bool foundJet, reco::Vertex primaryVertex,
+				  bool foundGenMuo, math::PtEtaPhiELorentzVector genMuo_mt, bool & matched, bool signal){
+  if(foundGenMuo){
+    float dRGenReco = 9999.;
+    pat::MuonCollection::const_iterator SelectedMuon_prov;
+    for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+      if(ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo_mt)<0.3 && ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo_mt)<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo_mt);
+	SelectedMuon_prov = muon;
+	matched = true;
+      }
+    }
+    if(matched){
+      foundMuon=true;
+      SelectedMuon=SelectedMuon_prov;
+      ptMuon=SelectedMuon_prov->pt();
+      //if(SelectedMuon_prov->isGlobalMuon()){
+      //	reco::TrackRef cktTrack = (muon::tevOptimized(*SelectedMuon_prov, 200, 17., 40., 0.25)).first;
+      //	if(cktTrack->pt()>10 &&
+      //	   fabs(cktTrack->eta())<2.4 && 
+      //	   fabs(cktTrack->phi())<3.2 && 
+      //	   (cktTrack->ptError()/cktTrack->pt())<0.3 &&
+      //	   SelectedMuon_prov->globalTrack()->hitPattern().numberOfValidMuonHits()>0 && 
+      //	   SelectedMuon_prov->numberOfMatches()>1 && 
+      //	   fabs(cktTrack->dxy(primaryVertex.position()))<0.2 && 
+      //	   fabs(cktTrack->dz( primaryVertex.position()))<0.5 &&
+      //	   SelectedMuon_prov->innerTrack()->hitPattern().numberOfValidPixelHits()>0 &&
+      //	   SelectedMuon_prov->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5){
+      //	  if(foundJet && signal) {
+      //	    if(ROOT::Math::VectorUtil::DeltaR(SelectedMuon_prov->p4(),SelectedJet->p4())>0.8){
+      //	      foundMuon=true;
+      //	      SelectedMuon=SelectedMuon_prov;
+      //	      ptMuon=cktTrack->pt();
+      //	    }
+      //	  }
+      //	  if(!signal){
+      //	    foundMuon=true;
+      //	    SelectedMuon=SelectedMuon_prov;
+      //	    ptMuon=SelectedMuon_prov->pt();
+      //	  }
+      //	}
+      //}
+    }
+  }
+}
+
+
+void Efficiency::SelectElectronHEEP(edm::Handle<pat::ElectronCollection> eleH,
+				    pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+				    pat::ElectronCollection::const_iterator & SelectedEle,
+				    float & ptEle, bool foundJet, reco::Vertex primaryVertex,
+				    bool foundGenEle_et, bool & isoHEEP, math::PtEtaPhiELorentzVector genEle_et, bool & matched, bool signal, float rho){
+  if(foundGenEle_et){
+    float dRGenReco = 9999.;
+    pat::ElectronCollection::const_iterator SelectedEle_prov;
+    for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
+      if(ROOT::Math::VectorUtil::DeltaR(electron->p4(),genEle_et)<0.3 && ROOT::Math::VectorUtil::DeltaR(electron->p4(),genEle_et)<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(electron->p4(),genEle_et);
+	SelectedEle_prov = electron;
+	matched = true;
+      }
+    }
+    if(matched){
+      float Et=SelectedEle_prov->caloEnergy()*sin(SelectedEle_prov->p4().theta());
+      float eta  = fabs(SelectedEle_prov->caloPosition().eta());
+      float iso = 999.;
+      float isoCut = 0;
+      SelectedEle=SelectedEle_prov;
+      foundElectron=true;
+      ptEle=SelectedEle_prov->pt();
+      if(eta<1.442){
+	iso = SelectedEle_prov->dr03EcalRecHitSumEt() + SelectedEle_prov->dr03HcalDepth1TowerSumEt();
+      	isoCut = 2 + 0.03*Et + 0.28*rho;
+	if(iso<isoCut) isoHEEP=true;
+      } else if(eta>1.56 && eta<2.5){
+	iso = SelectedEle_prov->dr03EcalRecHitSumEt() + SelectedEle_prov->dr03HcalDepth1TowerSumEt();
+      	if(Et<=50) isoCut = 2.5 + 0.28*rho;
+      	else       isoCut = 2.5 + 0.03*(Et-50.) + 0.28*rho;
+	if(iso<isoCut) isoHEEP=true;
+      }
+      //if(eta<1.442){
+      //	iso = SelectedEle_prov->dr03EcalRecHitSumEt() + SelectedEle_prov->dr03HcalDepth1TowerSumEt();
+      //	isoCut = 2 + 0.03*Et + 0.28*rho;
+      //	if(iso<isoCut) isoHEEP=true;
+      //	if(Et>20 && 
+      //	   SelectedEle_prov->ecalDriven()==1 &&
+      //	   fabs(SelectedEle_prov->deltaEtaSuperClusterTrackAtVtx())<0.005 &&
+      //	   fabs(SelectedEle_prov->deltaPhiSuperClusterTrackAtVtx())<0.060 &&
+      //	   SelectedEle_prov->hadronicOverEm()<0.05 &&
+      //	   (SelectedEle_prov->e2x5Max()/SelectedEle_prov->e5x5()>0.94 || SelectedEle_prov->e1x5()/SelectedEle_prov->e5x5()>0.83) && 
+      //	   //iso<isoCut && 
+      //	   SelectedEle_prov->dr03TkSumPt()<5 &&
+      //	   SelectedEle_prov->gsfTrack()->trackerExpectedHitsInner().numberOfHits()<2 && 
+      //	   fabs(SelectedEle_prov->gsfTrack()->dxy(primaryVertex.position()))<0.02
+      //	   ){
+      //	  if(foundJet && signal){
+      //	    if(ROOT::Math::VectorUtil::DeltaR(SelectedEle_prov->p4(),SelectedJet->p4())>0.8){
+      //	      foundElectron=true;
+      //	      SelectedEle=SelectedEle_prov;
+      //	      ptEle=SelectedEle_prov->pt();
+      //	    }
+      //	  }
+      //	  if(!signal){
+      //	    foundElectron=true;
+      //	    SelectedEle=SelectedEle_prov;
+      //	    ptEle=SelectedEle_prov->pt();
+      //	  }
+      //	}
+      //}
+      //if(eta>1.56 && eta<2.5){
+      //	iso = SelectedEle_prov->dr03EcalRecHitSumEt() + SelectedEle_prov->dr03HcalDepth1TowerSumEt();
+      //	if(Et<=50) isoCut = 2.5 + 0.28*rho;
+      //	else       isoCut = 2.5 + 0.03*(Et-50.) + 0.28*rho;
+      //	if(iso<isoCut) isoHEEP=true;
+      //	if(Et>20 &&
+      //	   SelectedEle_prov->ecalDriven()==1 &&
+      //	   fabs(SelectedEle_prov->deltaEtaSuperClusterTrackAtVtx())<0.007 &&
+      //	   fabs(SelectedEle_prov->deltaPhiSuperClusterTrackAtVtx())<0.060 &&
+      //	   SelectedEle_prov->hadronicOverEm()<0.05 &&
+      //	   SelectedEle_prov->scSigmaIEtaIEta()<0.03 &&
+      //	   //iso<isoCut &&
+      //	   SelectedEle_prov->dr03TkSumPt()<5 &&
+      //	   SelectedEle_prov->gsfTrack()->trackerExpectedHitsInner().numberOfHits()<2 && 
+      //	   fabs(SelectedEle_prov->gsfTrack()->dxy(primaryVertex.position()))<0.05
+      //	   ){
+      //	  if(foundJet && signal){
+      //	    if(ROOT::Math::VectorUtil::DeltaR(SelectedEle_prov->p4(),SelectedJet->p4())>0.8){
+      //	      foundElectron=true;
+      //	      SelectedEle=SelectedEle_prov;
+      //	      ptEle=SelectedEle_prov->pt();
+      //	    }
+      //	  }
+      //	  if(!signal){
+      //	    foundElectron=true;
+      //	    SelectedEle=SelectedEle_prov;
+      //	    ptEle=SelectedEle_prov->pt();
+      //	  }
+      //	}
+      //}
+    }
+  }
+}
+
+void Efficiency::SelectElectron(edm::Handle<pat::ElectronCollection> eleH,
+				pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+				pat::ElectronCollection::const_iterator & SelectedEle,
+				float & ptEle, bool foundJet, reco::Vertex primaryVertex,
+				bool foundGenEle_et, math::PtEtaPhiELorentzVector genEle_et, bool & matched, bool signal){
+  if(foundGenEle_et){
+    float dRGenReco = 9999.;
+    pat::ElectronCollection::const_iterator SelectedEle_prov;
+    for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
+      if(ROOT::Math::VectorUtil::DeltaR(electron->p4(),genEle_et)<0.3 && ROOT::Math::VectorUtil::DeltaR(electron->p4(),genEle_et)<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(electron->p4(),genEle_et);
+	SelectedEle_prov = electron;
+	matched = true;
+      }
+    }
+    if(matched){
+      foundElectron=true;
+      SelectedEle=SelectedEle_prov;
+      ptEle=SelectedEle_prov->pt();
+      //if(SelectedEle_prov->pt()>10){
+      //	if(fabs(SelectedEle_prov->superCluster()->eta())<=1.479){
+      //	  if(fabs(SelectedEle_prov->deltaEtaSuperClusterTrackAtVtx())<0.004 &&
+      //	     fabs(SelectedEle_prov->deltaPhiSuperClusterTrackAtVtx())<0.030 &&
+      //	     SelectedEle_prov->sigmaIetaIeta()<0.01 &&
+      //	     SelectedEle_prov->hadronicOverEm()<0.12 &&
+      //	     fabs(SelectedEle_prov->gsfTrack()->dxy(primaryVertex.position()))<0.02 &&
+      //	     fabs(SelectedEle_prov->gsfTrack()->dz(primaryVertex.position()))<0.1 &&
+      //	     (fabs(1/SelectedEle_prov->ecalEnergy() - SelectedEle_prov->eSuperClusterOverP()/SelectedEle_prov->ecalEnergy()))<0.05 &&
+      //	     SelectedEle_prov->passConversionVeto()!=0 &&
+      //	     SelectedEle_prov->gsfTrack()->trackerExpectedHitsInner().numberOfHits()==0){
+      //	    if(foundJet && signal){
+      //	      if(ROOT::Math::VectorUtil::DeltaR(SelectedEle_prov->p4(),SelectedJet->p4())>0.8){
+      //		foundElectron=true;
+      //		SelectedEle=SelectedEle_prov;
+      //		ptEle=SelectedEle_prov->pt();
+      //	      }
+      //	    }
+      //	    if(!signal){
+      //	      foundElectron=true;
+      //	      SelectedEle=SelectedEle_prov;
+      //	      ptEle=SelectedEle_prov->pt();
+      //	    }
+      //	  }
+      //	}
+      //	if(fabs(SelectedEle_prov->superCluster()->eta())>1.479 && fabs(SelectedEle_prov->superCluster()->eta())<2.5){
+      //	  if(fabs(SelectedEle_prov->deltaEtaSuperClusterTrackAtVtx())<0.005  &&
+      //	     fabs(SelectedEle_prov->deltaPhiSuperClusterTrackAtVtx())<0.020  &&
+      //	     SelectedEle_prov->sigmaIetaIeta()<0.03  &&
+      //	     SelectedEle_prov->hadronicOverEm()<0.10  &&
+      //	     fabs(SelectedEle_prov->gsfTrack()->dxy(primaryVertex.position()))<0.02  &&
+      //	     fabs(SelectedEle_prov->gsfTrack()->dz(primaryVertex.position()))<0.1  &&
+      //	     (fabs(1/SelectedEle_prov->ecalEnergy() - SelectedEle_prov->eSuperClusterOverP()/SelectedEle_prov->ecalEnergy()))<0.05  &&
+      //	     SelectedEle_prov->passConversionVeto()!=0  &&
+      //	     SelectedEle_prov->gsfTrack()->trackerExpectedHitsInner().numberOfHits()==0){
+      //	    if(foundJet && signal){
+      //	      if(ROOT::Math::VectorUtil::DeltaR(SelectedEle_prov->p4(),SelectedJet->p4())>0.8){
+      //		foundElectron=true;
+      //		SelectedEle=SelectedEle_prov;
+      //		ptEle=SelectedEle_prov->pt();
+      //	      }
+      //	    }
+      //	    if(!signal){
+      //	      foundElectron=true;
+      //	      SelectedEle=SelectedEle_prov;
+      //	      ptEle=SelectedEle_prov->pt();
+      //	    }
+      //	  }
+      //	}
+      //}
+    }
+  }
+}
+
+
+void Efficiency::SelectTrackerMuon(edm::Handle<pat::MuonCollection> muoH, bool & foundMuon, pat::MuonCollection::const_iterator & SelectedMuon, 
+				   float & ptMuon, reco::Vertex primaryVertex, pat::JetCollection::const_iterator SelectedJet, bool foundJet, 
+				   bool foundGenMuo, math::PtEtaPhiELorentzVector genMuo, bool & matched){
+  if(foundGenMuo){
+    float dRGenReco = 9999.;
+    pat::MuonCollection::const_iterator SelectedMuon_prov;
+    for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+      if(ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo)<0.3 && ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo)<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo);
+	SelectedMuon_prov = muon;
+	matched = true;
+      }
+    }
+    if(matched){
+      foundMuon=true;
+      SelectedMuon=SelectedMuon_prov;
+      ptMuon=SelectedMuon_prov->pt();
+      //if(SelectedMuon_prov->pt()>10 && 
+      //	 fabs(SelectedMuon_prov->eta())<2.4 &&
+      //	 fabs(SelectedMuon_prov->phi())<3.2 &&
+      //	 (SelectedMuon_prov->isTrackerMuon()) &&
+      //	 SelectedMuon_prov->numberOfMatches()>1 &&
+      //	 fabs(SelectedMuon_prov->muonBestTrack()->dz(primaryVertex.position()))<0.5 &&
+      //	 fabs(SelectedMuon_prov->dB())<0.2  &&
+      //	 SelectedMuon_prov->innerTrack()->hitPattern().numberOfValidPixelHits()>0 &&
+      //	 SelectedMuon_prov->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5 &&
+      //	 (SelectedMuon_prov->muonBestTrack()->ptError()/SelectedMuon_prov->muonBestTrack()->pt())<=0.3){
+      //	if(foundJet){
+      //	  if(ROOT::Math::VectorUtil::DeltaR(SelectedMuon_prov->p4(),SelectedJet->p4())>0.8){
+      //	    foundMuon=true;
+      //	    SelectedMuon=SelectedMuon_prov;
+      //	    ptMuon=SelectedMuon_prov->pt();
+      //	  }
+      //	}
+      //}
+    }
+  }
+}
+
+
+void Efficiency::SelectTightMuon(edm::Handle<pat::MuonCollection> muoH,
+				 pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+				 pat::MuonCollection::const_iterator & SelectedMuon,
+				 float & ptMuon, bool foundJet, reco::Vertex primaryVertex,
+				 bool foundGenMuo, math::PtEtaPhiELorentzVector genMuo_mt, bool & matched, bool signal){
+  if(foundGenMuo){
+    float dRGenReco = 9999.;
+    pat::MuonCollection::const_iterator SelectedMuon_prov;
+    for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+      if(ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo_mt)<0.3 && ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo_mt)<dRGenReco){
+	dRGenReco = ROOT::Math::VectorUtil::DeltaR(muon->p4(),genMuo_mt);
+	SelectedMuon_prov = muon;
+	matched = true;
+      }
+    }
+    if(matched){
+      foundMuon=true;
+      SelectedMuon=SelectedMuon_prov;
+      ptMuon=SelectedMuon_prov->pt();
+      //if(SelectedMuon_prov->pt()>10 && 
+      //	 fabs(SelectedMuon_prov->eta())<2.4 && 
+      //	 fabs(SelectedMuon_prov->phi())<3.2 && 
+      //	 SelectedMuon_prov->isGlobalMuon() && 
+      //	 SelectedMuon_prov->isPFMuon() && 
+      //	 SelectedMuon_prov->globalTrack()->normalizedChi2()<10 && 
+      //	 SelectedMuon_prov->globalTrack()->hitPattern().numberOfValidMuonHits()>0 && 
+      //	 SelectedMuon_prov->numberOfMatches()>1 && 
+      //	 fabs(SelectedMuon_prov->dB())<0.2  && 
+      //	 fabs(SelectedMuon_prov->muonBestTrack()->dz(primaryVertex.position()))<0.5 && 
+      //	 SelectedMuon_prov->innerTrack()->hitPattern().numberOfValidPixelHits()>0 && 
+      //	 SelectedMuon_prov->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5){
+      //	if(foundJet && signal) {
+      //	  if(ROOT::Math::VectorUtil::DeltaR(SelectedMuon_prov->p4(),SelectedJet->p4())>0.8){
+      //	    foundMuon=true;
+      //	    SelectedMuon=SelectedMuon_prov;
+      //	    ptMuon=SelectedMuon_prov->pt();
+      //	  }
+      //	}
+      //	if(!signal){
+      //	  foundMuon=true;
+      //	  SelectedMuon=SelectedMuon_prov;
+      //	  ptMuon=SelectedMuon_prov->pt();
+      //	}
+      //}
+    }
+  }
+}
+
+void Efficiency::SelectTrackerGlobalID(pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2, 
+				       bool matched1, bool matched2, reco::Vertex primaryVertex, bool & hasAtLeastOneHighPtMuo){
+  if(matched1 && matched2){
+    vector<pat::MuonCollection::const_iterator> SelectedMuo;
+    SelectedMuo.push_back(SelectedMuo1);
+    SelectedMuo.push_back(SelectedMuo2);
+    for(unsigned int i=0; i<SelectedMuo.size(); i++){
+      if(!(SelectedMuo[i]->isGlobalMuon())) continue;
+      reco::TrackRef cktTrack = (muon::tevOptimized(*(SelectedMuo[i]), 200, 17., 40., 0.25)).first;
+      if(cktTrack->pt()<10) continue;
+      if(fabs(cktTrack->eta())>2.4) continue;
+      if(fabs(cktTrack->phi())>3.2) continue;
+      if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
+      if(SelectedMuo[i]->globalTrack()->hitPattern().numberOfValidMuonHits()<=0) continue;
+      if(SelectedMuo[i]->numberOfMatches()<=1) continue;
+      if(fabs(cktTrack->dxy(primaryVertex.position()))>=0.2) continue;
+      if(fabs(cktTrack->dz( primaryVertex.position()))>=0.5) continue;
+      if(SelectedMuo[i]->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
+      if(SelectedMuo[i]->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
+      hasAtLeastOneHighPtMuo = true;
+    }
+  }
+}
+
+float Efficiency::MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
+  float sumChargedHadronPt = muon->pfIsolationR04().sumChargedHadronPt;
+  float sumNeutralHadronEt = muon->pfIsolationR04().sumNeutralHadronEt;
+  float sumPhotonEt = muon->pfIsolationR04().sumPhotonEt;
+  float sumPUPt = muon->pfIsolationR04().sumPUPt;
+  float iso = (sumChargedHadronPt+ max(0.,sumNeutralHadronEt+sumPhotonEt-0.5*sumPUPt))/muon->pt();
+  if(highpt && muon->isGlobalMuon()){
+    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
+    iso = (sumChargedHadronPt+ max(0.,sumNeutralHadronEt+sumPhotonEt-0.5*sumPUPt))/cktTrack->pt();
+  }
+  return iso;
+}
+
+
+float Efficiency::ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho){
+  float chargedHadronIso = electron->chargedHadronIso();
+  float neutralHadronIso = electron->neutralHadronIso();
+  float photonIso = electron->photonIso();
+  float thiseta = fabs(electron->superCluster()->eta());
+  float Aeff=0.;
+  if(thiseta<1.0) Aeff=0.13;
+  if(thiseta>=1.0 && thiseta<1.479) Aeff=0.14;
+  if(thiseta>=1.479 && thiseta<2.0) Aeff=0.07;
+  if(thiseta>=2.0 && thiseta<2.2) Aeff=0.09;
+  if(thiseta>=2.2 && thiseta<2.3) Aeff=0.11;
+  if(thiseta>=2.3 && thiseta<2.4) Aeff=0.11;
+  if(thiseta>=2.4) Aeff=0.14;
+  float zero = 0.;
+  float iso = (chargedHadronIso + max(zero, neutralHadronIso + photonIso - rho*Aeff))/electron->pt();
+  return iso;
+}
+
+float Efficiency::MuonCorrPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
+  float sumChargedHadronPt = muon->userIsolation(pat::PfChargedHadronIso);
+  float sumNeutralHadronEt = muon->userIsolation(pat::PfNeutralHadronIso);
+  float sumPhotonEt = muon->userIsolation(pat::PfGammaIso);
+  float sumPUPt = muon->userIsolation(pat::User2Iso);
+  float iso = (sumChargedHadronPt+ max(0.,sumNeutralHadronEt+sumPhotonEt-0.5*sumPUPt))/muon->pt();
+  if(highpt && muon->isGlobalMuon()){
+    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
+    iso = (sumChargedHadronPt+ max(0.,sumNeutralHadronEt+sumPhotonEt-0.5*sumPUPt))/cktTrack->pt();
+  }
+  return iso;
+}
+
+float Efficiency::ElectronCorrPFIso(pat::ElectronCollection::const_iterator electron, float rho){
+  float chargedHadronIso = electron->userIsolation(pat::PfChargedHadronIso);
+  float neutralHadronIso = electron->userIsolation(pat::PfNeutralHadronIso);
+  float photonIso = electron->userIsolation(pat::PfGammaIso);
+  float thiseta = fabs(electron->superCluster()->eta());
+  float Aeff=0.;
+  if(thiseta<1.0) Aeff=0.13;
+  if(thiseta>=1.0 && thiseta<1.479) Aeff=0.14;
+  if(thiseta>=1.479 && thiseta<2.0) Aeff=0.07;
+  if(thiseta>=2.0 && thiseta<2.2) Aeff=0.09;
+  if(thiseta>=2.2 && thiseta<2.3) Aeff=0.11;
+  if(thiseta>=2.3 && thiseta<2.4) Aeff=0.11;
+  if(thiseta>=2.4) Aeff=0.14;
+  float zero = 0.;
+  float iso = (chargedHadronIso + max(zero, neutralHadronIso + photonIso - rho*Aeff))/electron->pt();
+  return iso;
+}
+
+float Efficiency::MuonDETIso(pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2, bool secondMuon){
+  float isovar = SelectedMuo1->trackIso()/SelectedMuo1->pt();
+  if(secondMuon){
+    double dR = ROOT::Math::VectorUtil::DeltaR(SelectedMuo1->p4(), SelectedMuo2->p4());
+    if(dR < 0.3) isovar = isovar - SelectedMuo2->track()->pt()/SelectedMuo1->pt();
+  }
+  return isovar;
+}
+
+bool Efficiency::ElectronDETIso(pat::ElectronCollection::const_iterator electron, float rho){
+  bool iso = false;
+  if(electron->userIso(0) < 5.0){
+    bool inBarrel = electron->isEE();
+    double ECALIsol = electron->userIso(1);
+    double HCALIsol = electron->userIso(2);
+    double sumCaloEt = ECALIsol + HCALIsol;
+    double sumCaloEtLimit = -1;
+    double et = electron->et();
+    if(inBarrel) sumCaloEtLimit = 2.0 + 0.03*et + 0.28*rho;
+    if(!inBarrel){
+      if(et<50) sumCaloEtLimit = 2.5 + 0.28*rho;
+      else sumCaloEtLimit = 2.5 + 0.03*(et-50) + 0.28*rho;
+    }
+    if(sumCaloEt<sumCaloEtLimit) iso = true;
+  }
+  return iso;
+}
+
+
+
+
+void Efficiency::FillTree(int category, TTree *Tree, pat::JetCollection::const_iterator SelectedJet, pat::TauCollection::const_iterator SelectedTau,
+			  pat::MuonCollection::const_iterator SelectedMuon, pat::MuonCollection::const_iterator SelectedMuon1, 
+			  pat::MuonCollection::const_iterator SelectedMuon2,std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo,
+			  pat::ElectronCollection::const_iterator SelectedElectron, pat::ElectronCollection::const_iterator SelectedElectron1, 
+			  pat::ElectronCollection::const_iterator SelectedElectron2, edm::Handle<reco::VertexCollection> vertices){
+  int genJetPt      = -99;
+  int genJetEta     = -99;
+  int genJetPhi     = -99;
+  int genLep1Pt     = -99;
+  int genLep2Pt     = -99;
+  int genLep1Eta    = -99;
+  int genLep2Eta    = -99;
+  int genLep1Phi    = -99;
+  int genLep2Phi    = -99;
+  int recoJetPt     = -99;
+  int recoJetEta    = -99;
+  int recoJetPhi    = -99;
+  int recoLep1Pt         = -99;
+  int recoLep1Eta        = -99;
+  int recoLep1Phi        = -99;
+  int recoLep1HEEP       = -99;
+  int recoLep1dRJet      = -99;
+  int recoLep1PFIso      = -99;
+  int recoLep1CorrPFIso  = -99;
+  int recoLep1DETIso     = -99;
+  int recoLep1HEEPIso    = -99;
+  int recoLep1dEtaIn     = -99;
+  int recoLep1dPhiIn     = -99;
+  int recoLep1SigmaIEIE  = -99;
+  int recoLep1HoverE     = -99;
+  int recoLep1dxy        = -99;
+  int recoLep1dz         = -99;
+  int recoLep1EandP      = -99;
+  int recoLep1Conv1      = -99;
+  int recoLep1Conv2      = -99;
+  int recoLep1IsGlobal   = -99;
+  int recoLep1ptErr      = -99;
+  int recoLep1MuonHits   = -99;
+  int recoLep1Matches    = -99;
+  int recoLep1PixelHits  = -99;
+  int recoLep1TrackerL   = -99;
+  int recoLep1IsPFMuon   = -99;
+  int recoLep1Chi2       = -99;
+  int recoLep1Discr1     = -99;
+  int recoLep1Discr2     = -99;
+  int recoLep1Discr3     = -99;
+  int recoLep1Discr4     = -99;
+  int recoLep2Pt         = -99;
+  int recoLep2Eta        = -99;
+  int recoLep2Phi        = -99;
+  int recoLep2HEEP       = -99;
+  int recoLep2dRJet      = -99;
+  int recoLep2PFIso      = -99;
+  int recoLep2CorrPFIso  = -99;
+  int recoLep2DETIso     = -99;
+  int recoLep2HEEPIso    = -99;
+  int recoLep2dEtaIn     = -99;
+  int recoLep2dPhiIn     = -99;
+  int recoLep2SigmaIEIE  = -99;
+  int recoLep2HoverE     = -99;
+  int recoLep2dxy        = -99;
+  int recoLep2dz         = -99;
+  int recoLep2EandP      = -99;
+  int recoLep2Conv1      = -99;
+  int recoLep2Conv2      = -99;
+  int recoLep2IsGlobal   = -99;
+  int recoLep2ptErr      = -99;
+  int recoLep2MuonHits   = -99;
+  int recoLep2Matches    = -99;
+  int recoLep2PixelHits  = -99;
+  int recoLep2TrackerL   = -99;
+  int recoLep2IsPFMuon   = -99;
+  int recoLep2Chi2       = -99;
+  int recoLep2Discr1     = -99;
+  int recoLep2Discr2     = -99;
+  int recoLep2Discr3     = -99;
+  int recoLep2Discr4     = -99;
+
+  if(category==0){//ELECTRON+MUON
+    //ELECTRON
+    recoLep1Pt         = (int)(SelectedElectron->pt()>10);
+    recoLep1Eta        = (int)(fabs(SelectedElectron->superCluster()->eta())<2.5);
+    recoLep1Phi        = (int)(fabs(SelectedElectron->phi())<3.2);
+    recoLep1HEEP       = (int)(SelectedElectron->userInt("HEEPId")==0);
+    recoLep1PFIso      = (int)(ElectronPFIso(SelectedElectron, rho)<0.1);
+    recoLep1CorrPFIso  = (int)(ElectronCorrPFIso(SelectedElectron, rho)<0.1);
+    recoLep1DETIso     = (int)(ElectronDETIso(SelectedElectron, rho));
+    recoLep1HEEPIso    = (int)(isoHEEP);
+    recoLep1dxy        = (int)(fabs(SelectedElectron->gsfTrack()->dxy(primaryVertex.position()))<0.02);
+    recoLep1dz         = (int)(fabs(SelectedElectron->gsfTrack()->dz(primaryVertex.position()))<0.1);
+    recoLep1EandP      = (int)((fabs(1/SelectedElectron->ecalEnergy() - SelectedElectron->eSuperClusterOverP()/SelectedElectron->ecalEnergy()))<0.05);
+    recoLep1Conv1      = (int)(SelectedElectron->passConversionVeto()!=0);
+    recoLep1Conv2      = (int)(SelectedElectron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()==0);
+    if(fabs(SelectedEle_prov->superCluster()->eta())<=1.479){
+      recoLep1dEtaIn     = (int)(fabs(SelectedElectron->deltaEtaSuperClusterTrackAtVtx())<0.004);
+      recoLep1dPhiIn     = (int)(fabs(SelectedElectron->deltaPhiSuperClusterTrackAtVtx())<0.030);
+      recoLep1SigmaIEIE  = (int)(SelectedElectron->sigmaIetaIeta()<0.01);
+      recoLep1HoverE     = (int)(SelectedElectron->hadronicOverEm()<0.12);
+    }
+    if(fabs(SelectedEle_prov->superCluster()->eta())>1.479 && fabs(SelectedElectron->superCluster()->eta())<2.5){
+      recoLep1dEtaIn     = (int)(fabs(SelectedElectron->deltaEtaSuperClusterTrackAtVtx())<0.005);
+      recoLep1dPhiIn     = (int)(fabs(SelectedElectron->deltaPhiSuperClusterTrackAtVtx())<0.020);
+      recoLep1SigmaIEIE  = (int)(SelectedElectron->sigmaIetaIeta()<0.03);
+      recoLep1HoverE     = (int)(SelectedElectron->hadronicOverEm()<0.10);
+    }
+    //MUON
+    recoLep2Pt         = (int)(SelectedMuon->pt()>10);
+    recoLep2Eta        = (int)(fabs(SelectedMuon->eta())<2.4);
+    recoLep2Phi        = (int)(fabs(SelectedMuon->phi())<3.2);
+    recoLep2PFIso      = (int)(MuonPFIso(SelectedMuon, true)<0.2);
+    recoLep2CorrPFIso  = (int)(MuonCorrPFIso(SelectedMuon, true)<0.2);
+    recoLep2IsGlobal   = (int)(SelectedMuon->isGlobalMuon());
+    if(SelectedMuon->isGlobalMuon()){
+      recoLep2ptErr      = (int)((SelectedMuon->ptError()/SelectedMuon->pt())<0.3);
+      recoLep2MuonHits   = (int)(SelectedMuon->globalTrack()->hitPattern().numberOfValidMuonHits()>0);
+      recoLep2Matches    = (int)(SelectedMuon->numberOfMatches()>1);
+      recoLep2dxy        = (int)(fabs(SelectedMuon->dxy(primaryVertex.position()))<0.2);
+      recoLep2dz         = (int)(fabs(SelectedMuon->dz(primaryVertex.position()))<0.5);
+      recoLep2PixelHits  = (int)(SelectedMuon->innerTrack()->hitPattern().numberOfValidPixelHits()>0);
+      recoLep2TrackerL   = (int)(SelectedMuon->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5);
+      recoLep2IsPFMuon   = (int)(SelectedMuon->isPFMuon());
+      recoLep2Chi2       = (int)(SelectedMuon->globalTrack()->normalizedChi2()<10);
+    }
+    //MIXED IF
+    if(foundJet) recoLep1dRJet = (int)(ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedJet->p4())>0.8);
+    if(foundJet) recoLep2dRJet = (int)(ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4()    ,SelectedJet->p4())>0.8);
+
+
+  } else if(category==1){//MUON+MUON
+    //MUON1
+    recoLep1Pt         = (int)(SelectedMuon1->pt()>10);
+    recoLep1Eta        = (int)(fabs(SelectedMuon1->eta())<2.4);
+    recoLep1Phi        = (int)(fabs(SelectedMuon1->phi())<3.2);
+    recoLep1PFIso      = (int)(MuonPFIso(SelectedMuon1, true)<0.2);
+    recoLep1CorrPFIso  = (int)(MuonCorrPFIso(SelectedMuon1, true)<0.2);
+    recoLep1DETIso     = (int)(MuonDETIso(SelectedMuon1,SelectedMuon2,true)<0.1);
+    recoLep1IsGlobal   = (int)(SelectedMuon1->isGlobalMuon());
+    if(SelectedMuon1->isGlobalMuon()){
+      recoLep1ptErr      = (int)((SelectedMuon1->ptError()/SelectedMuon1->pt())<0.3);
+      recoLep1MuonHits   = (int)(SelectedMuon1->globalTrack()->hitPattern().numberOfValidMuonHits()>0);
+      recoLep1Matches    = (int)(SelectedMuon1->numberOfMatches()>1);
+      recoLep1dxy        = (int)(fabs(SelectedMuon1->dxy(primaryVertex.position()))<0.2);
+      recoLep1dz         = (int)(fabs(SelectedMuon1->dz(primaryVertex.position()))<0.5);
+      recoLep1PixelHits  = (int)(SelectedMuon1->innerTrack()->hitPattern().numberOfValidPixelHits()>0);
+      recoLep1TrackerL   = (int)(SelectedMuon1->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5);
+      recoLep1IsPFMuon   = (int)(SelectedMuon1->isPFMuon());
+      recoLep1Chi2       = (int)(SelectedMuon1->globalTrack()->normalizedChi2()<10);
+    }
+    //MUON2
+    recoLep2Pt         = (int)(SelectedMuon2->pt()>10);
+    recoLep2Eta        = (int)(fabs(SelectedMuon2->eta())<2.4);
+    recoLep2Phi        = (int)(fabs(SelectedMuon2->phi())<3.2);
+    recoLep2PFIso      = (int)(MuonPFIso(SelectedMuon2, true)<0.2);
+    recoLep2CorrPFIso  = (int)(MuonCorrPFIso(SelectedMuon2, true)<0.2);
+    recoLep2DETIso     = (int)(MuonDETIso(SelectedMuon2,SelectedMuon1,true)<0.1);
+    recoLep2IsGlobal   = (int)(SelectedMuon2->isGlobalMuon());
+    if(SelectedMuon2->isGlobalMuon()){
+      recoLep2ptErr      = (int)((SelectedMuon2->ptError()/SelectedMuon2->pt())<0.3);
+      recoLep2MuonHits   = (int)(SelectedMuon2->globalTrack()->hitPattern().numberOfValidMuonHits()>0);
+      recoLep2Matches    = (int)(SelectedMuon2->numberOfMatches()>1);
+      recoLep2dxy        = (int)(fabs(SelectedMuon2->dxy(primaryVertex.position()))<0.2);
+      recoLep2dz         = (int)(fabs(SelectedMuon2->dz(primaryVertex.position()))<0.5);
+      recoLep2PixelHits  = (int)(SelectedMuon2->innerTrack()->hitPattern().numberOfValidPixelHits()>0);
+      recoLep2TrackerL   = (int)(SelectedMuon2->innerTrack()->hitPattern().trackerLayersWithMeasurement()>5);
+      recoLep2IsPFMuon   = (int)(SelectedMuon2->isPFMuon());
+      recoLep2Chi2       = (int)(SelectedMuon2->globalTrack()->normalizedChi2()<10);
+    }
+    //MIXED IF
+    if(foundJet) recoLep1dRJet = (int)(ROOT::Math::VectorUtil::DeltaR(SelectedMuon1->p4(),SelectedJet->p4())>0.8);
+    if(foundJet) recoLep2dRJet = (int)(ROOT::Math::VectorUtil::DeltaR(SelectedMuon2->p4(),SelectedJet->p4())>0.8);
+
+
+  } else if(category==2){//ELECTRON+ELECTRON
+    //ELECTRON
+    recoLep1Pt         = (int)(SelectedElectron1->pt()>10);
+    recoLep1Eta        = (int)(fabs(SelectedElectron1->superCluster()->eta())<2.5);
+    recoLep1Phi        = (int)(fabs(SelectedElectron1->phi())<3.2);
+    recoLep1HEEP       = (int)(SelectedElectron1->userInt("HEEPId")==0);
+    recoLep1PFIso      = (int)(ElectronPFIso(SelectedElectron1, rho)<0.1);
+    recoLep1CorrPFIso  = (int)(ElectronCorrPFIso(SelectedElectron1, rho)<0.1);
+    recoLep1DETIso     = (int)(ElectronDETIso(SelectedElectron1, rho));
+    recoLep1HEEPIso    = (int)(isoHEEP);
+    recoLep1dxy        = (int)(fabs(SelectedElectron1->gsfTrack()->dxy(primaryVertex.position()))<0.02);
+    recoLep1dz         = (int)(fabs(SelectedElectron1->gsfTrack()->dz(primaryVertex.position()))<0.1);
+    recoLep1EandP      = (int)((fabs(1/SelectedElectron1->ecalEnergy() - SelectedElectron1->eSuperClusterOverP()/SelectedElectron1->ecalEnergy()))<0.05);
+    recoLep1Conv1      = (int)(SelectedElectron1->passConversionVeto()!=0);
+    recoLep1Conv2      = (int)(SelectedElectron1->gsfTrack()->trackerExpectedHitsInner().numberOfHits()==0);
+    if(fabs(SelectedEle_prov->superCluster()->eta())<=1.479){
+      recoLep1dEtaIn     = (int)(fabs(SelectedElectron1->deltaEtaSuperClusterTrackAtVtx())<0.004);
+      recoLep1dPhiIn     = (int)(fabs(SelectedElectron1->deltaPhiSuperClusterTrackAtVtx())<0.030);
+      recoLep1SigmaIEIE  = (int)(SelectedElectron1->sigmaIetaIeta()<0.01);
+      recoLep1HoverE     = (int)(SelectedElectron1->hadronicOverEm()<0.12);
+    }
+    if(fabs(SelectedEle_prov->superCluster()->eta())>1.479 && fabs(SelectedElectron1->superCluster()->eta())<2.5){
+      recoLep1dEtaIn     = (int)(fabs(SelectedElectron1->deltaEtaSuperClusterTrackAtVtx())<0.005);
+      recoLep1dPhiIn     = (int)(fabs(SelectedElectron1->deltaPhiSuperClusterTrackAtVtx())<0.020);
+      recoLep1SigmaIEIE  = (int)(SelectedElectron1->sigmaIetaIeta()<0.03);
+      recoLep1HoverE     = (int)(SelectedElectron1->hadronicOverEm()<0.10);
+    }
+    //ELECTRON2
+    recoLep2Pt         = (int)(SelectedElectron2->pt()>10);
+    recoLep2Eta        = (int)(fabs(SelectedElectron2->superCluster()->eta())<2.5);
+    recoLep2Phi        = (int)(fabs(SelectedElectron2->phi())<3.2);
+    recoLep2HEEP       = (int)(SelectedElectron2->userInt("HEEPId")==0);
+    recoLep2PFIso      = (int)(ElectronPFIso(SelectedElectron2, rho)<0.1);
+    recoLep2CorrPFIso  = (int)(ElectronCorrPFIso(SelectedElectron2, rho)<0.1);
+    recoLep2DETIso     = (int)(ElectronDETIso(SelectedElectron2, rho));
+    recoLep2HEEPIso    = (int)(isoHEEP);
+    recoLep2dxy        = (int)(fabs(SelectedElectron2->gsfTrack()->dxy(primaryVertex.position()))<0.02);
+    recoLep2dz         = (int)(fabs(SelectedElectron2->gsfTrack()->dz(primaryVertex.position()))<0.1);
+    recoLep2EandP      = (int)((fabs(1/SelectedElectron2->ecalEnergy() - SelectedElectron2->eSuperClusterOverP()/SelectedElectron2->ecalEnergy()))<0.05);
+    recoLep2Conv1      = (int)(SelectedElectron2->passConversionVeto()!=0);
+    recoLep2Conv2      = (int)(SelectedElectron2->gsfTrack()->trackerExpectedHitsInner().numberOfHits()==0);
+    if(fabs(SelectedEle_prov->superCluster()->eta())<=1.479){
+      recoLep2dEtaIn     = (int)(fabs(SelectedElectron2->deltaEtaSuperClusterTrackAtVtx())<0.004);
+      recoLep2dPhiIn     = (int)(fabs(SelectedElectron2->deltaPhiSuperClusterTrackAtVtx())<0.030);
+      recoLep2SigmaIEIE  = (int)(SelectedElectron2->sigmaIetaIeta()<0.01);
+      recoLep2HoverE     = (int)(SelectedElectron2->hadronicOverEm()<0.12);
+    }
+    if(fabs(SelectedEle_prov->superCluster()->eta())>1.479 && fabs(SelectedElectron2->superCluster()->eta())<2.5){
+      recoLep2dEtaIn     = (int)(fabs(SelectedElectron2->deltaEtaSuperClusterTrackAtVtx())<0.005);
+      recoLep2dPhiIn     = (int)(fabs(SelectedElectron2->deltaPhiSuperClusterTrackAtVtx())<0.020);
+      recoLep2SigmaIEIE  = (int)(SelectedElectron2->sigmaIetaIeta()<0.03);
+      recoLep2HoverE     = (int)(SelectedElectron2->hadronicOverEm()<0.10);
+    }
+    //MIXED IF
+    if(foundJet) recoLep1dRJet = (int)(ROOT::Math::VectorUtil::DeltaR(SelectedElectron1->p4(),SelectedJet->p4())>0.8);
+    if(foundJet) recoLep2dRJet = (int)(ROOT::Math::VectorUtil::DeltaR(SelectedElectron2->p4(),SelectedJet->p4())>0.8);
+
+
+  } else if(category==3){//MUON+TAU
+    recoLep1Discr1     = (int)(SelectedTau->tauID("decayModeFindingNewDMs")>0.5);
+    recoLep1Discr2     = (int)(SelectedTau->tauID("againstMuonLoose")>0.5);
+    recoLep1Discr3     = (int)(SelectedTau->tauID("againstElectronLoose")>0.5);
+    recoLep1Discr4     = (int)(SelectedTau->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5);
+
+
+  } else if(category==4){//ELECTRON+TAU
+    recoLep1Discr1     = (int)(SelectedTau->tauID("decayModeFindingNewDMs")>0.5);
+    recoLep1Discr2     = (int)(SelectedTau->tauID("againstMuonLoose")>0.5);
+    recoLep1Discr3     = (int)(SelectedTau->tauID("againstElectronLoose")>0.5);
+    recoLep1Discr4     = (int)(SelectedTau->tauID("byVLooseIsolationMVA3newDMwoLT")>0.5);
+  }
+}
+
+//define this as a plug-in
+DEFINE_FWK_MODULE(Efficiency);

@@ -47,7 +47,7 @@ Implementation:
 #include "Math/VectorUtil.h"
 #include "Math/GenVector/LorentzVector.h"
 #include "TLorentzVector.h"
-
+#include "CMGTools/External/interface/PileupJetIdentifier.h"
 
 //
 // class declaration
@@ -71,51 +71,97 @@ private:
   virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
+  //FUNCTION
+  void SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets, edm::Handle<pat::JetCollection> CA8JetsPruned, bool & foundJet,
+                 pat::JetCollection::const_iterator & SelectedJet, float & prunedMass, float & tau21Z, float & ptZ, float massMin, float massMax);
+  void SelectTau(edm::Handle<pat::TauCollection> tauHandle, pat::JetCollection::const_iterator SelectedJet, bool & foundTau, 
+		 pat::TauCollection::const_iterator & SelectedTau, float & ptTau, bool foundJet);
+  void SelectMuon(edm::Handle<pat::MuonCollection> muoH, pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+		  pat::MuonCollection::const_iterator & SelectedMuon, float & ptMuon, bool foundJet, reco::Vertex primaryVertex, bool fully);
+  void SelectElectron(edm::Handle<pat::ElectronCollection> eleH, pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+		      pat::ElectronCollection::const_iterator & SelectedElectron, float & ptElectron, bool foundJet, reco::Vertex primaryVertex, 
+		      float lep2Pt, float rho, bool fully);
+  void SelectMuonMM(pat::MuonCollection::const_iterator & SelectedMuon1, pat::MuonCollection::const_iterator & SelectedMuon2, bool & foundMuonMM, 
+		    std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo, pat::JetCollection::const_iterator SelectedJet, bool foundJet, 
+		    reco::Vertex primaryVertex);
+  void SelectTrackerMuon(edm::Handle<pat::MuonCollection> muoH, std::vector<pat::MuonCollection::const_iterator> & SelectedMuo, reco::Vertex primaryVertex);
+  void Efficiency(float & genEvent, bool isData, edm::Handle<std::vector<reco::GenParticle> > genParts);
+  void svfit(edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, LorentzVector SelectedTau, LorentzVector SelectedMuon, TLorentzVector PrunedJet,
+	     float & MassSVFit, float & XMassSVFit, float & dRJetZSVFit, float & ptSVFit, pat::JetCollection::const_iterator SelectedJet, int category);
+  
   float MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
   float ElectronPFIso(pat::ElectronCollection::const_iterator electron, float rho);
   float MuonCorrPFIso(pat::MuonCollection::const_iterator muon, bool highpt);
   float ElectronCorrPFIso(pat::ElectronCollection::const_iterator electron, float rho);
-  void BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & nbtagsL, int & nbtagsM, int & nbtagsT, pat::JetCollection::const_iterator SelectedJet);
-
+  float MuonDETIso(pat::MuonCollection::const_iterator SelectedMuo, std::vector<pat::MuonCollection::const_iterator> SelectedHighptMuo);
+  void BtagVeto(int & njet1, int & nbtagsL1, int & nbtagsM1, int & nbtagsT1, int & njet2, int & nbtagsL2, int & nbtagsM2, int & nbtagsT2,
+		int & njet3, int & nbtagsL3, int & nbtagsM3, int & nbtagsT3, int & njet4, int & nbtagsL4, int & nbtagsM4, int & nbtagsT4,
+		pat::JetCollection::const_iterator SelectedJet, math::PtEtaPhiELorentzVector lep1, math::PtEtaPhiELorentzVector lep2, const edm::Event& iEvent);
+  void FillTree(int category, TTree *Tree, pat::JetCollection::const_iterator SelectedJet, pat::TauCollection::const_iterator SelectedTau,
+		pat::MuonCollection::const_iterator SelectedMuo, pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2,
+		pat::ElectronCollection::const_iterator SelectedEle, pat::ElectronCollection::const_iterator SelectedEle1, 
+		pat::ElectronCollection::const_iterator SelectedEle2, edm::Handle<reco::VertexCollection> vertices,
+		edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, edm::Handle<pat::METCollection> uncorrmet,
+		float prunedMass, bool isFired_HLT, bool isFired_HLT_PFJet320, bool isFired_HLT_HT650,
+		double MyWeight, float genEvent, float rho, int EleMuo, int MuoMuo, int EleEle, int MuoTau, int EleTau, const edm::Event& iEvent, 
+		std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo);
+  
   TH1D* Nevents;
 
   TTree *TreeSignalEff;
   float m_genEvent;
 
+  TTree *TreeEleMuo;
+  TTree *TreeMuoMuo;
+  TTree *TreeEleEle;
   TTree *TreeMuoTau;
   TTree *TreeEleTau;
+  TTree *TreeSB1EleMuo;
+  TTree *TreeSB1MuoMuo;
+  TTree *TreeSB1EleEle;
+  TTree *TreeSB1MuoTau;
+  TTree *TreeSB1EleTau;
+  TTree *TreeSB2EleMuo;
+  TTree *TreeSB2MuoMuo;
+  TTree *TreeSB2EleEle;
+  TTree *TreeSB2MuoTau;
+  TTree *TreeSB2EleTau;
   float m_jetPt;
   float m_jetEta;
   float m_jetMass;
   float m_jetSubjettiness;
   float m_dPhiJetMet;
   float m_dRJetMet;
-  float m_dRJetLep;
-  float m_dRJetTau;
-  float m_dPhiTauMet;
-  float m_dRTauMet;
-  float m_dRTauLep;
-  float m_dPhiLepMet;
-  float m_dRLepMet;
+  float m_dRJetLep2;
+  float m_dRJetLep1;
+  float m_dPhiLep1Met;
+  float m_dRLep1Met;
+  float m_dRLep1Lep2;
+  float m_dPhiLep2Met;
+  float m_dRLep2Met;
   float m_dRZZVis;
   float m_dRZZEff;
   float m_dRZZSvFit;
   float m_dRZZCA;
-  float m_tauPt;
-  float m_tauEta;
-  float m_tauCharge;
-  float m_tauIso;
-  int m_tauFake;
-  float m_lepPt;
-  float m_lepEta;
-  float m_lepCharge;
-  float m_lepPFIso;
-  float m_lepCorrPFIso;
+  float m_lep1Pt;
+  float m_lep1Eta;
+  float m_lep1Charge;
+  float m_lep1PFIso;
+  float m_lep1CorrPFIso;
+  float m_lep2Pt;
+  float m_lep2Eta;
+  float m_lep2Charge;
+  float m_lep2PFIso;
+  float m_lep2CorrPFIso;
+  float m_lep1DETIso;
+  float m_lep2DETIso;
+  int m_tauIso;
   float m_charge;
   float m_met;
   float m_metPhi;
   float m_uncorrmet;
   float m_uncorrmetPhi;
+  float m_PtSvfit;
   float m_MassVis;
   float m_MassEff;
   float m_MassSvfit;
@@ -124,9 +170,22 @@ private:
   float m_XMassEff;
   float m_XMassSVFit;
   float m_XMassCA;
-  int m_nbtagsL;
-  int m_nbtagsM;
-  int m_nbtagsT;
+  int m_njet1;
+  int m_nbtagsL1;
+  int m_nbtagsM1;
+  int m_nbtagsT1;
+  int m_njet2;
+  int m_nbtagsL2;
+  int m_nbtagsM2;
+  int m_nbtagsT2;
+  int m_njet3;
+  int m_nbtagsL3;
+  int m_nbtagsM3;
+  int m_nbtagsT3;
+  int m_njet4;
+  int m_nbtagsL4;
+  int m_nbtagsM4;
+  int m_nbtagsT4;
   int m_trigger;
   int m_trigger650;
   int m_trigger320;
@@ -139,12 +198,18 @@ private:
   double m_xsec;
   double m_lumi;
   float m_weight;
+  int m_EleMuo;
+  int m_MuoMuo;
+  int m_EleEle;
+  int m_MuoTau;
+  int m_EleTau;
 
   edm::LumiReWeighting LumiWeights_;
   bool isData; 
   edm::InputTag vtxColl_;
   edm::InputTag jetColl_;
   edm::InputTag jetPrunedColl_;
+  edm::InputTag electronETColl_;
   edm::InputTag electronColl_;
   edm::InputTag muonColl_;
   edm::InputTag tauMuTauColl_;
@@ -183,6 +248,7 @@ QCDAnalyzer::QCDAnalyzer(const edm::ParameterSet& iConfig)
   vtxColl_ = iConfig.getParameter<edm::InputTag>("vtxColl"); 
   jetColl_ = iConfig.getParameter<edm::InputTag>("jetColl"); 
   jetPrunedColl_ = iConfig.getParameter<edm::InputTag>("jetPrunedColl"); 
+  electronETColl_ = iConfig.getParameter<edm::InputTag>("electronETColl"); 
   electronColl_ = iConfig.getParameter<edm::InputTag>("electronColl"); 
   muonColl_ = iConfig.getParameter<edm::InputTag>("muonColl"); 
   tauMuTauColl_ = iConfig.getParameter<edm::InputTag>("tauMuTauColl");
@@ -197,7 +263,7 @@ QCDAnalyzer::QCDAnalyzer(const edm::ParameterSet& iConfig)
 
 
   // True number of interaction for data produced as in: https://twiki.cern.ch/twiki/bin/view/CMS/PileupJSONFileforData
-  TFile *da_=new TFile ("/shome/aspiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/MyDataPileupHistogram_True.root");
+  TFile *da_=new TFile ("/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/MyDataPileupHistogram_True.root");
   TH1F *da = (TH1F*) da_->Get("pileup");
   
   // MC distribution of true number of interactions as in: https://twiki.cern.ch/twiki/bin/view/CMS/Pileup_MC_Gen_Scenarios
@@ -234,7 +300,6 @@ QCDAnalyzer::~QCDAnalyzer()
 void
 QCDAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
- 
   Nevents->Fill(1);
   edm::Handle<reco::VertexCollection> vertices;
   iEvent.getByLabel(vtxColl_, vertices);
@@ -248,6 +313,9 @@ QCDAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   edm::Handle<pat::MuonCollection> muoH;
   iEvent.getByLabel(muonColl_, muoH);
+
+  edm::Handle<pat::ElectronCollection> eleETH;
+  iEvent.getByLabel(electronETColl_, eleETH);
 
   edm::Handle<pat::ElectronCollection> eleH;
   iEvent.getByLabel(electronColl_, eleH);
@@ -267,9 +335,6 @@ QCDAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<pat::METCollection> uncorrmet;
   iEvent.getByLabel(uncorrmetColl_, uncorrmet);
 
-  edm::Handle<pat::JetCollection> ak5jetCands;
-  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
-
   edm::Handle<double> rhoHandle;
   iEvent.getByLabel("kt6PFJets", "rho", rhoHandle);
   float rho = *(rhoHandle.product());
@@ -279,27 +344,7 @@ QCDAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   //FOR SIGNAL EFFICIENCY
   float genEvent = 0;
-  if(isData==false){
-    int ele = 0; int muo = 0;
-    vector<math::PtEtaPhiELorentzVector> genele;
-    for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
-      const reco::GenParticle & genPart = (*genParts)[ngenPart];
-      if(abs(genPart.pdgId())==15 && genPart.status()!=3){
-	for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
-	  const reco::Candidate * daughter = genPart.daughter(ndaugh);
-	  if(abs(daughter->pdgId())==11 && daughter->status()==1) ele = ele + 1;
-	  if(abs(daughter->pdgId())==13 && daughter->status()==1) muo = muo + 1;
-	}
-      }
-    }
-    if(ele==2 && muo==0)      genEvent = 1;
-    else if(ele==1 && muo==1) genEvent = 2;
-    else if(ele==1 && muo==0) genEvent = 3;
-    else if(ele==0 && muo==2) genEvent = 4;
-    else if(ele==0 && muo==1) genEvent = 5;
-    else if(ele==0 && muo==0) genEvent = 6;
-    else                      genEvent = 7;
-  }
+  Efficiency(genEvent, isData, genParts);
   m_genEvent = genEvent;
   TreeSignalEff->Fill();
 
@@ -359,397 +404,294 @@ QCDAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     MyWeight = LumiWeights_.weight( Tnpv );
   }
 
-  
-  //JET SELECTION
+    
+  //JET SELECTION - SR
   pat::JetCollection::const_iterator SelectedJet;
-  float massZ=-9999; float ptZ=-999; bool foundJet=false; float tau21Z=-9999;
-  for(pat::JetCollection::const_iterator jet = CA8JetswithQjets->begin(); jet != CA8JetswithQjets->end(); ++jet) {
-    float dRmin = 9999.; float mass = 0.;
-    for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
-      float dRtmp = ROOT::Math::VectorUtil::DeltaR(jet->p4(),jetPruned->p4());
-      if(dRtmp<dRmin && dRtmp<0.8){//matching failed if greater than jet radius
-	dRmin=dRtmp;
-	mass=jetPruned->mass();
-      }
-    }
-    if(jet->muonEnergyFraction()>=0.99) continue;
-    if(jet->photonEnergyFraction()>=0.99) continue;
-    if(jet->chargedEmEnergyFraction()>=0.99) continue;
-    if(jet->neutralHadronEnergyFraction()>=0.99) continue;
-    if(jet->chargedHadronEnergyFraction()<=0.00) continue;
-    if(jet->pt()<400) continue;
-    if(abs(jet->eta())>2.4) continue;
-    if(!(mass>20 && mass<110))  continue;
-    if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;
-    foundJet=true;
-    if(jet->pt()>ptZ){
-      massZ=mass;
-      ptZ=jet->pt();
-      tau21Z=jet->userFloat("tau2")/jet->userFloat("tau1");
-      SelectedJet=jet;
-    }
+  float prunedMass=-9999; float ptZ=-999; bool foundJet=false; float tau21Z=-9999;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundJet, SelectedJet, prunedMass, tau21Z, ptZ, 70, 110);
+
+  //JET SELECTION - SB1
+  pat::JetCollection::const_iterator SelectedSB1Jet;
+  float prunedMassSB1=-9999; float ptSB1Z=-999; bool foundSB1Jet=false; float tau21SB1Z=-9999;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB1Jet, SelectedSB1Jet, prunedMassSB1, tau21SB1Z, ptSB1Z, 20, 70);
+
+  //JET SELECTION - SB2
+  pat::JetCollection::const_iterator SelectedSB2Jet;
+  float prunedMassSB2=-9999; float ptSB2Z=-999; bool foundSB2Jet=false; float tau21SB2Z=-9999;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB2Jet, SelectedSB2Jet, prunedMassSB2, tau21SB2Z, ptSB2Z, 110, 99999);
+
+  //TAU SELECTION - MUOTAU - SR
+  float ptTauMT=-99; bool foundTauMT=false;
+  pat::TauCollection::const_iterator SelectedTauMT;
+  SelectTau(tauMuTauHandle, SelectedJet, foundTauMT, SelectedTauMT, ptTauMT, foundJet);
+
+  //TAU SELECTION - MUOTAU - SB1
+  float ptSB1TauMT=-99; bool foundSB1TauMT=false;
+  pat::TauCollection::const_iterator SelectedSB1TauMT;
+  SelectTau(tauMuTauHandle, SelectedSB1Jet, foundSB1TauMT, SelectedSB1TauMT, ptSB1TauMT, foundSB1Jet);
+
+  //TAU SELECTION - MUOTAU - SB2
+  float ptSB2TauMT=-99; bool foundSB2TauMT=false;
+  pat::TauCollection::const_iterator SelectedSB2TauMT;
+  SelectTau(tauMuTauHandle, SelectedSB2Jet, foundSB2TauMT, SelectedSB2TauMT, ptSB2TauMT, foundSB2Jet); 
+
+  //TAU SELECTION - ELETAU - SR
+  float ptTauET=-99; bool foundTauET=false;
+  pat::TauCollection::const_iterator SelectedTauET;
+  SelectTau(tauElTauHandle, SelectedJet, foundTauET, SelectedTauET, ptTauET, foundJet);
+
+  //TAU SELECTION - ELETAU - SB1
+  float ptSB1TauET=-99; bool foundSB1TauET=false;
+  pat::TauCollection::const_iterator SelectedSB1TauET;
+  SelectTau(tauElTauHandle, SelectedSB1Jet, foundSB1TauET, SelectedSB1TauET, ptSB1TauET, foundSB1Jet);
+
+  //TAU SELECTION - ELETAU - SB2
+  float ptSB2TauET=-99; bool foundSB2TauET=false;
+  pat::TauCollection::const_iterator SelectedSB2TauET;
+  SelectTau(tauElTauHandle, SelectedSB2Jet, foundSB2TauET, SelectedSB2TauET, ptSB2TauET, foundSB2Jet); 
+
+  //MUON SELECTION - MUOTAU - SR
+  float ptMuonMT=-99; bool foundMuonMT=false;
+  pat::MuonCollection::const_iterator SelectedMuonMT;
+  SelectMuon(muoH, SelectedJet, foundMuonMT, SelectedMuonMT, ptMuonMT, foundJet, primaryVertex, false);
+
+  //MUON SELECTION - MUOTAU - SB1
+  float ptSB1MuonMT=-99; bool foundSB1MuonMT=false;
+  pat::MuonCollection::const_iterator SelectedSB1MuonMT;
+  SelectMuon(muoH, SelectedSB1Jet, foundSB1MuonMT, SelectedSB1MuonMT, ptSB1MuonMT, foundSB1Jet, primaryVertex, false);
+
+  //MUON SELECTION - MUOTAU - SB2
+  float ptSB2MuonMT=-99; bool foundSB2MuonMT=false;
+  pat::MuonCollection::const_iterator SelectedSB2MuonMT;
+  SelectMuon(muoH, SelectedSB2Jet, foundSB2MuonMT, SelectedSB2MuonMT, ptSB2MuonMT, foundSB2Jet, primaryVertex, false);
+
+  //MUON SELECTION - ELEMUO - SR
+  float ptMuonEM=-99; bool foundMuonEM=false;
+  pat::MuonCollection::const_iterator SelectedMuonEM;
+  SelectMuon(muoH, SelectedJet, foundMuonEM, SelectedMuonEM, ptMuonEM, foundJet, primaryVertex, true);
+
+  //MUON SELECTION - ELEMUO - SB1
+  float ptSB1MuonEM=-99; bool foundSB1MuonEM=false;
+  pat::MuonCollection::const_iterator SelectedSB1MuonEM;
+  SelectMuon(muoH, SelectedSB1Jet, foundSB1MuonEM, SelectedSB1MuonEM, ptSB1MuonEM, foundSB1Jet, primaryVertex, true);
+
+  //MUON SELECTION - ELEMUO - SB2
+  float ptSB2MuonEM=-99; bool foundSB2MuonEM=false;
+  pat::MuonCollection::const_iterator SelectedSB2MuonEM;
+  SelectMuon(muoH, SelectedSB2Jet, foundSB2MuonEM, SelectedSB2MuonEM, ptSB2MuonEM, foundSB2Jet, primaryVertex, true);
+
+  //ELECTRON SELECTION - ELETAU - SR
+  float ptElectronET=-99; bool foundElectronET=false;
+  pat::ElectronCollection::const_iterator SelectedElectronET;
+  SelectElectron(eleETH, SelectedJet, foundElectronET, SelectedElectronET, ptElectronET, foundJet, primaryVertex, -1, rho, false);
+
+  //ELECTRON SELECTION - ELETAU - SB1
+  float ptSB1ElectronET=-99; bool foundSB1ElectronET=false;
+  pat::ElectronCollection::const_iterator SelectedSB1ElectronET;
+  SelectElectron(eleETH, SelectedSB1Jet, foundSB1ElectronET, SelectedSB1ElectronET, ptSB1ElectronET, foundSB1Jet, primaryVertex, -1, rho, false);
+
+  //ELECTRON SELECTION - ELETAU - SB2
+  float ptSB2ElectronET=-99; bool foundSB2ElectronET=false;
+  pat::ElectronCollection::const_iterator SelectedSB2ElectronET;
+  SelectElectron(eleETH, SelectedSB2Jet, foundSB2ElectronET, SelectedSB2ElectronET, ptSB2ElectronET, foundSB2Jet, primaryVertex, -1, rho, false);
+
+  //ELECTRON SELECTION - ELEELE1 - SR
+  float ptElectron1EE=-99; bool foundElectron1EE=false;
+  pat::ElectronCollection::const_iterator SelectedElectron1EE;
+  SelectElectron(eleH, SelectedJet, foundElectron1EE, SelectedElectron1EE, ptElectron1EE, foundJet, primaryVertex, -1, rho, true);
+
+  //ELECTRON SELECTION - ELEELE1 - SB1
+  float ptSB1Electron1EE=-99; bool foundSB1Electron1EE=false;
+  pat::ElectronCollection::const_iterator SelectedSB1Electron1EE;
+  SelectElectron(eleH, SelectedSB1Jet, foundSB1Electron1EE, SelectedSB1Electron1EE, ptSB1Electron1EE, foundSB1Jet, primaryVertex, -1, rho, true);
+
+  //ELECTRON SELECTION - ELEELE1 - SB2
+  float ptSB2Electron1EE=-99; bool foundSB2Electron1EE=false;
+  pat::ElectronCollection::const_iterator SelectedSB2Electron1EE;
+  SelectElectron(eleH, SelectedSB2Jet, foundSB2Electron1EE, SelectedSB2Electron1EE, ptSB2Electron1EE, foundSB2Jet, primaryVertex, -1, rho, true);
+
+  //ELECTRON SELECTION - ELEELE2 - SR
+  float ptElectron2EE=-99; bool foundElectron2EE=false;
+  pat::ElectronCollection::const_iterator SelectedElectron2EE;
+  SelectElectron(eleH, SelectedJet, foundElectron2EE, SelectedElectron2EE, ptElectron2EE, foundJet, primaryVertex, ptElectron1EE, rho, true);
+
+  //ELECTRON SELECTION - ELEELE2 - SB1
+  float ptSB1Electron2EE=-99; bool foundSB1Electron2EE=false;
+  pat::ElectronCollection::const_iterator SelectedSB1Electron2EE;
+  SelectElectron(eleH, SelectedSB1Jet, foundSB1Electron2EE, SelectedSB1Electron2EE, ptSB1Electron2EE, foundSB1Jet, primaryVertex, ptSB1Electron1EE, rho, true);
+
+  //ELECTRON SELECTION - ELEELE2 - SB2
+  float ptSB2Electron2EE=-99; bool foundSB2Electron2EE=false;
+  pat::ElectronCollection::const_iterator SelectedSB2Electron2EE;
+  SelectElectron(eleH, SelectedSB2Jet, foundSB2Electron2EE, SelectedSB2Electron2EE, ptSB2Electron2EE, foundSB2Jet, primaryVertex, ptSB2Electron1EE, rho, true);
+
+  //ELECTRON SELECTION - ELEMUO - SR
+  float ptElectronEM=-99; bool foundElectronEM=false;
+  pat::ElectronCollection::const_iterator SelectedElectronEM;
+  SelectElectron(eleH, SelectedJet, foundElectronEM, SelectedElectronEM, ptElectronEM, foundJet, primaryVertex, -1, rho, true);
+
+  //ELECTRON SELECTION - ELEMUO - SB1
+  float ptSB1ElectronEM=-99; bool foundSB1ElectronEM=false;
+  pat::ElectronCollection::const_iterator SelectedSB1ElectronEM;
+  SelectElectron(eleH, SelectedSB1Jet, foundSB1ElectronEM, SelectedSB1ElectronEM, ptSB1ElectronEM, foundSB1Jet, primaryVertex, -1, rho, true);
+
+  //ELECTRON SELECTION - ELEMUO - SB2
+  float ptSB2ElectronEM=-99; bool foundSB2ElectronEM=false;
+  pat::ElectronCollection::const_iterator SelectedSB2ElectronEM;
+  SelectElectron(eleH, SelectedSB2Jet, foundSB2ElectronEM, SelectedSB2ElectronEM, ptSB2ElectronEM, foundSB2Jet, primaryVertex, -1, rho, true);
+
+  //MUON SELECTION - MUOMUO - SR
+  vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo;
+  SelectTrackerMuon(muoH, SelectedTrackerMuo, primaryVertex);
+  bool foundMuonMM=false; 
+  pat::MuonCollection::const_iterator SelectedMuon1MM;
+  pat::MuonCollection::const_iterator SelectedMuon2MM;
+  SelectMuonMM(SelectedMuon1MM, SelectedMuon2MM, foundMuonMM, SelectedTrackerMuo, SelectedJet, foundJet, primaryVertex);
+
+  //MUON SELECTION - MUOMUO - SB1
+  bool foundSB1MuonMM=false;
+  pat::MuonCollection::const_iterator SelectedSB1Muon1MM;
+  pat::MuonCollection::const_iterator SelectedSB1Muon2MM;
+  SelectMuonMM(SelectedSB1Muon1MM, SelectedSB1Muon2MM, foundSB1MuonMM, SelectedTrackerMuo, SelectedSB1Jet, foundSB1Jet, primaryVertex);
+
+  //MUON SELECTION - MUOMUO - SB2
+  bool foundSB2MuonMM=false;
+  pat::MuonCollection::const_iterator SelectedSB2Muon1MM;
+  pat::MuonCollection::const_iterator SelectedSB2Muon2MM;
+  SelectMuonMM(SelectedSB2Muon1MM, SelectedSB2Muon2MM, foundSB2MuonMM, SelectedTrackerMuo, SelectedSB2Jet, foundSB2Jet, primaryVertex);
+
+  pat::TauCollection::const_iterator      SelectedTauFake;
+  pat::MuonCollection::const_iterator     SelectedMuonFake;
+  pat::MuonCollection::const_iterator     SelectedMuon1Fake;
+  pat::MuonCollection::const_iterator     SelectedMuon2Fake;
+  pat::ElectronCollection::const_iterator SelectedElectronFake;
+  pat::ElectronCollection::const_iterator SelectedElectron1Fake;
+  pat::ElectronCollection::const_iterator SelectedElectron2Fake;
+
+  int EleMuo = 0; int MuoMuo = 0; int EleEle = 0; int MuoTau = 0; int EleTau = 0;
+  if(foundJet && foundMuonEM && foundElectronEM) EleMuo=1;
+  if(foundJet && foundMuonMM) MuoMuo=1;
+  if(foundJet && foundElectron1EE && foundElectron2EE) EleEle=1;
+  if(foundJet && foundMuonMT && foundTauMT) MuoTau=1;
+  if(foundJet && foundElectronET && foundTauET) EleTau=1;
+
+  //ELE-MUO ANALYSIS - SR
+  if(foundJet && foundMuonEM && foundElectronEM){
+    cout<<"EleMuo "<<iEvent.id().event()<<"; muon pt "<<SelectedMuonEM->pt()<<"; ele pt "<<SelectedElectronEM->pt()<<
+      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+    FillTree(0,TreeEleMuo,SelectedJet,SelectedTauFake,SelectedMuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronEM,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent, SelectedTrackerMuo);
   }
-  
-  //TAU SELECTION - MUTAU
-  float ptTauMuTau=-99; bool foundTauMuTau=false;
-  pat::TauCollection::const_iterator SelectedTauMuTau;
-  for (pat::TauCollection::const_iterator patTau = tauMuTauHandle->begin(); patTau != tauMuTauHandle->end(); ++patTau ) {
-    if(patTau->pt()<20) continue;
-    if(abs(patTau->eta())>2.4) continue;
-    if(patTau->tauID("decayModeFinding")<0.5) continue;
-    if(patTau->tauID("againstMuonLoose")<0.5) continue;
-    if(patTau->tauID("againstElectronLoose")<0.5) continue;
-    //if(patTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")<0.5) continue;
-    foundTauMuTau=true;
-    if(patTau->pt()>ptTauMuTau){
-      SelectedTauMuTau=patTau;
-      ptTauMuTau=patTau->pt();
-    }
+  //MUO-MUO ANALYSIS - SR
+  if(foundJet && foundMuonMM){
+    cout<<"MuoMuo "<<iEvent.id().event()<<"; muon1 pt "<<SelectedMuon1MM->pt()<<"; muon2 pt "<<SelectedMuon2MM->pt()<<
+      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+    FillTree(1,TreeMuoMuo,SelectedJet,SelectedTauFake,SelectedMuonFake,SelectedMuon1MM,SelectedMuon2MM,SelectedElectronFake,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent, SelectedTrackerMuo);
   }
-  
-  //TAU SELECTION - ELTAU
-  float ptTauElTau=-99; bool foundTauElTau=false;
-  pat::TauCollection::const_iterator SelectedTauElTau;
-  for (pat::TauCollection::const_iterator patTau = tauElTauHandle->begin(); patTau != tauElTauHandle->end(); ++patTau ) {
-    if(patTau->pt()<20) continue;
-    if(abs(patTau->eta())>2.4) continue;
-    if(patTau->tauID("decayModeFinding")<0.5) continue;
-    if(patTau->tauID("againstMuonLoose")<0.5) continue;
-    if(patTau->tauID("againstElectronLoose")<0.5) continue;
-    //if(patTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr")<0.5) continue;
-    foundTauElTau=true;
-    if(patTau->pt()>ptTauElTau){
-      SelectedTauElTau=patTau;
-      ptTauElTau=patTau->pt();
-    }
+  //ELE-ELE ANALYSIS - SR
+  if(foundJet && foundElectron1EE && foundElectron2EE){
+    cout<<"EleEle "<<iEvent.id().event()<<"; ele1 pt "<<SelectedElectron1EE->pt()<<"; ele2 pt "<<SelectedElectron2EE->pt()<<
+      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+    FillTree(2,TreeEleEle,SelectedJet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronFake,SelectedElectron1EE,
+	     SelectedElectron2EE, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent, SelectedTrackerMuo);
   }
-
-  //MUON SELECTION
-  float ptMuon=-99; bool foundMuon=false;
-  pat::MuonCollection::const_iterator SelectedMuon;
-  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
-    if(!(muon->isGlobalMuon())) continue;
-    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
-    if(cktTrack->pt()<10) continue;
-    if(abs(cktTrack->eta())>2.4) continue;
-    if(abs(cktTrack->phi())>3.2) continue;
-    if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
-    if(muon->globalTrack()->hitPattern().numberOfValidMuonHits()<=0) continue;
-    if(muon->numberOfMatches()<=1) continue;
-    if(fabs(cktTrack->dxy(primaryVertex.position()))>=0.2) continue;
-    if(fabs(cktTrack->dz( primaryVertex.position()))>=0.5) continue;
-    if(muon->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
-    if(muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
-    foundMuon=true;
-    if(cktTrack->pt()>ptMuon){
-      SelectedMuon=muon;
-      ptMuon=cktTrack->pt();
-    }
+  //MUO-TAU ANALYSIS - SR
+  if(foundJet && foundMuonMT && foundTauMT){
+    cout<<"MuoTau "<<iEvent.id().event()<<"; tau pt "<<SelectedTauMT->pt()<<"; muon pt "<<SelectedMuonMT->pt()<<
+      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+    FillTree(3,TreeMuoTau,SelectedJet,SelectedTauMT,SelectedMuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronFake,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent, SelectedTrackerMuo);
   }
-
-  //ELECTRON SELECTION
-  float ptElectron=-99; bool foundElectron=false;
-  pat::ElectronCollection::const_iterator SelectedElectron;
-  for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
-    if(electron->pt()<10) continue;
-    if(fabs(electron->superCluster()->eta())<=1.479){
-      if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.004) continue;
-      if(electron->deltaPhiSuperClusterTrackAtVtx()>=0.030) continue;
-      if(electron->sigmaIetaIeta()>=0.01) continue;
-      if(electron->hadronicOverEm()>=0.12) continue;
-      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
-      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
-      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
-      if(electron->passConversionVeto()==0) continue;
-      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
-    }
-    if(fabs(electron->superCluster()->eta())>1.479 && fabs(electron->superCluster()->eta())<2.5){
-      if(electron->deltaEtaSuperClusterTrackAtVtx()>=0.005) continue;
-      if(electron->deltaPhiSuperClusterTrackAtVtx()>=0.020) continue;
-      if(electron->sigmaIetaIeta()>=0.03) continue;
-      if(electron->hadronicOverEm()>=0.10) continue;
-      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
-      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
-      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
-      if(electron->passConversionVeto()==0) continue;
-      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
-    }
-    foundElectron=true;
-    if(electron->pt()>ptElectron){
-      SelectedElectron=electron;
-      ptElectron=electron->pt();
-    }
-  }
-  
-  //BTAG VETO
-  int nbtagsL=0; int nbtagsM=0; int nbtagsT=0;
-  if(foundJet) BtagVeto(ak5jetCands, nbtagsL, nbtagsM, nbtagsT, SelectedJet);
-
-  //MU-TAU ANALYSIS
-  if(foundJet && foundTauMuTau && foundMuon){ 
-    
-    //FROM WHERE DOES IT COME THE RECO TAU?
-    int tauFake = -999;
-    if(isData==false){ 
-      float dR=999; float TauPdgId=-99999;
-      for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
-	const reco::GenParticle & genPart = (*genParts)[ngenPart];
-	if(genPart.status()==3) continue;
-	float dR_GenTau=ROOT::Math::VectorUtil::DeltaR(genPart.p4(),SelectedTauMuTau->p4());
-	if(dR_GenTau<dR && dR_GenTau<0.2){
-	  dR=dR_GenTau;
-	  TauPdgId=genPart.pdgId();
-	}
-      }
-      if(abs(TauPdgId)==15) tauFake=1;
-      else if (abs(TauPdgId)==11 || abs(TauPdgId)==13) tauFake=2;
-      else tauFake=3;
-    }
-
-    //SVFIT
-    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
-    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
-    TMatrixD covMET(2, 2); // PFMET significance matrix
-    covMET[0][0] = (metRaw->front() ).getSignificanceMatrix()(0,0);
-    covMET[1][0] = (metRaw->front() ).getSignificanceMatrix()(1,0);
-    covMET[0][1] = (metRaw->front() ).getSignificanceMatrix()(0,1);
-    covMET[1][1] = (metRaw->front() ).getSignificanceMatrix()(1,1);
-    std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kHadDecay, SelectedTauMuTau->p4()));
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedMuon->p4()));
-    NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
-    algo.addLogM(false);
-    algo.integrateMarkovChain();
-    float MassSVFit = -1;
-    float XMassSVFit = -1;
-    float dRJetZSVFit = -1;
-    if(algo.pt()>0){
-      TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
-      dRJetZSVFit=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
-      XMassSVFit=(SVFitTauTau+PrunedJet).M();
-      MassSVFit=algo.getMass();
-    }
-
-    //COLLINEAR APPROXIMATION
-    TLorentzVector CATauTau; bool CA = false;
-    float a = (SelectedTauMuTau->py()*met->begin()->px()-SelectedTauMuTau->px()*met->begin()->py())/
-      (SelectedMuon->px()*SelectedTauMuTau->py()-SelectedMuon->py()*SelectedTauMuTau->px());
-    float b = (SelectedMuon->py()*met->begin()->px()-SelectedMuon->px()*met->begin()->py())/
-      (SelectedTauMuTau->px()*SelectedMuon->py()-SelectedTauMuTau->py()*SelectedMuon->px());
-    if(((1+a)*(1+b))>0) {
-      CATauTau.SetPxPyPzE((1+a)*SelectedMuon->px()+(1+b)*SelectedTauMuTau->px(),
-			  (1+a)*SelectedMuon->py()+(1+b)*SelectedTauMuTau->py(),
-			  (1+a)*SelectedMuon->pz()+(1+b)*SelectedTauMuTau->pz(),
-			  (1+a)*SelectedMuon->energy()+(1+b)*SelectedTauMuTau->energy());
-      CA=true;
-    }
-    else CA = false;
-    float MassCA = -1;
-    float XmassCA = -1.;
-    float dRJetZCA = -1.;
-    if(CA){
-      MassCA = CATauTau.M();
-      XmassCA = (CATauTau+PrunedJet).M();
-      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
-    }
-
-    //VISIBLE AND EFFECTIVE
-    math::PtEtaPhiELorentzVector dilep; dilep = SelectedTauMuTau->p4()+SelectedMuon->p4();
-    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedTauMuTau->p4()+SelectedMuon->p4()+met->begin()->p4();
-    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedTauMuTau->p4()+SelectedMuon->p4()+PrunedJet_prov;
-    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedTauMuTau->p4()+SelectedMuon->p4()+met->begin()->p4()+PrunedJet_prov;
-
-    m_jetPt=SelectedJet->pt();
-    m_jetEta=SelectedJet->eta();
-    m_jetMass=massZ;
-    m_jetSubjettiness=tau21Z;
-    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
-    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
-    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedJet->p4());
-    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedTauMuTau->p4(),SelectedJet->p4());
-    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTauMuTau->p4());
-    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTauMuTau->p4());
-    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedMuon->p4(),SelectedTauMuTau->p4());
-    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedMuon->p4());
-    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedMuon->p4());
-    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
-    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
-    m_dRZZSvFit=dRJetZSVFit;
-    m_dRZZCA=dRJetZCA;
-    m_tauPt=SelectedTauMuTau->pt();
-    m_tauEta=SelectedTauMuTau->eta();
-    m_tauCharge=SelectedTauMuTau->charge();
-    m_tauIso=SelectedTauMuTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr");
-    m_tauFake=tauFake;
-    m_lepPt=SelectedMuon->pt();
-    m_lepEta=SelectedMuon->eta();
-    m_lepCharge=SelectedMuon->charge();
-    m_lepPFIso=MuonPFIso(SelectedMuon,true);
-    m_lepCorrPFIso=MuonCorrPFIso(SelectedMuon,true);
-    m_charge=SelectedTauMuTau->charge()*SelectedMuon->charge();
-    m_met=met->begin()->pt();
-    m_metPhi=met->begin()->phi();
-    m_uncorrmet=uncorrmet->begin()->pt();
-    m_uncorrmetPhi=uncorrmet->begin()->phi();
-    m_MassVis=dilep.mass();
-    m_MassEff=dilepmet.mass();
-    m_MassSvfit=MassSVFit;
-    m_MassCA=MassCA;
-    m_XMassVis=dilepjet.mass();
-    m_XMassEff=dilepmetjet.mass();
-    m_XMassSVFit=XMassSVFit;
-    m_XMassCA=XmassCA;
-    m_nbtagsL=nbtagsL;
-    m_nbtagsM=nbtagsM;
-    m_nbtagsT=nbtagsT;
-    m_trigger=(int)isFired_HLT;
-    m_trigger320=(int)isFired_HLT_PFJet320;
-    m_trigger650=(int)isFired_HLT_HT650;
-    m_sideband=(int)(massZ<70);
-    m_NVertices=vertices->size();
-    m_PUWeight=MyWeight;
-    m_metPx=met->begin()->px();
-    m_metPy=met->begin()->py();
-    m_NeventsTOT=NeventsTOT_;
-    m_xsec=xsec_;
-    m_lumi=lumi_;
-    m_weight=xsec_*lumi_/NeventsTOT_;
-    m_genEvent = genEvent;
-    TreeMuoTau->Fill();
+  //ELE-TAU ANALYSIS - SR
+  if(foundJet && foundElectronET && foundTauET){
+    cout<<"EleTau "<<iEvent.id().event()<<"; tau pt "<<SelectedTauET->pt()<<"; electron pt "<<SelectedElectronET->pt()<<
+      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+    FillTree(4,TreeEleTau,SelectedJet,SelectedTauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronET,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent, SelectedTrackerMuo);
   }
 
 
-  //ELE-TAU ANALYSIS
-  if(foundJet && foundTauElTau && foundElectron){
-    
-    //FROM WHERE DOES IT COME THE RECO TAU?
-    int tauFake = -999;
-    if(isData==false){ 
-      float dR=999; float TauPdgId=-99999;
-      for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
-	const reco::GenParticle & genPart = (*genParts)[ngenPart];
-	if(genPart.status()==3) continue;
-	float dR_GenTau=ROOT::Math::VectorUtil::DeltaR(genPart.p4(),SelectedTauElTau->p4());
-	if(dR_GenTau<dR && dR_GenTau<0.2){
-	  dR=dR_GenTau;
-	  TauPdgId=genPart.pdgId();
-	}
-      }
-      if(abs(TauPdgId)==15) tauFake=1;
-      else if (abs(TauPdgId)==11 || abs(TauPdgId)==13) tauFake=2;
-      else tauFake=3;
-    }
+  int EleMuoSB1 = 0; int MuoMuoSB1 = 0; int EleEleSB1 = 0; int MuoTauSB1 = 0; int EleTauSB1 = 0;
+  if(foundSB1Jet && foundSB1MuonEM && foundSB1ElectronEM) EleMuo=1;
+  if(foundSB1Jet && foundSB1MuonMM) MuoMuoSB1=1;
+  if(foundSB1Jet && foundSB1Electron1EE && foundSB1Electron2EE) EleEleSB1=1;
+  if(foundSB1Jet && foundSB1MuonMT && foundSB1TauMT) MuoTauSB1=1;
+  if(foundSB1Jet && foundSB1ElectronET && foundSB1TauET) EleTauSB1=1;
 
-    //SVFIT
-    math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),massZ);
-    TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
-    TMatrixD covMET(2, 2); // PFMET significance matrix
-    covMET[0][0] = (metRaw->front() ).getSignificanceMatrix()(0,0);
-    covMET[1][0] = (metRaw->front() ).getSignificanceMatrix()(1,0);
-    covMET[0][1] = (metRaw->front() ).getSignificanceMatrix()(0,1);
-    covMET[1][1] = (metRaw->front() ).getSignificanceMatrix()(1,1);
-    std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedTauElTau->p4()));
-    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedElectron->p4()));
-    NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
-    algo.addLogM(false);
-    algo.integrateMarkovChain();
-    float MassSVFit = -1;
-    float XMassSVFit = -1;
-    float dRJetZSVFit = -1;
-    if(algo.pt()>0){
-      TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
-      dRJetZSVFit=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
-      XMassSVFit=(SVFitTauTau+PrunedJet).M();
-      MassSVFit=algo.getMass();
-    }
+  //ELE-MUO ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1MuonEM && foundSB1ElectronEM){
+    FillTree(0,TreeSB1EleMuo,SelectedSB1Jet,SelectedTauFake,SelectedSB1MuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedSB1ElectronEM,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent, SelectedTrackerMuo);
+  }
+  //MUO-MUO ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1MuonMM){
+    FillTree(1,TreeSB1MuoMuo,SelectedSB1Jet,SelectedTauFake,SelectedMuonFake,SelectedSB1Muon1MM,SelectedSB1Muon2MM,SelectedElectronFake,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent, SelectedTrackerMuo);
+  }
+  //ELE-ELE ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1Electron1EE && foundSB1Electron2EE){
+    FillTree(2,TreeSB1EleEle,SelectedSB1Jet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronFake,SelectedSB1Electron1EE,
+	     SelectedSB1Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent, SelectedTrackerMuo);
+  }
+  //MUO-TAU ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1MuonMT && foundSB1TauMT){
+    FillTree(3,TreeSB1MuoTau,SelectedSB1Jet,SelectedSB1TauMT,SelectedSB1MuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronFake,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent, SelectedTrackerMuo);
+  }
+  //ELE-TAU ANALYSIS - SB1
+  if(foundSB1Jet && foundSB1ElectronET && foundSB1TauET){
+    FillTree(4,TreeSB1EleTau,SelectedSB1Jet,SelectedSB1TauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedSB1ElectronET,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent, SelectedTrackerMuo);
+  }
 
-    //COLLINEAR APPROXIMATION
-    TLorentzVector CATauTau; bool CA = false;
-    float a = (SelectedTauElTau->py()*met->begin()->px()-SelectedTauElTau->px()*met->begin()->py())/
-      (SelectedElectron->px()*SelectedTauElTau->py()-SelectedElectron->py()*SelectedTauElTau->px());
-    float b = (SelectedElectron->py()*met->begin()->px()-SelectedElectron->px()*met->begin()->py())/
-      (SelectedTauElTau->px()*SelectedElectron->py()-SelectedTauElTau->py()*SelectedElectron->px());
-    if(((1+a)*(1+b))>0) {
-      CATauTau.SetPxPyPzE((1+a)*SelectedElectron->px()+(1+b)*SelectedTauElTau->px(),
-			  (1+a)*SelectedElectron->py()+(1+b)*SelectedTauElTau->py(),
-			  (1+a)*SelectedElectron->pz()+(1+b)*SelectedTauElTau->pz(),
-			  (1+a)*SelectedElectron->energy()+(1+b)*SelectedTauElTau->energy());
-      CA=true;
-    }
-    else CA = false;
-    float MassCA = -1;
-    float XmassCA = -1.;
-    float dRJetZCA = -1.;
-    if(CA){
-      MassCA = CATauTau.M();
-      XmassCA = (CATauTau+PrunedJet).M();
-      dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
-    }
 
-    //VISIBLE AND EFFECTIVE
-    math::PtEtaPhiELorentzVector dilep; dilep = SelectedTauElTau->p4()+SelectedElectron->p4();
-    math::PtEtaPhiELorentzVector dilepmet; dilepmet = SelectedTauElTau->p4()+SelectedElectron->p4()+met->begin()->p4();
-    math::PtEtaPhiELorentzVector dilepjet; dilepjet = SelectedTauElTau->p4()+SelectedElectron->p4()+PrunedJet_prov;
-    math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = SelectedTauElTau->p4()+SelectedElectron->p4()+met->begin()->p4()+PrunedJet_prov;
+  int EleMuoSB2 = 0; int MuoMuoSB2 = 0; int EleEleSB2 = 0; int MuoTauSB2 = 0; int EleTauSB2 = 0;
+  if(foundSB2Jet && foundSB2MuonEM && foundSB2ElectronEM) EleMuo=1;
+  if(foundSB2Jet && foundSB2MuonMM) MuoMuoSB2=1;
+  if(foundSB2Jet && foundSB2Electron1EE && foundSB2Electron2EE) EleEleSB2=1;
+  if(foundSB2Jet && foundSB2MuonMT && foundSB2TauMT) MuoTauSB2=1;
+  if(foundSB2Jet && foundSB2ElectronET && foundSB2TauET) EleTauSB2=1;
 
-    m_jetPt=SelectedJet->pt();
-    m_jetEta=SelectedJet->eta();
-    m_jetMass=massZ;
-    m_jetSubjettiness=tau21Z;
-    m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
-    m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
-    m_dRJetLep=ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedJet->p4());
-    m_dRJetTau=ROOT::Math::VectorUtil::DeltaR(SelectedTauElTau->p4(),SelectedJet->p4());
-    m_dPhiTauMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedTauElTau->p4());
-    m_dRTauMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedTauElTau->p4());
-    m_dRTauLep=ROOT::Math::VectorUtil::DeltaR(SelectedElectron->p4(),SelectedTauElTau->p4());
-    m_dPhiLepMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedElectron->p4());
-    m_dRLepMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedElectron->p4());
-    m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
-    m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
-    m_dRZZSvFit=dRJetZSVFit;
-    m_dRZZCA=dRJetZCA;
-    m_tauPt=SelectedTauElTau->pt();
-    m_tauEta=SelectedTauElTau->eta();
-    m_tauCharge=SelectedTauElTau->charge();
-    m_tauIso=SelectedTauElTau->tauID("byVLooseCombinedIsolationDeltaBetaCorr");
-    m_tauFake=tauFake;
-    m_lepPt=SelectedElectron->pt();
-    m_lepEta=SelectedElectron->eta();
-    m_lepCharge=SelectedElectron->charge();
-    m_lepPFIso=ElectronPFIso(SelectedElectron,rho);
-    m_lepCorrPFIso=ElectronCorrPFIso(SelectedElectron,rho);
-    m_charge=SelectedTauElTau->charge()*SelectedElectron->charge();
-    m_met=met->begin()->pt();
-    m_metPhi=met->begin()->phi();
-    m_uncorrmet=uncorrmet->begin()->pt();
-    m_uncorrmetPhi=uncorrmet->begin()->phi();
-    m_MassVis=dilep.mass();
-    m_MassEff=dilepmet.mass();
-    m_MassSvfit=MassSVFit;
-    m_MassCA=MassCA;
-    m_XMassVis=dilepjet.mass();
-    m_XMassEff=dilepmetjet.mass();
-    m_XMassSVFit=XMassSVFit;
-    m_XMassCA=XmassCA;
-    m_nbtagsL=nbtagsL;
-    m_nbtagsM=nbtagsM;
-    m_nbtagsT=nbtagsT;
-    m_trigger=(int)isFired_HLT;
-    m_trigger320=(int)isFired_HLT_PFJet320;
-    m_trigger650=(int)isFired_HLT_HT650;
-    m_sideband=(int)(massZ<70);
-    m_NVertices=vertices->size();
-    m_PUWeight=MyWeight;
-    m_metPx=met->begin()->px();
-    m_metPy=met->begin()->py();
-    m_NeventsTOT=NeventsTOT_;
-    m_xsec=xsec_;
-    m_lumi=lumi_;
-    m_weight=xsec_*lumi_/NeventsTOT_;
-    m_genEvent = genEvent;
-    TreeEleTau->Fill();
+  //ELE-MUO ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2MuonEM && foundSB2ElectronEM){
+    FillTree(0,TreeSB2EleMuo,SelectedSB2Jet,SelectedTauFake,SelectedSB2MuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedSB2ElectronEM,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent, SelectedTrackerMuo);
+  }
+  //MUO-MUO ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2MuonMM){
+    FillTree(1,TreeSB2MuoMuo,SelectedSB2Jet,SelectedTauFake,SelectedMuonFake,SelectedSB2Muon1MM,SelectedSB2Muon2MM,SelectedElectronFake,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent, SelectedTrackerMuo);
+  }
+  //ELE-ELE ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2Electron1EE && foundSB2Electron2EE){
+    FillTree(2,TreeSB2EleEle,SelectedSB2Jet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronFake,SelectedSB2Electron1EE,
+	     SelectedSB2Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent, SelectedTrackerMuo);
+  }
+  //MUO-TAU ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2MuonMT && foundSB2TauMT){
+    FillTree(3,TreeSB2MuoTau,SelectedSB2Jet,SelectedSB2TauMT,SelectedSB2MuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedElectronFake,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent, SelectedTrackerMuo);
+  }
+  //ELE-TAU ANALYSIS - SB2
+  if(foundSB2Jet && foundSB2ElectronET && foundSB2TauET){
+    FillTree(4,TreeSB2EleTau,SelectedSB2Jet,SelectedSB2TauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedSB2ElectronET,SelectedElectron1Fake,
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent, SelectedTrackerMuo);
   }
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
@@ -774,6 +716,246 @@ QCDAnalyzer::beginJob()
   TreeSignalEff = fs->make<TTree>("TreeSignalEff", "TreeSignalEff");
   TreeSignalEff->Branch("genEvent", &m_genEvent, "genEvent/f");
 
+  TreeEleMuo = fs->make<TTree>("TreeEleMuo", "TreeEleMuo");
+  TreeEleMuo->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeEleMuo->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeEleMuo->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeEleMuo->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeEleMuo->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeEleMuo->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeEleMuo->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeEleMuo->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeEleMuo->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeEleMuo->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeEleMuo->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeEleMuo->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeEleMuo->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeEleMuo->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeEleMuo->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeEleMuo->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeEleMuo->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeEleMuo->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeEleMuo->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeEleMuo->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeEleMuo->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeEleMuo->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeEleMuo->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeEleMuo->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeEleMuo->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeEleMuo->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeEleMuo->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeEleMuo->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeEleMuo->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeEleMuo->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeEleMuo->Branch("charge", &m_charge, "charge/f");
+  TreeEleMuo->Branch("met", &m_met, "met/f");
+  TreeEleMuo->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeEleMuo->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeEleMuo->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeEleMuo->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeEleMuo->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeEleMuo->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeEleMuo->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeEleMuo->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeEleMuo->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeEleMuo->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeEleMuo->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeEleMuo->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeEleMuo->Branch("njet1", &m_njet1, "njet1/i");
+  TreeEleMuo->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeEleMuo->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeEleMuo->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeEleMuo->Branch("njet2", &m_njet2, "njet2/i");
+  TreeEleMuo->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeEleMuo->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeEleMuo->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeEleMuo->Branch("njet3", &m_njet3, "njet3/i");
+  TreeEleMuo->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeEleMuo->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeEleMuo->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeEleMuo->Branch("njet4", &m_njet4, "njet4/i");
+  TreeEleMuo->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeEleMuo->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeEleMuo->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeEleMuo->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeEleMuo->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeEleMuo->Branch("trigger", &m_trigger, "trigger/i");
+  TreeEleMuo->Branch("sideband", &m_sideband, "sideband/i");
+  TreeEleMuo->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeEleMuo->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeEleMuo->Branch("metPx", &m_metPx, "metPx/f");
+  TreeEleMuo->Branch("metPy", &m_metPy, "metPy/f");
+  TreeEleMuo->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeEleMuo->Branch("xsec", &m_xsec, "xsec/d");
+  TreeEleMuo->Branch("lumi", &m_lumi, "lumi/d");
+  TreeEleMuo->Branch("weight", &m_weight, "weight/f");
+  TreeEleMuo->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeEleMuo->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeEleMuo->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeEleMuo->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeEleMuo->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeEleMuo->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeMuoMuo = fs->make<TTree>("TreeMuoMuo", "TreeMuoMuo");
+  TreeMuoMuo->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeMuoMuo->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeMuoMuo->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeMuoMuo->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeMuoMuo->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeMuoMuo->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeMuoMuo->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeMuoMuo->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeMuoMuo->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeMuoMuo->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeMuoMuo->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeMuoMuo->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeMuoMuo->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeMuoMuo->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeMuoMuo->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeMuoMuo->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeMuoMuo->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeMuoMuo->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeMuoMuo->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeMuoMuo->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeMuoMuo->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeMuoMuo->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeMuoMuo->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeMuoMuo->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeMuoMuo->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeMuoMuo->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeMuoMuo->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeMuoMuo->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeMuoMuo->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeMuoMuo->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeMuoMuo->Branch("charge", &m_charge, "charge/f");
+  TreeMuoMuo->Branch("met", &m_met, "met/f");
+  TreeMuoMuo->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeMuoMuo->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeMuoMuo->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeMuoMuo->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeMuoMuo->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeMuoMuo->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeMuoMuo->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeMuoMuo->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeMuoMuo->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeMuoMuo->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeMuoMuo->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeMuoMuo->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeMuoMuo->Branch("njet1", &m_njet1, "njet1/i");
+  TreeMuoMuo->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeMuoMuo->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeMuoMuo->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeMuoMuo->Branch("njet2", &m_njet2, "njet2/i");
+  TreeMuoMuo->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeMuoMuo->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeMuoMuo->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeMuoMuo->Branch("njet3", &m_njet3, "njet3/i");
+  TreeMuoMuo->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeMuoMuo->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeMuoMuo->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeMuoMuo->Branch("njet4", &m_njet4, "njet4/i");
+  TreeMuoMuo->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeMuoMuo->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeMuoMuo->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeMuoMuo->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeMuoMuo->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeMuoMuo->Branch("trigger", &m_trigger, "trigger/i");
+  TreeMuoMuo->Branch("sideband", &m_sideband, "sideband/i");
+  TreeMuoMuo->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeMuoMuo->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeMuoMuo->Branch("metPx", &m_metPx, "metPx/f");
+  TreeMuoMuo->Branch("metPy", &m_metPy, "metPy/f");
+  TreeMuoMuo->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeMuoMuo->Branch("xsec", &m_xsec, "xsec/d");
+  TreeMuoMuo->Branch("lumi", &m_lumi, "lumi/d");
+  TreeMuoMuo->Branch("weight", &m_weight, "weight/f");
+  TreeMuoMuo->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeMuoMuo->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeMuoMuo->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeMuoMuo->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeMuoMuo->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeMuoMuo->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeEleEle = fs->make<TTree>("TreeEleEle", "TreeEleEle");
+  TreeEleEle->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeEleEle->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeEleEle->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeEleEle->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeEleEle->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeEleEle->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeEleEle->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeEleEle->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeEleEle->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeEleEle->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeEleEle->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeEleEle->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeEleEle->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeEleEle->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeEleEle->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeEleEle->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeEleEle->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeEleEle->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeEleEle->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeEleEle->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeEleEle->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeEleEle->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeEleEle->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeEleEle->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeEleEle->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeEleEle->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeEleEle->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeEleEle->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeEleEle->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeEleEle->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeEleEle->Branch("charge", &m_charge, "charge/f");
+  TreeEleEle->Branch("met", &m_met, "met/f");
+  TreeEleEle->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeEleEle->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeEleEle->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeEleEle->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeEleEle->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeEleEle->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeEleEle->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeEleEle->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeEleEle->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeEleEle->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeEleEle->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeEleEle->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeEleEle->Branch("njet1", &m_njet1, "njet1/i");
+  TreeEleEle->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeEleEle->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeEleEle->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeEleEle->Branch("njet2", &m_njet2, "njet2/i");
+  TreeEleEle->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeEleEle->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeEleEle->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeEleEle->Branch("njet3", &m_njet3, "njet3/i");
+  TreeEleEle->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeEleEle->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeEleEle->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeEleEle->Branch("njet4", &m_njet4, "njet4/i");
+  TreeEleEle->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeEleEle->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeEleEle->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeEleEle->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeEleEle->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeEleEle->Branch("trigger", &m_trigger, "trigger/i");
+  TreeEleEle->Branch("sideband", &m_sideband, "sideband/i");
+  TreeEleEle->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeEleEle->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeEleEle->Branch("metPx", &m_metPx, "metPx/f");
+  TreeEleEle->Branch("metPy", &m_metPy, "metPy/f");
+  TreeEleEle->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeEleEle->Branch("xsec", &m_xsec, "xsec/d");
+  TreeEleEle->Branch("lumi", &m_lumi, "lumi/d");
+  TreeEleEle->Branch("weight", &m_weight, "weight/f");
+  TreeEleEle->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeEleEle->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeEleEle->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeEleEle->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeEleEle->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeEleEle->Branch("EleTau", &m_EleTau, "EleTau/i");
+
   TreeMuoTau = fs->make<TTree>("TreeMuoTau", "TreeMuoTau");
   TreeMuoTau->Branch("jetPt", &m_jetPt, "jetPt/f");
   TreeMuoTau->Branch("jetEta", &m_jetEta, "jetEta/f");
@@ -781,27 +963,30 @@ QCDAnalyzer::beginJob()
   TreeMuoTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
   TreeMuoTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
   TreeMuoTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
-  TreeMuoTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
-  TreeMuoTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
-  TreeMuoTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
-  TreeMuoTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
-  TreeMuoTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
-  TreeMuoTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
-  TreeMuoTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeMuoTau->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeMuoTau->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeMuoTau->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeMuoTau->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeMuoTau->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeMuoTau->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeMuoTau->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
   TreeMuoTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
   TreeMuoTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
   TreeMuoTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
   TreeMuoTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
-  TreeMuoTau->Branch("tauPt", &m_tauPt, "tauPt/f");
-  TreeMuoTau->Branch("tauEta", &m_tauEta, "tauEta/f");
-  TreeMuoTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
-  TreeMuoTau->Branch("tauIso", &m_tauIso, "tauIso/f");
-  TreeMuoTau->Branch("tauFake", &m_tauFake, "tauFake/i");
-  TreeMuoTau->Branch("lepPt", &m_lepPt, "lepPt/f");
-  TreeMuoTau->Branch("lepEta", &m_lepEta, "lepEta/f");
-  TreeMuoTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
-  TreeMuoTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
-  TreeMuoTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeMuoTau->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeMuoTau->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeMuoTau->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeMuoTau->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeMuoTau->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeMuoTau->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeMuoTau->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeMuoTau->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeMuoTau->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeMuoTau->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeMuoTau->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeMuoTau->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeMuoTau->Branch("tauIso", &m_tauIso, "tauIso/i");
   TreeMuoTau->Branch("charge", &m_charge, "charge/f");
   TreeMuoTau->Branch("met", &m_met, "met/f");
   TreeMuoTau->Branch("metPhi", &m_metPhi, "metPhi/f");
@@ -811,13 +996,27 @@ QCDAnalyzer::beginJob()
   TreeMuoTau->Branch("MassEff", &m_MassEff, "MassEff/f");
   TreeMuoTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
   TreeMuoTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeMuoTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
   TreeMuoTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
   TreeMuoTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
   TreeMuoTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
   TreeMuoTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
-  TreeMuoTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
-  TreeMuoTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
-  TreeMuoTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeMuoTau->Branch("njet1", &m_njet1, "njet1/i");
+  TreeMuoTau->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeMuoTau->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeMuoTau->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeMuoTau->Branch("njet2", &m_njet2, "njet2/i");
+  TreeMuoTau->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeMuoTau->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeMuoTau->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeMuoTau->Branch("njet3", &m_njet3, "njet3/i");
+  TreeMuoTau->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeMuoTau->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeMuoTau->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeMuoTau->Branch("njet4", &m_njet4, "njet4/i");
+  TreeMuoTau->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeMuoTau->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeMuoTau->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
   TreeMuoTau->Branch("trigger320", &m_trigger320, "trigger320/i");
   TreeMuoTau->Branch("trigger650", &m_trigger650, "trigger650/i");
   TreeMuoTau->Branch("trigger", &m_trigger, "trigger/i");
@@ -831,6 +1030,11 @@ QCDAnalyzer::beginJob()
   TreeMuoTau->Branch("lumi", &m_lumi, "lumi/d");
   TreeMuoTau->Branch("weight", &m_weight, "weight/f");
   TreeMuoTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeMuoTau->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeMuoTau->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeMuoTau->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeMuoTau->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeMuoTau->Branch("EleTau", &m_EleTau, "EleTau/i");
 
   TreeEleTau = fs->make<TTree>("TreeEleTau", "TreeEleTau");
   TreeEleTau->Branch("jetPt", &m_jetPt, "jetPt/f");
@@ -839,27 +1043,30 @@ QCDAnalyzer::beginJob()
   TreeEleTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
   TreeEleTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
   TreeEleTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
-  TreeEleTau->Branch("dRJetLep", &m_dRJetLep, "dRJetLep/f");
-  TreeEleTau->Branch("dRJetTau", &m_dRJetTau, "dRJetTau/f");
-  TreeEleTau->Branch("dPhiTauMet", &m_dPhiTauMet, "dPhiTauMet/f");
-  TreeEleTau->Branch("dRTauMet", &m_dRTauMet, "dRTauMet/f");
-  TreeEleTau->Branch("dRTauLep", &m_dRTauLep, "dRTauLep/f");
-  TreeEleTau->Branch("dPhiLepMet", &m_dPhiLepMet, "dPhiLepMet/f");
-  TreeEleTau->Branch("dRLepMet", &m_dRLepMet, "dRLepMet/f");
+  TreeEleTau->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeEleTau->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeEleTau->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeEleTau->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeEleTau->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeEleTau->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeEleTau->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
   TreeEleTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
   TreeEleTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
   TreeEleTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
   TreeEleTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
-  TreeEleTau->Branch("tauPt", &m_tauPt, "tauPt/f");
-  TreeEleTau->Branch("tauEta", &m_tauEta, "tauEta/f");
-  TreeEleTau->Branch("tauCharge", &m_tauCharge, "tauCharge/f");
-  TreeEleTau->Branch("tauIso", &m_tauIso, "tauIso/f");
-  TreeEleTau->Branch("tauFake", &m_tauFake, "tauFake/i");
-  TreeEleTau->Branch("lepPt", &m_lepPt, "lepPt/f");
-  TreeEleTau->Branch("lepEta", &m_lepEta, "lepEta/f");
-  TreeEleTau->Branch("lepCharge", &m_lepCharge, "lepCharge/f");
-  TreeEleTau->Branch("lepPFIso", &m_lepPFIso, "lepPFIso/f");
-  TreeEleTau->Branch("lepCorrPFIso", &m_lepCorrPFIso, "lepCorrPFIso/f");
+  TreeEleTau->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeEleTau->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeEleTau->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeEleTau->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeEleTau->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeEleTau->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeEleTau->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeEleTau->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeEleTau->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeEleTau->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeEleTau->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeEleTau->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeEleTau->Branch("tauIso", &m_tauIso, "tauIso/i");
   TreeEleTau->Branch("charge", &m_charge, "charge/f");
   TreeEleTau->Branch("met", &m_met, "met/f");
   TreeEleTau->Branch("metPhi", &m_metPhi, "metPhi/f");
@@ -869,13 +1076,27 @@ QCDAnalyzer::beginJob()
   TreeEleTau->Branch("MassEff", &m_MassEff, "MassEff/f");
   TreeEleTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
   TreeEleTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeEleTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
   TreeEleTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
   TreeEleTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
   TreeEleTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
   TreeEleTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
-  TreeEleTau->Branch("nbtagsL", &m_nbtagsL, "nbtagsL/i");
-  TreeEleTau->Branch("nbtagsM", &m_nbtagsM, "nbtagsM/i");
-  TreeEleTau->Branch("nbtagsT", &m_nbtagsT, "nbtagsT/i");
+  TreeEleTau->Branch("njet1", &m_njet1, "njet1/i");
+  TreeEleTau->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeEleTau->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeEleTau->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeEleTau->Branch("njet2", &m_njet2, "njet2/i");
+  TreeEleTau->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeEleTau->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeEleTau->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeEleTau->Branch("njet3", &m_njet3, "njet3/i");
+  TreeEleTau->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeEleTau->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeEleTau->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeEleTau->Branch("njet4", &m_njet4, "njet4/i");
+  TreeEleTau->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeEleTau->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeEleTau->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
   TreeEleTau->Branch("trigger320", &m_trigger320, "trigger320/i");
   TreeEleTau->Branch("trigger650", &m_trigger650, "trigger650/i");
   TreeEleTau->Branch("trigger", &m_trigger, "trigger/i");
@@ -889,6 +1110,811 @@ QCDAnalyzer::beginJob()
   TreeEleTau->Branch("lumi", &m_lumi, "lumi/d");
   TreeEleTau->Branch("weight", &m_weight, "weight/f");
   TreeEleTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeEleTau->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeEleTau->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeEleTau->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeEleTau->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeEleTau->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB1EleMuo = fs->make<TTree>("TreeSB1EleMuo", "TreeSB1EleMuo");
+  TreeSB1EleMuo->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1EleMuo->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1EleMuo->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1EleMuo->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1EleMuo->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1EleMuo->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1EleMuo->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB1EleMuo->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB1EleMuo->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB1EleMuo->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB1EleMuo->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB1EleMuo->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB1EleMuo->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB1EleMuo->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1EleMuo->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1EleMuo->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1EleMuo->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1EleMuo->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB1EleMuo->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB1EleMuo->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB1EleMuo->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB1EleMuo->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB1EleMuo->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB1EleMuo->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB1EleMuo->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB1EleMuo->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB1EleMuo->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB1EleMuo->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB1EleMuo->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB1EleMuo->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB1EleMuo->Branch("charge", &m_charge, "charge/f");
+  TreeSB1EleMuo->Branch("met", &m_met, "met/f");
+  TreeSB1EleMuo->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1EleMuo->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1EleMuo->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1EleMuo->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1EleMuo->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1EleMuo->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1EleMuo->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1EleMuo->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1EleMuo->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1EleMuo->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1EleMuo->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1EleMuo->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1EleMuo->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB1EleMuo->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB1EleMuo->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB1EleMuo->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB1EleMuo->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB1EleMuo->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB1EleMuo->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB1EleMuo->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB1EleMuo->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB1EleMuo->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB1EleMuo->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB1EleMuo->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB1EleMuo->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB1EleMuo->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB1EleMuo->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB1EleMuo->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB1EleMuo->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1EleMuo->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1EleMuo->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1EleMuo->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1EleMuo->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1EleMuo->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1EleMuo->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1EleMuo->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1EleMuo->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1EleMuo->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1EleMuo->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1EleMuo->Branch("weight", &m_weight, "weight/f");
+  TreeSB1EleMuo->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB1EleMuo->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB1EleMuo->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB1EleMuo->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB1EleMuo->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB1EleMuo->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB1MuoMuo = fs->make<TTree>("TreeSB1MuoMuo", "TreeSB1MuoMuo");
+  TreeSB1MuoMuo->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1MuoMuo->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1MuoMuo->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1MuoMuo->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1MuoMuo->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1MuoMuo->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1MuoMuo->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB1MuoMuo->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB1MuoMuo->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB1MuoMuo->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB1MuoMuo->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB1MuoMuo->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB1MuoMuo->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB1MuoMuo->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1MuoMuo->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1MuoMuo->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1MuoMuo->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1MuoMuo->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB1MuoMuo->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB1MuoMuo->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB1MuoMuo->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB1MuoMuo->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB1MuoMuo->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB1MuoMuo->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB1MuoMuo->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB1MuoMuo->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB1MuoMuo->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB1MuoMuo->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB1MuoMuo->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB1MuoMuo->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB1MuoMuo->Branch("charge", &m_charge, "charge/f");
+  TreeSB1MuoMuo->Branch("met", &m_met, "met/f");
+  TreeSB1MuoMuo->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1MuoMuo->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1MuoMuo->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1MuoMuo->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1MuoMuo->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1MuoMuo->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1MuoMuo->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1MuoMuo->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1MuoMuo->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1MuoMuo->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1MuoMuo->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1MuoMuo->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1MuoMuo->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB1MuoMuo->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB1MuoMuo->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB1MuoMuo->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB1MuoMuo->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB1MuoMuo->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB1MuoMuo->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB1MuoMuo->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB1MuoMuo->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB1MuoMuo->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB1MuoMuo->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB1MuoMuo->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB1MuoMuo->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB1MuoMuo->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB1MuoMuo->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB1MuoMuo->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB1MuoMuo->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1MuoMuo->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1MuoMuo->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1MuoMuo->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1MuoMuo->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1MuoMuo->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1MuoMuo->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1MuoMuo->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1MuoMuo->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1MuoMuo->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1MuoMuo->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1MuoMuo->Branch("weight", &m_weight, "weight/f");
+  TreeSB1MuoMuo->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB1MuoMuo->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB1MuoMuo->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB1MuoMuo->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB1MuoMuo->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB1MuoMuo->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB1EleEle = fs->make<TTree>("TreeSB1EleEle", "TreeSB1EleEle");
+  TreeSB1EleEle->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1EleEle->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1EleEle->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1EleEle->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1EleEle->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1EleEle->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1EleEle->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB1EleEle->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB1EleEle->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB1EleEle->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB1EleEle->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB1EleEle->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB1EleEle->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB1EleEle->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1EleEle->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1EleEle->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1EleEle->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1EleEle->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB1EleEle->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB1EleEle->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB1EleEle->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB1EleEle->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB1EleEle->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB1EleEle->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB1EleEle->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB1EleEle->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB1EleEle->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB1EleEle->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB1EleEle->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB1EleEle->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB1EleEle->Branch("charge", &m_charge, "charge/f");
+  TreeSB1EleEle->Branch("met", &m_met, "met/f");
+  TreeSB1EleEle->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1EleEle->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1EleEle->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1EleEle->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1EleEle->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1EleEle->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1EleEle->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1EleEle->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1EleEle->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1EleEle->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1EleEle->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1EleEle->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1EleEle->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB1EleEle->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB1EleEle->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB1EleEle->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB1EleEle->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB1EleEle->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB1EleEle->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB1EleEle->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB1EleEle->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB1EleEle->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB1EleEle->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB1EleEle->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB1EleEle->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB1EleEle->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB1EleEle->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB1EleEle->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB1EleEle->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1EleEle->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1EleEle->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1EleEle->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1EleEle->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1EleEle->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1EleEle->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1EleEle->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1EleEle->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1EleEle->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1EleEle->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1EleEle->Branch("weight", &m_weight, "weight/f");
+  TreeSB1EleEle->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB1EleEle->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB1EleEle->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB1EleEle->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB1EleEle->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB1EleEle->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB1MuoTau = fs->make<TTree>("TreeSB1MuoTau", "TreeSB1MuoTau");
+  TreeSB1MuoTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1MuoTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1MuoTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1MuoTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1MuoTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1MuoTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1MuoTau->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB1MuoTau->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB1MuoTau->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB1MuoTau->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB1MuoTau->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB1MuoTau->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB1MuoTau->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB1MuoTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1MuoTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1MuoTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1MuoTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1MuoTau->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB1MuoTau->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB1MuoTau->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB1MuoTau->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB1MuoTau->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB1MuoTau->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB1MuoTau->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB1MuoTau->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB1MuoTau->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB1MuoTau->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB1MuoTau->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB1MuoTau->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB1MuoTau->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB1MuoTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB1MuoTau->Branch("met", &m_met, "met/f");
+  TreeSB1MuoTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1MuoTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1MuoTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1MuoTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1MuoTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1MuoTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1MuoTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1MuoTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1MuoTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1MuoTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1MuoTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1MuoTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1MuoTau->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB1MuoTau->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB1MuoTau->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB1MuoTau->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB1MuoTau->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB1MuoTau->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB1MuoTau->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB1MuoTau->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB1MuoTau->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB1MuoTau->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB1MuoTau->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB1MuoTau->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB1MuoTau->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB1MuoTau->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB1MuoTau->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB1MuoTau->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB1MuoTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1MuoTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1MuoTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1MuoTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1MuoTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1MuoTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1MuoTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1MuoTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1MuoTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1MuoTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1MuoTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1MuoTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB1MuoTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB1MuoTau->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB1MuoTau->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB1MuoTau->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB1MuoTau->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB1MuoTau->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB1EleTau = fs->make<TTree>("TreeSB1EleTau", "TreeSB1EleTau");
+  TreeSB1EleTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB1EleTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB1EleTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB1EleTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB1EleTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB1EleTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB1EleTau->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB1EleTau->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB1EleTau->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB1EleTau->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB1EleTau->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB1EleTau->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB1EleTau->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB1EleTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB1EleTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB1EleTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB1EleTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB1EleTau->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB1EleTau->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB1EleTau->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB1EleTau->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB1EleTau->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB1EleTau->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB1EleTau->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB1EleTau->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB1EleTau->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB1EleTau->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB1EleTau->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB1EleTau->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB1EleTau->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB1EleTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB1EleTau->Branch("met", &m_met, "met/f");
+  TreeSB1EleTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB1EleTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB1EleTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB1EleTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB1EleTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB1EleTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB1EleTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB1EleTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB1EleTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB1EleTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB1EleTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB1EleTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB1EleTau->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB1EleTau->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB1EleTau->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB1EleTau->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB1EleTau->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB1EleTau->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB1EleTau->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB1EleTau->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB1EleTau->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB1EleTau->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB1EleTau->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB1EleTau->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB1EleTau->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB1EleTau->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB1EleTau->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB1EleTau->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB1EleTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB1EleTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB1EleTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB1EleTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB1EleTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB1EleTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB1EleTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB1EleTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB1EleTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB1EleTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB1EleTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB1EleTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB1EleTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB1EleTau->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB1EleTau->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB1EleTau->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB1EleTau->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB1EleTau->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB2EleMuo = fs->make<TTree>("TreeSB2EleMuo", "TreeSB2EleMuo");
+  TreeSB2EleMuo->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2EleMuo->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2EleMuo->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2EleMuo->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2EleMuo->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2EleMuo->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2EleMuo->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB2EleMuo->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB2EleMuo->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB2EleMuo->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB2EleMuo->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB2EleMuo->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB2EleMuo->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB2EleMuo->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2EleMuo->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2EleMuo->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2EleMuo->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2EleMuo->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB2EleMuo->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB2EleMuo->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB2EleMuo->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB2EleMuo->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB2EleMuo->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB2EleMuo->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB2EleMuo->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB2EleMuo->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB2EleMuo->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB2EleMuo->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB2EleMuo->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB2EleMuo->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB2EleMuo->Branch("charge", &m_charge, "charge/f");
+  TreeSB2EleMuo->Branch("met", &m_met, "met/f");
+  TreeSB2EleMuo->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2EleMuo->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2EleMuo->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2EleMuo->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2EleMuo->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2EleMuo->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2EleMuo->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2EleMuo->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2EleMuo->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2EleMuo->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2EleMuo->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2EleMuo->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2EleMuo->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB2EleMuo->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB2EleMuo->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB2EleMuo->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB2EleMuo->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB2EleMuo->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB2EleMuo->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB2EleMuo->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB2EleMuo->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB2EleMuo->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB2EleMuo->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB2EleMuo->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB2EleMuo->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB2EleMuo->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB2EleMuo->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB2EleMuo->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB2EleMuo->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2EleMuo->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2EleMuo->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2EleMuo->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2EleMuo->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2EleMuo->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2EleMuo->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2EleMuo->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2EleMuo->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2EleMuo->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2EleMuo->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2EleMuo->Branch("weight", &m_weight, "weight/f");
+  TreeSB2EleMuo->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB2EleMuo->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB2EleMuo->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB2EleMuo->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB2EleMuo->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB2EleMuo->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB2MuoMuo = fs->make<TTree>("TreeSB2MuoMuo", "TreeSB2MuoMuo");
+  TreeSB2MuoMuo->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2MuoMuo->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2MuoMuo->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2MuoMuo->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2MuoMuo->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2MuoMuo->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2MuoMuo->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB2MuoMuo->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB2MuoMuo->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB2MuoMuo->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB2MuoMuo->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB2MuoMuo->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB2MuoMuo->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB2MuoMuo->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2MuoMuo->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2MuoMuo->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2MuoMuo->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2MuoMuo->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB2MuoMuo->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB2MuoMuo->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB2MuoMuo->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB2MuoMuo->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB2MuoMuo->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB2MuoMuo->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB2MuoMuo->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB2MuoMuo->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB2MuoMuo->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB2MuoMuo->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB2MuoMuo->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB2MuoMuo->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB2MuoMuo->Branch("charge", &m_charge, "charge/f");
+  TreeSB2MuoMuo->Branch("met", &m_met, "met/f");
+  TreeSB2MuoMuo->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2MuoMuo->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2MuoMuo->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2MuoMuo->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2MuoMuo->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2MuoMuo->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2MuoMuo->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2MuoMuo->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2MuoMuo->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2MuoMuo->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2MuoMuo->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2MuoMuo->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2MuoMuo->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB2MuoMuo->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB2MuoMuo->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB2MuoMuo->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB2MuoMuo->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB2MuoMuo->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB2MuoMuo->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB2MuoMuo->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB2MuoMuo->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB2MuoMuo->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB2MuoMuo->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB2MuoMuo->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB2MuoMuo->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB2MuoMuo->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB2MuoMuo->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB2MuoMuo->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB2MuoMuo->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2MuoMuo->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2MuoMuo->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2MuoMuo->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2MuoMuo->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2MuoMuo->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2MuoMuo->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2MuoMuo->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2MuoMuo->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2MuoMuo->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2MuoMuo->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2MuoMuo->Branch("weight", &m_weight, "weight/f");
+  TreeSB2MuoMuo->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB2MuoMuo->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB2MuoMuo->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB2MuoMuo->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB2MuoMuo->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB2MuoMuo->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB2EleEle = fs->make<TTree>("TreeSB2EleEle", "TreeSB2EleEle");
+  TreeSB2EleEle->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2EleEle->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2EleEle->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2EleEle->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2EleEle->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2EleEle->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2EleEle->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB2EleEle->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB2EleEle->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB2EleEle->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB2EleEle->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB2EleEle->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB2EleEle->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB2EleEle->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2EleEle->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2EleEle->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2EleEle->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2EleEle->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB2EleEle->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB2EleEle->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB2EleEle->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB2EleEle->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB2EleEle->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB2EleEle->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB2EleEle->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB2EleEle->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB2EleEle->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB2EleEle->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB2EleEle->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB2EleEle->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB2EleEle->Branch("charge", &m_charge, "charge/f");
+  TreeSB2EleEle->Branch("met", &m_met, "met/f");
+  TreeSB2EleEle->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2EleEle->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2EleEle->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2EleEle->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2EleEle->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2EleEle->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2EleEle->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2EleEle->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2EleEle->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2EleEle->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2EleEle->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2EleEle->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2EleEle->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB2EleEle->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB2EleEle->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB2EleEle->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB2EleEle->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB2EleEle->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB2EleEle->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB2EleEle->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB2EleEle->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB2EleEle->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB2EleEle->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB2EleEle->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB2EleEle->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB2EleEle->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB2EleEle->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB2EleEle->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB2EleEle->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2EleEle->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2EleEle->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2EleEle->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2EleEle->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2EleEle->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2EleEle->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2EleEle->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2EleEle->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2EleEle->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2EleEle->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2EleEle->Branch("weight", &m_weight, "weight/f");
+  TreeSB2EleEle->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB2EleEle->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB2EleEle->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB2EleEle->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB2EleEle->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB2EleEle->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB2MuoTau = fs->make<TTree>("TreeSB2MuoTau", "TreeSB2MuoTau");
+  TreeSB2MuoTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2MuoTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2MuoTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2MuoTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2MuoTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2MuoTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2MuoTau->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB2MuoTau->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB2MuoTau->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB2MuoTau->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB2MuoTau->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB2MuoTau->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB2MuoTau->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB2MuoTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2MuoTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2MuoTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2MuoTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2MuoTau->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB2MuoTau->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB2MuoTau->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB2MuoTau->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB2MuoTau->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB2MuoTau->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB2MuoTau->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB2MuoTau->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB2MuoTau->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB2MuoTau->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB2MuoTau->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB2MuoTau->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB2MuoTau->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB2MuoTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB2MuoTau->Branch("met", &m_met, "met/f");
+  TreeSB2MuoTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2MuoTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2MuoTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2MuoTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2MuoTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2MuoTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2MuoTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2MuoTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2MuoTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2MuoTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2MuoTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2MuoTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2MuoTau->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB2MuoTau->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB2MuoTau->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB2MuoTau->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB2MuoTau->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB2MuoTau->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB2MuoTau->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB2MuoTau->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB2MuoTau->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB2MuoTau->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB2MuoTau->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB2MuoTau->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB2MuoTau->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB2MuoTau->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB2MuoTau->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB2MuoTau->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB2MuoTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2MuoTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2MuoTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2MuoTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2MuoTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2MuoTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2MuoTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2MuoTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2MuoTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2MuoTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2MuoTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2MuoTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB2MuoTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB2MuoTau->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB2MuoTau->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB2MuoTau->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB2MuoTau->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB2MuoTau->Branch("EleTau", &m_EleTau, "EleTau/i");
+
+  TreeSB2EleTau = fs->make<TTree>("TreeSB2EleTau", "TreeSB2EleTau");
+  TreeSB2EleTau->Branch("jetPt", &m_jetPt, "jetPt/f");
+  TreeSB2EleTau->Branch("jetEta", &m_jetEta, "jetEta/f");
+  TreeSB2EleTau->Branch("jetMass", &m_jetMass, "jetMass/f");
+  TreeSB2EleTau->Branch("jetSubjettiness", &m_jetSubjettiness, "jetSubjettiness/f");
+  TreeSB2EleTau->Branch("dPhiJetMet", &m_dPhiJetMet, "dPhiJetMet/f");
+  TreeSB2EleTau->Branch("dRJetMet", &m_dRJetMet, "dRJetMet/f");
+  TreeSB2EleTau->Branch("dRJetLep2", &m_dRJetLep2, "dRJetLep2/f");
+  TreeSB2EleTau->Branch("dRJetLep1", &m_dRJetLep1, "dRJetLep1/f");
+  TreeSB2EleTau->Branch("dPhiLep1Met", &m_dPhiLep1Met, "dPhiLep1Met/f");
+  TreeSB2EleTau->Branch("dRLep1Met", &m_dRLep1Met, "dRLep1Met/f");
+  TreeSB2EleTau->Branch("dRLep1Lep2", &m_dRLep1Lep2, "dRLep1Lep2/f");
+  TreeSB2EleTau->Branch("dPhiLep2Met", &m_dPhiLep2Met, "dPhiLep2Met/f");
+  TreeSB2EleTau->Branch("dRLep2Met", &m_dRLep2Met, "dRLep2Met/f");
+  TreeSB2EleTau->Branch("dRZZVis", &m_dRZZVis, "dRZZVis/f");
+  TreeSB2EleTau->Branch("dRZZEff", &m_dRZZEff, "dRZZEff/f");
+  TreeSB2EleTau->Branch("dRZZSvFit", &m_dRZZSvFit, "dRZZSvFit/f");
+  TreeSB2EleTau->Branch("dRZZCA", &m_dRZZCA, "dRZZCA/f");
+  TreeSB2EleTau->Branch("lep1Pt", &m_lep1Pt, "lep1Pt/f");
+  TreeSB2EleTau->Branch("lep1Eta", &m_lep1Eta, "lep1Eta/f");
+  TreeSB2EleTau->Branch("lep1Charge", &m_lep1Charge, "lep1Charge/f");
+  TreeSB2EleTau->Branch("lep1PFIso", &m_lep1PFIso, "lep1PFIso/f");
+  TreeSB2EleTau->Branch("lep1CorrPFIso", &m_lep1CorrPFIso, "lep1CorrPFIso/f");
+  TreeSB2EleTau->Branch("lep2Pt", &m_lep2Pt, "lep2Pt/f");
+  TreeSB2EleTau->Branch("lep2Eta", &m_lep2Eta, "lep2Eta/f");
+  TreeSB2EleTau->Branch("lep2Charge", &m_lep2Charge, "lep2Charge/f");
+  TreeSB2EleTau->Branch("lep2PFIso", &m_lep2PFIso, "lep2PFIso/f");
+  TreeSB2EleTau->Branch("lep2CorrPFIso", &m_lep2CorrPFIso, "lep2CorrPFIso/f");
+  TreeSB2EleTau->Branch("lep1DETIso", &m_lep1DETIso, "lep1DETIso/f");
+  TreeSB2EleTau->Branch("lep2DETIso", &m_lep2DETIso, "lep2DETIso/f");
+  TreeSB2EleTau->Branch("tauIso", &m_tauIso, "tauIso/i");
+  TreeSB2EleTau->Branch("charge", &m_charge, "charge/f");
+  TreeSB2EleTau->Branch("met", &m_met, "met/f");
+  TreeSB2EleTau->Branch("metPhi", &m_metPhi, "metPhi/f");
+  TreeSB2EleTau->Branch("uncorrmet", &m_uncorrmet, "uncorrmet/f");
+  TreeSB2EleTau->Branch("uncorrmetPhi", &m_uncorrmetPhi, "uncorrmetPhi/f");
+  TreeSB2EleTau->Branch("MassVis", &m_MassVis, "MassVis/f");
+  TreeSB2EleTau->Branch("MassEff", &m_MassEff, "MassEff/f");
+  TreeSB2EleTau->Branch("MassSvfit", &m_MassSvfit, "MassSvfit/f");
+  TreeSB2EleTau->Branch("MassCA", &m_MassCA, "MassCA/f");
+  TreeSB2EleTau->Branch("PtSvfit", &m_PtSvfit, "PtSvfit/f");
+  TreeSB2EleTau->Branch("XMassVis", &m_XMassVis, "XMassVis/f");
+  TreeSB2EleTau->Branch("XMassEff", &m_XMassEff, "XMassEff/f");
+  TreeSB2EleTau->Branch("XMassSVFit", &m_XMassSVFit, "XMassSVFit/f");
+  TreeSB2EleTau->Branch("XMassCA", &m_XMassCA, "XMassCA/f");
+  TreeSB2EleTau->Branch("njet1", &m_njet1, "njet1/i");
+  TreeSB2EleTau->Branch("nbtagsL1", &m_nbtagsL1, "nbtagsL1/i");
+  TreeSB2EleTau->Branch("nbtagsM1", &m_nbtagsM1, "nbtagsM1/i");
+  TreeSB2EleTau->Branch("nbtagsT1", &m_nbtagsT1, "nbtagsT1/i");
+  TreeSB2EleTau->Branch("njet2", &m_njet2, "njet2/i");
+  TreeSB2EleTau->Branch("nbtagsL2", &m_nbtagsL2, "nbtagsL2/i");
+  TreeSB2EleTau->Branch("nbtagsM2", &m_nbtagsM2, "nbtagsM2/i");
+  TreeSB2EleTau->Branch("nbtagsT2", &m_nbtagsT2, "nbtagsT2/i");
+  TreeSB2EleTau->Branch("njet3", &m_njet3, "njet3/i");
+  TreeSB2EleTau->Branch("nbtagsL3", &m_nbtagsL3, "nbtagsL3/i");
+  TreeSB2EleTau->Branch("nbtagsM3", &m_nbtagsM3, "nbtagsM3/i");
+  TreeSB2EleTau->Branch("nbtagsT3", &m_nbtagsT3, "nbtagsT3/i");
+  TreeSB2EleTau->Branch("njet4", &m_njet4, "njet4/i");
+  TreeSB2EleTau->Branch("nbtagsL4", &m_nbtagsL4, "nbtagsL4/i");
+  TreeSB2EleTau->Branch("nbtagsM4", &m_nbtagsM4, "nbtagsM4/i");
+  TreeSB2EleTau->Branch("nbtagsT4", &m_nbtagsT4, "nbtagsT4/i");
+  TreeSB2EleTau->Branch("trigger320", &m_trigger320, "trigger320/i");
+  TreeSB2EleTau->Branch("trigger650", &m_trigger650, "trigger650/i");
+  TreeSB2EleTau->Branch("trigger", &m_trigger, "trigger/i");
+  TreeSB2EleTau->Branch("sideband", &m_sideband, "sideband/i");
+  TreeSB2EleTau->Branch("NVertices", &m_NVertices, "NVertices/i");
+  TreeSB2EleTau->Branch("PUWeight", &m_PUWeight, "PUWeight/f");
+  TreeSB2EleTau->Branch("metPx", &m_metPx, "metPx/f");
+  TreeSB2EleTau->Branch("metPy", &m_metPy, "metPy/f");
+  TreeSB2EleTau->Branch("NeventsTOT", &m_NeventsTOT, "NeventsTOT/i");
+  TreeSB2EleTau->Branch("xsec", &m_xsec, "xsec/d");
+  TreeSB2EleTau->Branch("lumi", &m_lumi, "lumi/d");
+  TreeSB2EleTau->Branch("weight", &m_weight, "weight/f");
+  TreeSB2EleTau->Branch("genEvent", &m_genEvent, "genEvent/f");
+  TreeSB2EleTau->Branch("EleMuo", &m_EleMuo, "EleMuo/i");
+  TreeSB2EleTau->Branch("MuoMuo", &m_MuoMuo, "MuoMuo/i");
+  TreeSB2EleTau->Branch("EleEle", &m_EleEle, "EleEle/i");
+  TreeSB2EleTau->Branch("MuoTau", &m_MuoTau, "MuoTau/i");
+  TreeSB2EleTau->Branch("EleTau", &m_EleTau, "EleTau/i");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -929,6 +1955,216 @@ QCDAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.setUnknown();
   descriptions.addDefault(desc);
+}
+
+void QCDAnalyzer::SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets,
+			 edm::Handle<pat::JetCollection> CA8JetsPruned,
+			 bool & foundJet,
+			 pat::JetCollection::const_iterator & SelectedJet,
+			 float & prunedMass, float & tau21Z, float & ptZ,
+			 float massMin, float massMax){
+
+  for(pat::JetCollection::const_iterator jet = CA8JetswithQjets->begin(); jet != CA8JetswithQjets->end(); ++jet) {
+    float dRmin = 9999.; float mass = 0.;
+    for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
+      float dRtmp = ROOT::Math::VectorUtil::DeltaR(jet->p4(),jetPruned->p4());
+      if(dRtmp<dRmin && dRtmp<0.8 ){//matching failed if greater than jet radius
+        dRmin=dRtmp;
+        mass=jetPruned->mass();
+      }
+    }
+    if(jet->muonEnergyFraction()>=0.99) continue;
+    if(jet->photonEnergyFraction()>=0.99) continue;
+    if(jet->chargedEmEnergyFraction()>=0.99) continue;
+    if(jet->neutralHadronEnergyFraction()>=0.99) continue;
+    if(jet->chargedHadronEnergyFraction()<=0.00) continue;
+    if(jet->nConstituents()<=1) continue;
+    if(jet->pt()<400) continue;
+    if(fabs(jet->eta())>2.4) continue;
+    if(!(mass>massMin && mass<massMax))  continue;
+    if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;
+    foundJet=true;
+    if(jet->pt()>ptZ){
+      prunedMass=mass;
+      ptZ=jet->pt();
+      tau21Z=jet->userFloat("tau2")/jet->userFloat("tau1");
+      SelectedJet=jet;
+    }
+  }
+}
+
+void QCDAnalyzer::SelectTau(edm::Handle<pat::TauCollection> tauHandle,
+			 pat::JetCollection::const_iterator SelectedJet,
+			 bool & foundTau,
+			 pat::TauCollection::const_iterator & SelectedTau,
+			 float & ptTau, bool foundJet){
+  
+  for (pat::TauCollection::const_iterator patTau = tauHandle->begin(); patTau != tauHandle->end(); ++patTau ) {
+    if(patTau->pt()<20) continue;
+    if(fabs(patTau->eta())>2.4) continue;
+    if(patTau->tauID("decayModeFindingNewDMs")<0.5) continue;
+    if(patTau->tauID("againstMuonLoose")<0.5) continue;
+    if(patTau->tauID("againstElectronLoose")<0.5) continue;
+    //if(patTau->tauID("byVLooseIsolationMVA3newDMwoLT")<0.5) continue;
+    if(foundJet){
+      if(ROOT::Math::VectorUtil::DeltaR(patTau->p4(),SelectedJet->p4())>0.8){
+    	foundTau=true;
+	if(patTau->pt()>ptTau){
+	  SelectedTau=patTau;
+	  ptTau=patTau->pt();
+	}
+      }
+    }
+  }
+}
+
+void QCDAnalyzer::SelectMuon(edm::Handle<pat::MuonCollection> muoH,
+			  pat::JetCollection::const_iterator SelectedJet, bool & foundMuon,
+			  pat::MuonCollection::const_iterator & SelectedMuon,
+			  float & ptMuon, bool foundJet, reco::Vertex primaryVertex, bool fully){
+  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+    if(!(muon->isGlobalMuon())) continue;
+    reco::TrackRef cktTrack = (muon::tevOptimized(*muon, 200, 17., 40., 0.25)).first;
+    if(cktTrack->pt()<10) continue;
+    if(fabs(cktTrack->eta())>2.4) continue;
+    if(fabs(cktTrack->phi())>3.2) continue;
+    if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
+    if(muon->globalTrack()->hitPattern().numberOfValidMuonHits()<=0) continue;
+    if(muon->numberOfMatches()<=1) continue;
+    if(fabs(cktTrack->dxy(primaryVertex.position()))>=0.2) continue;
+    if(fabs(cktTrack->dz( primaryVertex.position()))>=0.5) continue;
+    if(muon->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
+    if(muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
+    //if(fully){if(MuonPFIso(muon, true)>0.2) continue;}
+    //else     {if(MuonCorrPFIso(muon, true)>0.2) continue;}
+    if(foundJet) {
+      if(ROOT::Math::VectorUtil::DeltaR(muon->p4(),SelectedJet->p4())>0.8){
+	foundMuon=true;
+	if(cktTrack->pt()>ptMuon){
+	  SelectedMuon=muon;
+	  ptMuon=cktTrack->pt();
+	}
+      }
+    }
+  }
+}
+
+void QCDAnalyzer::SelectElectron(edm::Handle<pat::ElectronCollection> eleH,
+			      pat::JetCollection::const_iterator SelectedJet, bool & foundElectron,
+			      pat::ElectronCollection::const_iterator & SelectedElectron,
+			      float & ptElectron, bool foundJet, reco::Vertex primaryVertex, 
+			      float lep2Pt, float rho, bool fully){
+  bool passEle=false;
+  for(pat::ElectronCollection::const_iterator electron = eleH->begin(); electron != eleH->end(); ++electron) {
+    if(electron->pt()<10) continue;
+    if(electron->pt()==lep2Pt) continue;
+    //if(fully){if(ElectronPFIso(electron,rho)>0.1) continue;}
+    //else     {if(ElectronCorrPFIso(electron,rho)>0.1) continue;}
+    if(fabs(electron->superCluster()->eta())<=1.479){
+      if(fabs(electron->deltaEtaSuperClusterTrackAtVtx())>=0.004) continue;
+      if(fabs(electron->deltaPhiSuperClusterTrackAtVtx())>=0.030) continue;
+      if(electron->sigmaIetaIeta()>=0.01) continue;
+      if(electron->hadronicOverEm()>=0.12) continue;
+      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
+      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
+      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
+      if(electron->passConversionVeto()==0) continue;
+      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
+      passEle=true;
+    }
+    if(fabs(electron->superCluster()->eta())>1.479 && fabs(electron->superCluster()->eta())<2.5){
+      if(fabs(electron->deltaEtaSuperClusterTrackAtVtx())>=0.005) continue;
+      if(fabs(electron->deltaPhiSuperClusterTrackAtVtx())>=0.020) continue;
+      if(electron->sigmaIetaIeta()>=0.03) continue;
+      if(electron->hadronicOverEm()>=0.10) continue;
+      if(fabs(electron->gsfTrack()->dxy(primaryVertex.position()))>=0.02) continue;
+      if(fabs(electron->gsfTrack()->dz(primaryVertex.position()))>=0.1) continue;
+      if((fabs(1/electron->ecalEnergy() - electron->eSuperClusterOverP()/electron->ecalEnergy()))>=0.05) continue;
+      if(electron->passConversionVeto()==0) continue;
+      if(electron->gsfTrack()->trackerExpectedHitsInner().numberOfHits()!=0) continue;
+      passEle=true;
+    }
+    if(foundJet && passEle){
+      if(ROOT::Math::VectorUtil::DeltaR(electron->p4(),SelectedJet->p4())>0.8){
+	foundElectron=true;
+	if(electron->pt()>ptElectron){
+	  SelectedElectron=electron;
+	  ptElectron=electron->pt();
+	}
+      }
+    }
+  }
+}
+
+void QCDAnalyzer::SelectMuonMM(pat::MuonCollection::const_iterator & SelectedMuon1, 
+			    pat::MuonCollection::const_iterator & SelectedMuon2, 
+			    bool & foundMuonMM, std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo, 
+			    pat::JetCollection::const_iterator SelectedJet, bool foundJet, reco::Vertex primaryVertex){
+  bool hasAtLeastOneHighPtMuo=false; float pt1=-99; float pt2=-99;
+  vector<pat::MuonCollection::const_iterator> SelectedMuo;
+  pat::MuonCollection::const_iterator Muon1;
+  pat::MuonCollection::const_iterator Muon2;
+  for(unsigned int i=0; i<SelectedTrackerMuo.size(); i++){
+    if(!foundJet) continue;
+    //if((MuonDETIso(SelectedTrackerMuo[i],SelectedTrackerMuo))>0.1) continue;
+    if(ROOT::Math::VectorUtil::DeltaR(SelectedTrackerMuo[i]->p4(),SelectedJet->p4())<0.8) continue;
+    SelectedMuo.push_back(SelectedTrackerMuo[i]);
+  }
+  for(unsigned int i=0; i<SelectedMuo.size(); i++){
+    if(!(SelectedMuo[i]->isGlobalMuon())) continue;
+    reco::TrackRef cktTrack = (muon::tevOptimized(*(SelectedMuo[i]), 200, 17., 40., 0.25)).first;
+    if(cktTrack->pt()<10) continue;
+    if(fabs(cktTrack->eta())>2.4) continue;
+    if(fabs(cktTrack->phi())>3.2) continue;
+    if((cktTrack->ptError()/cktTrack->pt())>0.3) continue;
+    if(SelectedMuo[i]->globalTrack()->hitPattern().numberOfValidMuonHits()<=0) continue;
+    if(SelectedMuo[i]->numberOfMatches()<=1) continue;
+    if(fabs(cktTrack->dxy(primaryVertex.position()))>=0.2) continue;
+    if(fabs(cktTrack->dz( primaryVertex.position()))>=0.5) continue;
+    if(SelectedMuo[i]->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
+    if(SelectedMuo[i]->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
+    hasAtLeastOneHighPtMuo = true;
+    if(SelectedMuo[i]->pt()>pt1){
+      Muon1=SelectedMuo[i];
+      pt1=SelectedMuo[i]->pt();
+    }
+  }
+  if(hasAtLeastOneHighPtMuo){
+    for(unsigned int i=0; i<SelectedMuo.size(); i++){
+      if(SelectedMuo[i]==Muon1) continue;
+      foundMuonMM=true;
+      if(SelectedMuo[i]->pt()>pt2){
+	Muon2=SelectedMuo[i];
+	pt2=SelectedMuo[i]->pt();
+      }
+    }
+  }
+  if(foundMuonMM){
+    if(Muon1->pt()>Muon2->pt()){
+      SelectedMuon1=Muon1;
+      SelectedMuon2=Muon2;
+    }else{
+      SelectedMuon1=Muon2;
+      SelectedMuon2=Muon1;
+    }
+  }
+}
+
+
+void QCDAnalyzer::SelectTrackerMuon(edm::Handle<pat::MuonCollection> muoH, vector<pat::MuonCollection::const_iterator> & SelectedMuo, reco::Vertex primaryVertex){
+  for(pat::MuonCollection::const_iterator muon = muoH->begin(); muon != muoH->end(); ++muon) {
+    if(muon->pt()<10) continue;
+    if(fabs(muon->eta())>2.4) continue;
+    if(fabs(muon->phi())>3.2) continue;
+    if(!(muon->isTrackerMuon())) continue;
+    if(muon->numberOfMatches()<=1) continue;
+    if(fabs(muon->muonBestTrack()->dz(primaryVertex.position()))>=0.5) continue;
+    if(fabs(muon->dB())>=0.2 ) continue;
+    if(muon->innerTrack()->hitPattern().numberOfValidPixelHits()<=0) continue;
+    if(muon->innerTrack()->hitPattern().trackerLayersWithMeasurement()<=5) continue;
+    if((muon->muonBestTrack()->ptError()/muon->muonBestTrack()->pt())>0.3) continue;
+    SelectedMuo.push_back(muon);
+  }
 }
 
 float QCDAnalyzer::MuonPFIso(pat::MuonCollection::const_iterator muon, bool highpt){
@@ -995,15 +2231,322 @@ float QCDAnalyzer::ElectronCorrPFIso(pat::ElectronCollection::const_iterator ele
   return iso;
 }
 
-void QCDAnalyzer::BtagVeto(edm::Handle<pat::JetCollection> ak5jetCands, int & nbtagsL, int & nbtagsM, int & nbtagsT,
-				    pat::JetCollection::const_iterator SelectedJet){
-  for(pat::JetCollection::const_iterator ak5 = ak5jetCands->begin(); ak5 != ak5jetCands->end(); ++ak5) {
-    if(ROOT::Math::VectorUtil::DeltaR(ak5->p4(),SelectedJet->p4())<0.8) continue;
-    double discCSV = ak5->bDiscriminator("combinedSecondaryVertexBJetTags");
-    if(discCSV>0.244) nbtagsL++; //loose working point
-    if(discCSV>0.679) nbtagsM++; //medium working point
-    if(discCSV>0.898) nbtagsT++; //tight working point
+float QCDAnalyzer::MuonDETIso(pat::MuonCollection::const_iterator SelectedMuo, vector<pat::MuonCollection::const_iterator> SelectedHighptMuo){
+  float isovar = SelectedMuo->trackIso()/SelectedMuo->pt();
+  for(unsigned int j = 0; j< SelectedHighptMuo.size();++j){
+    if(SelectedMuo==SelectedHighptMuo[j]) continue;
+    double dR = ROOT::Math::VectorUtil::DeltaR(SelectedMuo->p4(),SelectedHighptMuo[j]->p4());
+    if(dR < 0.3) isovar = isovar - ((SelectedHighptMuo[j]->track()->pt())/SelectedMuo->pt());
   }
+  return isovar;
+}
+
+void QCDAnalyzer::BtagVeto(int & njet1, int & nbtagsL1, int & nbtagsM1, int & nbtagsT1, int & njet2, int & nbtagsL2, int & nbtagsM2, int & nbtagsT2,
+			int & njet3, int & nbtagsL3, int & nbtagsM3, int & nbtagsT3, int & njet4, int & nbtagsL4, int & nbtagsM4, int & nbtagsT4,
+			pat::JetCollection::const_iterator SelectedJet, math::PtEtaPhiELorentzVector lep1, math::PtEtaPhiELorentzVector lep2, const edm::Event& iEvent){
+
+  //edm::Handle<pat::JetCollection> ak5jetCands;
+  edm::Handle<edm::View<pat::Jet> > ak5jetCands;
+  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
+  edm::Handle<ValueMap<float> > puJetIdMVA;
+  iEvent.getByLabel("puJetMvaAK5CHS","fullDiscriminant", puJetIdMVA);
+  edm::Handle<ValueMap<int> > puJetIdFlag;
+  iEvent.getByLabel("puJetMvaAK5CHS","fullId", puJetIdFlag);
+
+  for ( unsigned int i=0; i<ak5jetCands->size(); ++i ) {
+    const pat::Jet & ak5 = ak5jetCands->at(i);
+    //for(pat::JetCollection::const_iterator ak5 = ak5jetCands->begin(); ak5 != ak5jetCands->end(); ++ak5) {
+    if(ak5.pt()<20) continue;
+    if(fabs(ak5.eta())>2.4) continue;
+    if(ROOT::Math::VectorUtil::DeltaR(ak5.p4(),SelectedJet->p4())<0.8) continue;
+    if(ROOT::Math::VectorUtil::DeltaR(ak5.p4(),lep1)<0.5) continue;
+    if(ROOT::Math::VectorUtil::DeltaR(ak5.p4(),lep2)<0.5) continue;
+    //float mva   = (*puJetIdMVA)[ak5jetCands->refAt(i)];
+    int idflag = (*puJetIdFlag)[ak5jetCands->refAt(i)];
+    double discCSV = ak5.bDiscriminator("combinedSecondaryVertexBJetTags");
+    njet1++;
+    if(discCSV>0.244) nbtagsL1++; //loose working point
+    if(discCSV>0.679) nbtagsM1++; //medium working point
+    if(discCSV>0.898) nbtagsT1++; //tight working point
+    if(!(PileupJetIdentifier::passJetId(idflag, PileupJetIdentifier::kLoose))){
+      njet2++;
+      if(discCSV>0.244) nbtagsL2++;
+      if(discCSV>0.679) nbtagsM2++;
+      if(discCSV>0.898) nbtagsT2++;
+    }
+    if(!(PileupJetIdentifier::passJetId(idflag, PileupJetIdentifier::kMedium))){
+      njet3++;
+      if(discCSV>0.244) nbtagsL3++;
+      if(discCSV>0.679) nbtagsM3++;
+      if(discCSV>0.898) nbtagsT3++;
+    }
+    if(!(PileupJetIdentifier::passJetId(idflag, PileupJetIdentifier::kTight))){
+      njet4++;
+      if(discCSV>0.244) nbtagsL4++;
+      if(discCSV>0.679) nbtagsM4++;
+      if(discCSV>0.898) nbtagsT4++;
+    }
+  }
+}
+
+void QCDAnalyzer::Efficiency(float & genEvent, bool isData, Handle<vector<reco::GenParticle> > genParts){
+  if(isData==false){
+    int ele = 0; int muo = 0;
+    vector<math::PtEtaPhiELorentzVector> genele;
+    for(size_t ngenPart=0; ngenPart<genParts->size(); ngenPart++){
+      const reco::GenParticle & genPart = (*genParts)[ngenPart];
+      if(abs(genPart.pdgId())==15 && genPart.status()!=3){
+	for(unsigned int ndaugh=0; ndaugh<genPart.numberOfDaughters(); ndaugh++){
+	  const reco::Candidate * daughter = genPart.daughter(ndaugh);
+	  if(abs(daughter->pdgId())==11 && daughter->status()==1) ele = ele + 1;
+	  if(abs(daughter->pdgId())==13 && daughter->status()==1) muo = muo + 1;
+	}
+      }
+    }
+    if(ele==2 && muo==0)      genEvent = 1;
+    else if(ele==1 && muo==1) genEvent = 2;
+    else if(ele==1 && muo==0) genEvent = 3;
+    else if(ele==0 && muo==2) genEvent = 4;
+    else if(ele==0 && muo==1) genEvent = 5;
+    else if(ele==0 && muo==0) genEvent = 6;
+    else                      genEvent = 7;
+  }
+}
+
+void QCDAnalyzer::svfit(edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, LorentzVector SelectedLep1, 
+		     LorentzVector SelectedLep2, TLorentzVector PrunedJet, float & MassSVFit, float & XMassSVFit, float & dRJetZSVFit, float & ptSVFit, 
+		     pat::JetCollection::const_iterator SelectedJet, int category){
+  TMatrixD covMET(2, 2); // PFMET significance matrix
+  covMET[0][0] = (metRaw->front() ).getSignificanceMatrix()(0,0);
+  covMET[1][0] = (metRaw->front() ).getSignificanceMatrix()(1,0);
+  covMET[0][1] = (metRaw->front() ).getSignificanceMatrix()(0,1);
+  covMET[1][1] = (metRaw->front() ).getSignificanceMatrix()(1,1);
+  std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
+  if(category==0 || category==1 || category==2){
+    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedLep1));
+    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedLep2));
+  }
+  if(category==3 || category==4){
+    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kHadDecay, SelectedLep1));
+    measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, SelectedLep2));
+  }
+  NSVfitStandaloneAlgorithm algo(measuredTauLeptons, met->begin()->momentum(), covMET, 0);
+  algo.addLogM(false);
+  algo.integrateMarkovChain();
+  if(algo.pt()>0){
+    TLorentzVector SVFitTauTau; SVFitTauTau.SetPtEtaPhiM(algo.pt(), algo.eta(), algo.phi(), algo.getMass());
+    dRJetZSVFit=ROOT::Math::VectorUtil::DeltaR(SVFitTauTau,SelectedJet->p4());
+    XMassSVFit=(SVFitTauTau+PrunedJet).M();
+    MassSVFit=algo.getMass();
+    ptSVFit=algo.pt();
+  }
+}
+
+void QCDAnalyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_iterator SelectedJet, pat::TauCollection::const_iterator SelectedTau,
+			pat::MuonCollection::const_iterator SelectedMuo, pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2,
+			pat::ElectronCollection::const_iterator SelectedEle, pat::ElectronCollection::const_iterator SelectedEle1, 
+			pat::ElectronCollection::const_iterator SelectedEle2, edm::Handle<reco::VertexCollection> vertices,
+			edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, edm::Handle<pat::METCollection> uncorrmet,
+			float prunedMass, bool isFired_HLT, bool isFired_HLT_PFJet320, bool isFired_HLT_HT650,
+			double MyWeight, float genEvent, float rho, int EleMuo, int MuoMuo, int EleEle, int MuoTau, int EleTau, const edm::Event& iEvent,
+			std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo){
+  
+  math::PtEtaPhiELorentzVector lep1;
+  math::PtEtaPhiELorentzVector lep2;
+  LorentzVector lep1SVFit;
+  LorentzVector lep2SVFit;
+  float lep1Charge=0;  float lep2Charge=0;
+  float lep1PFIso=100; float lep1CorrPFIso=100; float lep1DETIso=100;
+  float lep2PFIso=100; float lep2CorrPFIso=100;	float lep2DETIso=100;
+  int tauIso = -10;
+  if(category==0){
+    lep1 = SelectedEle->p4();
+    lep2 = SelectedMuo->p4();
+    lep1SVFit = SelectedEle->p4();
+    lep2SVFit = SelectedMuo->p4();
+    lep1Charge=SelectedEle->charge();
+    lep2Charge=SelectedMuo->charge();
+    lep1PFIso=ElectronPFIso(SelectedEle,rho);
+    lep1CorrPFIso=ElectronCorrPFIso(SelectedEle,rho);
+    lep2PFIso=MuonPFIso(SelectedMuo,true);
+    lep2CorrPFIso=MuonCorrPFIso(SelectedMuo,true);
+    lep2DETIso=(MuonDETIso(SelectedMuo,SelectedTrackerMuo));
+  }else if(category==1){
+    lep1 = SelectedMuo1->p4();
+    lep2 = SelectedMuo2->p4();
+    lep1SVFit = SelectedMuo1->p4();
+    lep2SVFit = SelectedMuo2->p4();
+    lep1Charge=SelectedMuo1->charge();
+    lep2Charge=SelectedMuo2->charge();
+    lep1PFIso=MuonPFIso(SelectedMuo1,true);
+    lep1CorrPFIso=MuonCorrPFIso(SelectedMuo1,true);
+    lep2PFIso=MuonPFIso(SelectedMuo2,true);
+    lep2CorrPFIso=MuonCorrPFIso(SelectedMuo2,true);
+    lep1DETIso=(MuonDETIso(SelectedMuo1,SelectedTrackerMuo));
+    lep2DETIso=(MuonDETIso(SelectedMuo2,SelectedTrackerMuo));
+  }else if(category==2){
+    lep1 = SelectedEle1->p4();
+    lep2 = SelectedEle2->p4();
+    lep1SVFit = SelectedEle1->p4();
+    lep2SVFit = SelectedEle2->p4();
+    lep1Charge=SelectedEle1->charge();
+    lep2Charge=SelectedEle2->charge();
+    lep1PFIso=ElectronPFIso(SelectedEle1,rho);
+    lep1CorrPFIso=ElectronCorrPFIso(SelectedEle1,rho);
+    lep2PFIso=ElectronPFIso(SelectedEle2,rho);
+    lep2CorrPFIso=ElectronCorrPFIso(SelectedEle2,rho);
+  }else if(category==3){
+    lep1 = SelectedTau->p4();
+    lep2 = SelectedMuo->p4();
+    lep1SVFit = SelectedTau->p4();
+    lep2SVFit = SelectedMuo->p4();
+    lep1Charge=SelectedTau->charge();
+    lep2Charge=SelectedMuo->charge();
+    lep2PFIso=MuonPFIso(SelectedMuo,true);
+    lep2CorrPFIso=MuonCorrPFIso(SelectedMuo,true);
+    lep2DETIso=(MuonDETIso(SelectedMuo,SelectedTrackerMuo));
+    tauIso=SelectedTau->tauID("byVLooseIsolationMVA3newDMwoLT");
+  }else if(category==4){
+    lep1 = SelectedTau->p4();
+    lep2 = SelectedEle->p4();
+    lep1SVFit = SelectedTau->p4();
+    lep2SVFit = SelectedEle->p4();
+    lep1Charge=SelectedTau->charge();
+    lep2Charge=SelectedEle->charge();
+    lep2PFIso=ElectronPFIso(SelectedEle,rho);
+    lep2CorrPFIso=ElectronCorrPFIso(SelectedEle,rho);
+    tauIso=SelectedTau->tauID("byVLooseIsolationMVA3newDMwoLT");
+  }
+
+  //BTAG VETO
+  int njet1=0; int nbtagsL1=0; int nbtagsM1=0; int nbtagsT1=0; int njet2=0; int nbtagsL2=0; int nbtagsM2=0; int nbtagsT2=0;
+  int njet3=0; int nbtagsL3=0; int nbtagsM3=0; int nbtagsT3=0; int njet4=0; int nbtagsL4=0; int nbtagsM4=0; int nbtagsT4=0;
+  BtagVeto(njet1, nbtagsL1, nbtagsM1, nbtagsT1, njet2, nbtagsL2, nbtagsM2, nbtagsT2, 
+	   njet3, nbtagsL3, nbtagsM3, nbtagsT3, njet4, nbtagsL4, nbtagsM4, nbtagsT4, SelectedJet, lep1, lep2, iEvent);
+
+  //SVFIT
+  math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),prunedMass);
+  TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
+  float MassSVFit = -1;
+  float XMassSVFit = -1;
+  float dRJetZSVFit = -1;
+  float ptSVFit = -1;
+  svfit(metRaw, met, lep1SVFit, lep2SVFit, PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedJet, category);
+  //COLLINEAR APPROXIMATION
+  TLorentzVector CATauTau; bool CA = false;
+  float a = (lep1.py()*met->begin()->px()-lep1.px()*met->begin()->py())/
+    (lep2.px()*lep1.py()-lep2.py()*lep1.px());
+  float b = (lep2.py()*met->begin()->px()-lep2.px()*met->begin()->py())/
+    (lep1.px()*lep2.py()-lep1.py()*lep2.px());
+  if(((1+a)*(1+b))>0 && ((1+a)*(1+b))<9999999999) {
+    CATauTau.SetPxPyPzE((1+a)*lep2.px()+(1+b)*lep1.px(),
+			(1+a)*lep2.py()+(1+b)*lep1.py(),
+			(1+a)*lep2.pz()+(1+b)*lep1.pz(),
+			(1+a)*lep2.energy()+(1+b)*lep1.energy());
+    CA=true;
+  }
+  else CA = false;
+  float MassCA = -1;
+  float XmassCA = -1.;
+  float dRJetZCA = -1.;
+  if(CA){
+    MassCA = CATauTau.M();
+    XmassCA = (CATauTau+PrunedJet).M();
+    dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
+  }
+  //VISIBLE AND EFFECTIVE
+  math::PtEtaPhiELorentzVector dilep; dilep = lep1+lep2;
+  math::PtEtaPhiELorentzVector dilepmet; dilepmet = lep1+lep2+met->begin()->p4();
+  math::PtEtaPhiELorentzVector dilepjet; dilepjet = lep1+lep2+PrunedJet_prov;
+  math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = lep1+lep2+met->begin()->p4()+PrunedJet_prov;
+
+  if(prunedMass>70 && prunedMass<110){
+    if(category==0) cout<<"EleMuo "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
+    if(category==1) cout<<"MuoMuo "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
+    if(category==2) cout<<"EleEle "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
+    if(category==3) cout<<"MuoTau "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
+    if(category==4) cout<<"EleTau "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
+  }
+
+  m_jetPt=SelectedJet->pt();
+  m_jetEta=SelectedJet->eta();
+  m_jetMass=prunedMass;
+  m_jetSubjettiness=SelectedJet->userFloat("tau2")/SelectedJet->userFloat("tau1");
+  m_lep1Pt=lep1.pt();
+  m_lep1Eta=lep1.eta();
+  m_lep1Charge=lep1Charge;
+  m_lep1PFIso=lep1PFIso;
+  m_lep1CorrPFIso=lep1CorrPFIso;
+  m_lep2Pt=lep2.pt();
+  m_lep2Eta=lep2.eta();
+  m_lep2Charge=lep2Charge;
+  m_lep2PFIso=lep2PFIso;
+  m_lep2CorrPFIso=lep2CorrPFIso;
+  m_lep1DETIso=lep1DETIso;
+  m_lep2DETIso=lep2DETIso;
+  m_tauIso=tauIso;
+  m_dPhiJetMet=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),SelectedJet->p4());
+  m_dRJetMet=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),SelectedJet->p4());
+  m_dRJetLep2=ROOT::Math::VectorUtil::DeltaR(lep2,SelectedJet->p4());
+  m_dRJetLep1=ROOT::Math::VectorUtil::DeltaR(lep1,SelectedJet->p4());
+  m_dPhiLep1Met=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),lep1);
+  m_dRLep1Met=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),lep1);
+  m_dRLep1Lep2=ROOT::Math::VectorUtil::DeltaR(lep2,lep1);
+  m_dPhiLep2Met=ROOT::Math::VectorUtil::DeltaPhi(met->begin()->p4(),lep2);
+  m_dRLep2Met=ROOT::Math::VectorUtil::DeltaR(met->begin()->p4(),lep2);
+  m_dRZZVis=ROOT::Math::VectorUtil::DeltaR(dilep,PrunedJet);
+  m_dRZZEff=ROOT::Math::VectorUtil::DeltaR(dilepmet,PrunedJet);
+  m_dRZZSvFit=dRJetZSVFit;
+  m_dRZZCA=dRJetZCA;
+  m_charge=lep1Charge*lep2Charge;
+  m_met=met->begin()->pt();
+  m_metPhi=met->begin()->phi();
+  m_uncorrmet=uncorrmet->begin()->pt();
+  m_uncorrmetPhi=uncorrmet->begin()->phi();
+  m_PtSvfit=ptSVFit;
+  m_MassVis=dilep.mass();
+  m_MassEff=dilepmet.mass();
+  m_MassSvfit=MassSVFit;
+  m_MassCA=MassCA;
+  m_XMassVis=dilepjet.mass();
+  m_XMassEff=dilepmetjet.mass();
+  m_XMassSVFit=XMassSVFit;
+  m_XMassCA=XmassCA;
+  m_njet1=njet1;
+  m_nbtagsL1=nbtagsL1;
+  m_nbtagsM1=nbtagsM1;
+  m_nbtagsT1=nbtagsT1;
+  m_njet2=njet2;
+  m_nbtagsL2=nbtagsL2;
+  m_nbtagsM2=nbtagsM2;
+  m_nbtagsT2=nbtagsT2;
+  m_njet3=njet3;
+  m_nbtagsL3=nbtagsL3;
+  m_nbtagsM3=nbtagsM3;
+  m_nbtagsT3=nbtagsT3;
+  m_njet4=njet4;
+  m_nbtagsL4=nbtagsL4;
+  m_nbtagsM4=nbtagsM4;
+  m_nbtagsT4=nbtagsT4;
+  m_trigger=(int)isFired_HLT;
+  m_trigger320=(int)isFired_HLT_PFJet320;
+  m_trigger650=(int)isFired_HLT_HT650;
+  m_sideband=(int)(prunedMass<70);
+  m_NVertices=vertices->size();
+  m_PUWeight=MyWeight;
+  m_metPx=met->begin()->px();
+  m_metPy=met->begin()->py();
+  m_NeventsTOT=NeventsTOT_;
+  m_xsec=xsec_;
+  m_lumi=lumi_;
+  m_weight=xsec_*lumi_/NeventsTOT_;
+  m_genEvent = genEvent;
+  m_EleMuo=EleMuo;
+  m_MuoMuo=MuoMuo;
+  m_EleEle=EleEle;
+  m_MuoTau=MuoTau;
+  m_EleTau=EleTau;
+  Tree->Fill();
 }
 
 //define this as a plug-in
