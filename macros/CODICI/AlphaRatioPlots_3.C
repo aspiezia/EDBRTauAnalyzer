@@ -66,7 +66,7 @@ void BackgroundEstimation(char *channel, float XMassWidth, float XMassBin, float
   TFile *file07=TFile::Open("../../RISULTATI/analyzer_290514/QCD250.root");    TTree *Tree07=(TTree*)file07->Get(openTreeSB);  TTree *Tree20=(TTree*)file07->Get(openTree); 
   TFile *file08=TFile::Open("../../RISULTATI/analyzer_290514/QCD500.root");    TTree *Tree08=(TTree*)file08->Get(openTreeSB);  TTree *Tree21=(TTree*)file08->Get(openTree); 
   TFile *file09=TFile::Open("../../RISULTATI/analyzer_290514/TT.root");        TTree *Tree09=(TTree*)file09->Get(openTreeSB);  TTree *Tree22=(TTree*)file09->Get(openTree);
-  TFile *file10=TFile::Open("../../RISULTATI/analyzer_290514/WJets180.root");  TTree *Tree10=(TTree*)file10->Get(openTreeSB);  TTree *Tree23=(TTree*)file10->Get(openTree); 
+  TFile *file10=TFile::Open("../../RISULTATI/analyzer_290514/WJetsHT.root");   TTree *Tree10=(TTree*)file10->Get(openTreeSB);  TTree *Tree23=(TTree*)file10->Get(openTree); 
   TFile *file11=TFile::Open("../../RISULTATI/analyzer_290514/WW.root");        TTree *Tree11=(TTree*)file11->Get(openTreeSB);  TTree *Tree24=(TTree*)file11->Get(openTree);  
   TFile *file12=TFile::Open("../../RISULTATI/analyzer_290514/WZ.root");        TTree *Tree12=(TTree*)file12->Get(openTreeSB);  TTree *Tree25=(TTree*)file12->Get(openTree);  
   TFile *file13=TFile::Open("../../RISULTATI/analyzer_290514/ZZ.root");        TTree *Tree13=(TTree*)file13->Get(openTreeSB);  TTree *Tree26=(TTree*)file13->Get(openTree); 
@@ -81,7 +81,7 @@ void BackgroundEstimation(char *channel, float XMassWidth, float XMassBin, float
     TH1F *QCD250    = new TH1F("","",bin,min,max);	 TH1F *QCD1000_SR   = new TH1F("","",bin,min,max);
     TH1F *QCD500    = new TH1F("","",bin,min,max);	 TH1F *QCD250_SR    = new TH1F("","",bin,min,max);
     TH1F *TT        = new TH1F("","",bin,min,max);	 TH1F *QCD500_SR    = new TH1F("","",bin,min,max);
-    TH1F *WJets180  = new TH1F("","",bin,min,max);	 TH1F *WJets180_SR  = new TH1F("","",bin,min,max);
+    TH1F *WJetsHT   = new TH1F("","",bin,min,max);	 TH1F *WJetsHT_SR   = new TH1F("","",bin,min,max);
     TH1F *WW        = new TH1F("","",bin,min,max);	 TH1F *WW_SR        = new TH1F("","",bin,min,max);
     TH1F *WZ        = new TH1F("","",bin,min,max);	 TH1F *WZ_SR        = new TH1F("","",bin,min,max);
     TH1F *ZZ        = new TH1F("","",bin,min,max);	 TH1F *ZZ_SR        = new TH1F("","",bin,min,max);
@@ -125,7 +125,7 @@ void BackgroundEstimation(char *channel, float XMassWidth, float XMassBin, float
     Tree07->Draw(input07,CUT);     if(Tree07->Draw(input07,CUT))     {QCD250    = h07; }
     Tree08->Draw(input08,CUT);     if(Tree08->Draw(input08,CUT))     {QCD500    = h08; }
     Tree09->Draw(input09,CUT);     if(Tree09->Draw(input09,CUT))     {TT        = h09; }
-    Tree10->Draw(input10,CUT);     if(Tree10->Draw(input10,CUT))     {WJets180  = h10; }
+    Tree10->Draw(input10,CUT);     if(Tree10->Draw(input10,CUT))     {WJetsHT   = h10; }
     Tree11->Draw(input11,CUT);     if(Tree11->Draw(input11,CUT))     {WW        = h11; }
     Tree12->Draw(input12,CUT);     if(Tree12->Draw(input12,CUT))     {WZ        = h12; }
     Tree13->Draw(input13,CUT);     if(Tree13->Draw(input13,CUT))     {WZ        = h13; }
@@ -153,7 +153,7 @@ void BackgroundEstimation(char *channel, float XMassWidth, float XMassBin, float
     Tree20->Draw(input20,CUT);     if(Tree20->Draw(input20,CUT))     {QCD250_SR    = h20; }
     Tree21->Draw(input21,CUT);     if(Tree21->Draw(input21,CUT))     {QCD500_SR    = h21; }
     Tree22->Draw(input22,CUT);     if(Tree22->Draw(input22,CUT))     {TT_SR        = h22; }
-    Tree23->Draw(input23,CUT);     if(Tree23->Draw(input23,CUT))     {WJets180_SR  = h23; }
+    Tree23->Draw(input23,CUT);     if(Tree23->Draw(input23,CUT))     {WJetsHT_SR   = h23; }
     Tree24->Draw(input24,CUT);     if(Tree24->Draw(input24,CUT))     {WW_SR        = h24; }
     Tree25->Draw(input25,CUT);     if(Tree25->Draw(input25,CUT))     {WZ_SR        = h25; }
     Tree26->Draw(input26,CUT);     if(Tree26->Draw(input26,CUT))     {WZ_SR        = h26; }
@@ -169,7 +169,7 @@ void BackgroundEstimation(char *channel, float XMassWidth, float XMassBin, float
     float w_WW        = (57.1097*19702./10000431.);
     float w_WZ        = ( 33.210*19702./10000283.);
     float w_ZZ        = (  8.059*19702./9799908.0);
-    float w_WJets180  = ( 23.500*19702./9739464.0);
+    float w_WJetsHT   = ( 25.220*19702./4971847.0);
 		
     double N_sb = data->Integral();
     double N_sb_err = sqrt(data->Integral());
@@ -200,10 +200,10 @@ void BackgroundEstimation(char *channel, float XMassWidth, float XMassBin, float
     double N_TT_SB      = w_TT*TT->Integral();
     double N_TT_SB_err  = sqrt(w_TT*w_TT*TT->Integral());
 
-    double N_Wjets_SR      = w_WJets180*WJets180_SR->Integral();
-    double N_Wjets_SR_err  = sqrt(w_WJets180*w_WJets180*WJets180_SR->Integral());
-    double N_Wjets_SB      = w_WJets180*WJets180->Integral();
-    double N_Wjets_SB_err  = sqrt(w_WJets180*w_WJets180*WJets180->Integral());
+    double N_Wjets_SR      = w_WJetsHT*WJetsHT_SR->Integral();
+    double N_Wjets_SR_err  = sqrt(w_WJetsHT*w_WJetsHT*WJetsHT_SR->Integral());
+    double N_Wjets_SB      = w_WJetsHT*WJetsHT->Integral();
+    double N_Wjets_SB_err  = sqrt(w_WJetsHT*w_WJetsHT*WJetsHT->Integral());
 		
     double alpha_num     = N_QCD_SR + N_DY_SR + N_VV_SR + N_TT_SR + N_Wjets_SR;
     double alpha_num_err = sqrt(N_QCD_SR_err*N_QCD_SR_err + N_DY_SR_err*N_DY_SR_err + N_VV_SR_err*N_VV_SR_err + N_TT_SR_err*N_TT_SR_err + N_Wjets_SR_err*N_Wjets_SR_err);

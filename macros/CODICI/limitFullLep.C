@@ -32,11 +32,11 @@ void limitFullLep(bool only_leptonTAG=false, bool save_plots = false, float min=
 	
   //LIMIT - Breit-Wigner
   Double_t Limit_Obs[val]     = {0,0,0,0};
-  Double_t Limit_Exp_m2s[val] = {3.60, 1.0, 0.9, 0.9};
-  Double_t Limit_Exp_m1s[val] = {5.10, 1.8, 1.5, 1.5};
-  Double_t Limit_Exp[val]     = {7.70, 3.2, 2.7, 2.8};
-  Double_t Limit_Exp_p1s[val] = {12.0, 5.6, 4.9, 5.2};
-  Double_t Limit_Exp_p2s[val] = {18.0, 9.1, 8.1, 8.5};
+  Double_t Limit_Exp_m2s[val] = {3.90, 1.1, 0.8, 0.8};
+  Double_t Limit_Exp_m1s[val] = {5.40, 1.8, 1.4, 1.4};
+  Double_t Limit_Exp[val]     = {8.00, 3.0, 2.6, 2.6};
+  Double_t Limit_Exp_p1s[val] = {12.2, 5.1, 4.8, 4.8};
+  Double_t Limit_Exp_p2s[val] = {18.1, 8.4, 8.0, 7.9};
 
   Double_t XSEC[val] = {1.54, 0.22, 0.03, 0.01};
 	

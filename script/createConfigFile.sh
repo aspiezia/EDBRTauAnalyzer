@@ -13,6 +13,26 @@ echo "import FWCore.ParameterSet.Config as cms"
 echo ""
 echo 'process = cms.Process("Demo")'
 echo ""
+echo "##USED ONLY FOR MC"
+echo "jecLevels = ["
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L1FastJet_AK7PFchs.txt',"
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L2Relative_AK7PFchs.txt',"
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L3Absolute_AK7PFchs.txt'"
+echo "]"
+echo "jecLevelsAK5 = ["
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L1FastJet_AK5PF.txt',"
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L2Relative_AK5PF.txt',"
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L3Absolute_AK5PF.txt'"
+echo "]"
+echo "jecLevelsAK5CHS = ["
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L1FastJet_AK5PFchs.txt',"
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L2Relative_AK5PFchs.txt',"
+echo "  '/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_L3Absolute_AK5PFchs.txt'"
+echo "]"
+echo "xyMETcorrs= ["
+echo "    '+0.1166 + 0.0200*Nvtx',"
+echo "    '+0.2764 - 0.1280*Nvtx'"
+echo "]"
 echo 'process.load("FWCore.MessageService.MessageLogger_cfi")'
 echo "process.MessageLogger.cerr.FwkReport.reportEvery = 10000"
 echo ""
@@ -76,7 +96,15 @@ echo '                              tauElTauColl = cms.InputTag("selectedPatTaus
 echo '                              metColl = cms.InputTag("patMetShiftCorrected"),'
 echo '                              uncorrmetColl = cms.InputTag("patMETs"),'
 echo '                              metRawColl = cms.InputTag("patMETsRaw"),'
-echo '                              ak5JetColl = cms.InputTag("patJetsWithVarCHS"),'
+echo '                              ak5JetColl = cms.InputTag("patJetsWithVar"),'
+echo '                              ak5CHSJetColl = cms.InputTag("patJetsWithVarCHS"),'
+echo "                              jecPayloadNames = cms.vstring( jecLevels ),"
+echo "                              jecUncName = cms.string('/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_Uncertainty_AK7PFchs.txt'),"
+echo "                              jecPayloadNamesAK5 = cms.vstring( jecLevelsAK5 ),"
+echo "                              jecUncNameAK5 = cms.string('/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_Uncertainty_AK5PF.txt'),"
+echo "                              jecPayloadNamesAK5CHS = cms.vstring( jecLevelsAK5CHS ),"
+echo "                              jecUncNameAK5CHS = cms.string('/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/GLOBALTAG/START53_V23_Uncertainty_AK5PFchs.txt'),"
+echo "                              corrFormulas = cms.vstring( xyMETcorrs ),"
 if [ "$dataset" == "WW" ]
 then
     echo '                              NeventsTOT = cms.int32(10000431),'

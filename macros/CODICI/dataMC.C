@@ -21,15 +21,17 @@
     char demo0     [500]; sprintf(demo0,     "demo/Tree"); 
     char demo1     [500]; sprintf(demo1,     "demo/TreeSB1"); 
     char demo2     [500]; sprintf(demo2,     "demo/TreeSB2"); 
+    char demo3     [500]; sprintf(demo3,     "demo/TreeSB3"); 
     char openTree0 [500]; sprintf(openTree0, "%s%s",demo0,channel); 
     char openTree1 [500]; sprintf(openTree1, "%s%s",demo1,channel); 
     char openTree2 [500]; sprintf(openTree2, "%s%s",demo2,channel); 
+    char openTree3 [500]; sprintf(openTree3, "%s%s",demo3,channel); 
     TString CHANNEL = channel;
     bool save=true; 
     bool log=true;
 
     vector<string> PLOT;              vector<int> BIN;   vector<float> MIN;  vector<float> MAX;   vector<float> MAXY; vector<TString> AXIS;
-    PLOT.push_back("MassVis");        BIN.push_back(25); MIN.push_back(0);   MAX.push_back(250);  MAXY.push_back(500); AXIS.push_back("M(tau,lep) [GeV] (visible)");
+    PLOT.push_back("MassVis");        BIN.push_back(25); MIN.push_back(0);   MAX.push_back(250);  MAXY.push_back(500); AXIS.push_back("M(lep,lep) [GeV] (visible)");
     PLOT.push_back("NVertices");      BIN.push_back(41); MIN.push_back(-0.5);MAX.push_back(40.5); MAXY.push_back(500); AXIS.push_back("N(vertices)");
     PLOT.push_back("XMassSVFit");     BIN.push_back(60); MIN.push_back(0);   MAX.push_back(3000); MAXY.push_back(500); AXIS.push_back("M(Z,H) [GeV] (SvFit)");
     PLOT.push_back("jetMass");        BIN.push_back(20); MIN.push_back(20);  MAX.push_back(200);  MAXY.push_back(500); AXIS.push_back("jet mass [GeV]");
@@ -41,8 +43,6 @@
     PLOT.push_back("dRLep1Lep2");     BIN.push_back(60); MIN.push_back(0);   MAX.push_back(6);    MAXY.push_back(500); AXIS.push_back("#DeltaR (lep1,lep2)");
     PLOT.push_back("lep1Pt");         BIN.push_back(50); MIN.push_back(0);   MAX.push_back(500);  MAXY.push_back(500); AXIS.push_back("lep1 pt [GeV]");
     PLOT.push_back("lep2Pt");         BIN.push_back(50); MIN.push_back(0);   MAX.push_back(500);  MAXY.push_back(500); AXIS.push_back("lep2 pt [GeV]");
-
-  
 
     for(int i=0; i<PLOT.size(); i++){
       //for(int i=3; i<4; i++){
@@ -60,11 +60,11 @@
       //int N = 16;  Double_t xbins[N] = {0,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1800,2000,2500}; //X MASS
 
       char CUT [500];
-      if(CHANNEL=="EleMuo")      sprintf(CUT, "trigger*PUWeight*(met>20)");
-      else if(CHANNEL=="MuoMuo") sprintf(CUT, "trigger*PUWeight*(met>20)");
-      else if(CHANNEL=="EleEle") sprintf(CUT, "trigger*PUWeight*(met>20)");
-      else if(CHANNEL=="EleTau") sprintf(CUT, "trigger*PUWeight*(met>20)");
-      else if(CHANNEL=="MuoTau") sprintf(CUT, "trigger*PUWeight*(met>20)");
+      if(CHANNEL=="EleMuo")      sprintf(CUT, "trigger*PUWeight*(met>20 && PtSvfit>100)");
+      else if(CHANNEL=="MuoMuo") sprintf(CUT, "trigger*PUWeight*(met>20 && PtSvfit>100)");
+      else if(CHANNEL=="EleEle") sprintf(CUT, "trigger*PUWeight*(met>20 && PtSvfit>100)");
+      else if(CHANNEL=="EleTau") sprintf(CUT, "trigger*PUWeight*(met>20 && PtSvfit>100)");
+      else if(CHANNEL=="MuoTau") sprintf(CUT, "trigger*PUWeight*(met>20 && PtSvfit>100)");
 
 
       cout<<endl;
@@ -79,7 +79,7 @@
       TH1F *QCD250   = new TH1F("","",bin,min,max);
       TH1F *QCD500   = new TH1F("","",bin,min,max);
       TH1F *TT       = new TH1F("","",bin,min,max);
-      TH1F *WJets180 = new TH1F("","",bin,min,max);
+      TH1F *WJetsHT  = new TH1F("","",bin,min,max);
       TH1F *WW       = new TH1F("","",bin,min,max);
       TH1F *WZ       = new TH1F("","",bin,min,max);
       TH1F *ZZ       = new TH1F("","",bin,min,max);
@@ -93,24 +93,37 @@
       TFile *file07=TFile::Open("../../RISULTATI/analyzer_290514/QCD250.root");     
       TFile *file08=TFile::Open("../../RISULTATI/analyzer_290514/QCD500.root");     
       TFile *file09=TFile::Open("../../RISULTATI/analyzer_290514/TT.root");        
-      TFile *file10=TFile::Open("../../RISULTATI/analyzer_290514/WJets180.root");   
+      TFile *file10=TFile::Open("../../RISULTATI/analyzer_290514/WJetsHT.root");   
       TFile *file11=TFile::Open("../../RISULTATI/analyzer_290514/WW.root");          
       TFile *file12=TFile::Open("../../RISULTATI/analyzer_290514/WZ.root");          
       TFile *file13=TFile::Open("../../RISULTATI/analyzer_290514/ZZ.root");        
 
-      TTree *Tree01=(TTree*)file01->Get(openTree0);    TTree *Tree14=(TTree*)file01->Get(openTree1);    TTree *Tree27=(TTree*)file01->Get(openTree2);  
-      TTree *Tree02=(TTree*)file02->Get(openTree0);    TTree *Tree15=(TTree*)file02->Get(openTree1);    TTree *Tree28=(TTree*)file02->Get(openTree2);  
-      TTree *Tree03=(TTree*)file03->Get(openTree0);    TTree *Tree16=(TTree*)file03->Get(openTree1);    TTree *Tree29=(TTree*)file03->Get(openTree2);  
-      TTree *Tree04=(TTree*)file04->Get(openTree0);    TTree *Tree17=(TTree*)file04->Get(openTree1);    TTree *Tree30=(TTree*)file04->Get(openTree2);  
-      TTree *Tree05=(TTree*)file05->Get(openTree0);    TTree *Tree18=(TTree*)file05->Get(openTree1);    TTree *Tree31=(TTree*)file05->Get(openTree2);  
-      TTree *Tree06=(TTree*)file06->Get(openTree0);    TTree *Tree19=(TTree*)file06->Get(openTree1);    TTree *Tree32=(TTree*)file06->Get(openTree2);  
-      TTree *Tree07=(TTree*)file07->Get(openTree0);    TTree *Tree20=(TTree*)file07->Get(openTree1);    TTree *Tree33=(TTree*)file07->Get(openTree2);  
-      TTree *Tree08=(TTree*)file08->Get(openTree0);    TTree *Tree21=(TTree*)file08->Get(openTree1);    TTree *Tree34=(TTree*)file08->Get(openTree2);  
-      TTree *Tree09=(TTree*)file09->Get(openTree0);    TTree *Tree22=(TTree*)file09->Get(openTree1);    TTree *Tree35=(TTree*)file09->Get(openTree2);  
-      TTree *Tree10=(TTree*)file10->Get(openTree0);    TTree *Tree23=(TTree*)file10->Get(openTree1);    TTree *Tree36=(TTree*)file10->Get(openTree2);  
-      TTree *Tree11=(TTree*)file11->Get(openTree0);    TTree *Tree24=(TTree*)file11->Get(openTree1);    TTree *Tree37=(TTree*)file11->Get(openTree2);  
-      TTree *Tree12=(TTree*)file12->Get(openTree0);    TTree *Tree25=(TTree*)file12->Get(openTree1);    TTree *Tree38=(TTree*)file12->Get(openTree2);  
-      TTree *Tree13=(TTree*)file13->Get(openTree0);    TTree *Tree26=(TTree*)file13->Get(openTree1);    TTree *Tree39=(TTree*)file13->Get(openTree2);  
+      TTree *Tree01=(TTree*)file01->Get(openTree0); TTree *Tree14=(TTree*)file01->Get(openTree1); TTree *Tree27=(TTree*)file01->Get(openTree2); 
+      TTree *Tree02=(TTree*)file02->Get(openTree0); TTree *Tree15=(TTree*)file02->Get(openTree1); TTree *Tree28=(TTree*)file02->Get(openTree2);  
+      TTree *Tree03=(TTree*)file03->Get(openTree0); TTree *Tree16=(TTree*)file03->Get(openTree1); TTree *Tree29=(TTree*)file03->Get(openTree2);  
+      TTree *Tree04=(TTree*)file04->Get(openTree0); TTree *Tree17=(TTree*)file04->Get(openTree1); TTree *Tree30=(TTree*)file04->Get(openTree2);  
+      TTree *Tree05=(TTree*)file05->Get(openTree0); TTree *Tree18=(TTree*)file05->Get(openTree1); TTree *Tree31=(TTree*)file05->Get(openTree2);  
+      TTree *Tree06=(TTree*)file06->Get(openTree0); TTree *Tree19=(TTree*)file06->Get(openTree1); TTree *Tree32=(TTree*)file06->Get(openTree2);  
+      TTree *Tree07=(TTree*)file07->Get(openTree0); TTree *Tree20=(TTree*)file07->Get(openTree1); TTree *Tree33=(TTree*)file07->Get(openTree2);  
+      TTree *Tree08=(TTree*)file08->Get(openTree0); TTree *Tree21=(TTree*)file08->Get(openTree1); TTree *Tree34=(TTree*)file08->Get(openTree2);  
+      TTree *Tree09=(TTree*)file09->Get(openTree0); TTree *Tree22=(TTree*)file09->Get(openTree1); TTree *Tree35=(TTree*)file09->Get(openTree2);  
+      TTree *Tree10=(TTree*)file10->Get(openTree0); TTree *Tree23=(TTree*)file10->Get(openTree1); TTree *Tree36=(TTree*)file10->Get(openTree2);  
+      TTree *Tree11=(TTree*)file11->Get(openTree0); TTree *Tree24=(TTree*)file11->Get(openTree1); TTree *Tree37=(TTree*)file11->Get(openTree2);  
+      TTree *Tree12=(TTree*)file12->Get(openTree0); TTree *Tree25=(TTree*)file12->Get(openTree1); TTree *Tree38=(TTree*)file12->Get(openTree2);  
+      TTree *Tree13=(TTree*)file13->Get(openTree0); TTree *Tree26=(TTree*)file13->Get(openTree1); TTree *Tree39=(TTree*)file13->Get(openTree2);
+      TTree *Tree40=(TTree*)file01->Get(openTree3);
+      TTree *Tree41=(TTree*)file02->Get(openTree3);
+      TTree *Tree42=(TTree*)file03->Get(openTree3);
+      TTree *Tree43=(TTree*)file04->Get(openTree3);
+      TTree *Tree44=(TTree*)file05->Get(openTree3);
+      TTree *Tree45=(TTree*)file06->Get(openTree3);
+      TTree *Tree46=(TTree*)file07->Get(openTree3);
+      TTree *Tree47=(TTree*)file08->Get(openTree3);
+      TTree *Tree48=(TTree*)file09->Get(openTree3);
+      TTree *Tree49=(TTree*)file10->Get(openTree3);
+      TTree *Tree50=(TTree*)file11->Get(openTree3);
+      TTree *Tree51=(TTree*)file12->Get(openTree3);
+      TTree *Tree52=(TTree*)file13->Get(openTree3);
     
       char input01 [50]; sprintf(input01, "%s>>h01(%i,%f,%f)",plot,bin,min,max);
       char input02 [50]; sprintf(input02, "%s>>h02(%i,%f,%f)",plot,bin,min,max);
@@ -151,6 +164,19 @@
       char input37 [50]; sprintf(input37, "%s>>h37(%i,%f,%f)",plot,bin,min,max);
       char input38 [50]; sprintf(input38, "%s>>h38(%i,%f,%f)",plot,bin,min,max);
       char input39 [50]; sprintf(input39, "%s>>h39(%i,%f,%f)",plot,bin,min,max);
+      char input40 [50]; sprintf(input40, "%s>>h40(%i,%f,%f)",plot,bin,min,max);
+      char input41 [50]; sprintf(input41, "%s>>h41(%i,%f,%f)",plot,bin,min,max);
+      char input42 [50]; sprintf(input42, "%s>>h42(%i,%f,%f)",plot,bin,min,max);
+      char input43 [50]; sprintf(input43, "%s>>h43(%i,%f,%f)",plot,bin,min,max);
+      char input44 [50]; sprintf(input44, "%s>>h44(%i,%f,%f)",plot,bin,min,max);
+      char input45 [50]; sprintf(input45, "%s>>h45(%i,%f,%f)",plot,bin,min,max);
+      char input46 [50]; sprintf(input46, "%s>>h46(%i,%f,%f)",plot,bin,min,max);
+      char input47 [50]; sprintf(input47, "%s>>h47(%i,%f,%f)",plot,bin,min,max);
+      char input48 [50]; sprintf(input48, "%s>>h48(%i,%f,%f)",plot,bin,min,max);
+      char input49 [50]; sprintf(input49, "%s>>h49(%i,%f,%f)",plot,bin,min,max);
+      char input50 [50]; sprintf(input50, "%s>>h50(%i,%f,%f)",plot,bin,min,max);
+      char input51 [50]; sprintf(input51, "%s>>h51(%i,%f,%f)",plot,bin,min,max);
+      char input52 [50]; sprintf(input52, "%s>>h52(%i,%f,%f)",plot,bin,min,max);
       
       Tree01->Draw(input01,CUT,"E"); if(Tree01->Draw(input01,CUT,"E")) {data      = h01; }
       Tree02->Draw(input02,CUT);     if(Tree02->Draw(input02,CUT))     {DY100     = h02; }
@@ -161,7 +187,7 @@
       Tree07->Draw(input07,CUT);     if(Tree07->Draw(input07,CUT))     {QCD250    = h07; }
       Tree08->Draw(input08,CUT);     if(Tree08->Draw(input08,CUT))     {QCD500    = h08; }
       Tree09->Draw(input09,CUT);     if(Tree09->Draw(input09,CUT))     {TT        = h09; }
-      Tree10->Draw(input10,CUT);     if(Tree10->Draw(input10,CUT))     {WJets180  = h10; }
+      Tree10->Draw(input10,CUT);     if(Tree10->Draw(input10,CUT))     {WJetsHT   = h10; }
       Tree11->Draw(input11,CUT);     if(Tree11->Draw(input11,CUT))     {WW        = h11; }
       Tree12->Draw(input12,CUT);     if(Tree12->Draw(input12,CUT))     {WZ        = h12; }
       Tree13->Draw(input13,CUT);     if(Tree13->Draw(input13,CUT))     {WZ        = h13; }
@@ -174,7 +200,7 @@
       Tree20->Draw(input20,CUT);     if(Tree20->Draw(input20,CUT))     {QCD250    ->Add(h20); }
       Tree21->Draw(input21,CUT);     if(Tree21->Draw(input21,CUT))     {QCD500    ->Add(h21); }
       Tree22->Draw(input22,CUT);     if(Tree22->Draw(input22,CUT))     {TT        ->Add(h22); }
-      Tree23->Draw(input23,CUT);     if(Tree23->Draw(input23,CUT))     {WJets180  ->Add(h23); }
+      Tree23->Draw(input23,CUT);     if(Tree23->Draw(input23,CUT))     {WJetsHT   ->Add(h23); }
       Tree24->Draw(input24,CUT);     if(Tree24->Draw(input24,CUT))     {WW        ->Add(h24); }
       Tree25->Draw(input25,CUT);     if(Tree25->Draw(input25,CUT))     {WZ        ->Add(h25); }
       Tree26->Draw(input26,CUT);     if(Tree26->Draw(input26,CUT))     {WZ        ->Add(h26); }
@@ -187,10 +213,23 @@
       Tree33->Draw(input33,CUT);     if(Tree33->Draw(input33,CUT))     {QCD250    ->Add(h33); }
       Tree34->Draw(input34,CUT);     if(Tree34->Draw(input34,CUT))     {QCD500    ->Add(h34); }
       Tree35->Draw(input35,CUT);     if(Tree35->Draw(input35,CUT))     {TT        ->Add(h35); }
-      Tree36->Draw(input36,CUT);     if(Tree36->Draw(input36,CUT))     {WJets180  ->Add(h36); }
+      Tree36->Draw(input36,CUT);     if(Tree36->Draw(input36,CUT))     {WJetsHT   ->Add(h36); }
       Tree37->Draw(input37,CUT);     if(Tree37->Draw(input37,CUT))     {WW        ->Add(h37); }
       Tree38->Draw(input38,CUT);     if(Tree38->Draw(input38,CUT))     {WZ        ->Add(h38); }
       Tree39->Draw(input39,CUT);     if(Tree39->Draw(input39,CUT))     {WZ        ->Add(h39); }
+      Tree40->Draw(input40,CUT,"E"); if(Tree40->Draw(input40,CUT,"E")) {data      ->Add(h40); }
+      Tree41->Draw(input41,CUT);     if(Tree41->Draw(input41,CUT))     {DY100     ->Add(h41); }
+      Tree42->Draw(input42,CUT);     if(Tree42->Draw(input42,CUT))     {DY70      ->Add(h42); }
+      Tree43->Draw(input43,CUT);     if(Tree43->Draw(input43,CUT))     {DYM50_100 ->Add(h43); }
+      Tree44->Draw(input44,CUT);     if(Tree44->Draw(input44,CUT))     {DYM50_70  ->Add(h44); }
+      Tree45->Draw(input45,CUT);     if(Tree45->Draw(input45,CUT))     {QCD1000   ->Add(h45); }
+      Tree46->Draw(input46,CUT);     if(Tree46->Draw(input46,CUT))     {QCD250    ->Add(h46); }
+      Tree47->Draw(input47,CUT);     if(Tree47->Draw(input47,CUT))     {QCD500    ->Add(h47); }
+      Tree48->Draw(input48,CUT);     if(Tree48->Draw(input48,CUT))     {TT        ->Add(h48); }
+      Tree49->Draw(input49,CUT);     if(Tree49->Draw(input49,CUT))     {WJetsHT   ->Add(h49); }
+      Tree50->Draw(input50,CUT);     if(Tree50->Draw(input50,CUT))     {WW        ->Add(h50); }
+      Tree51->Draw(input51,CUT);     if(Tree51->Draw(input51,CUT))     {WZ        ->Add(h51); }
+      Tree52->Draw(input52,CUT);     if(Tree52->Draw(input52,CUT))     {WZ        ->Add(h52); }
 
       DY100->Sumw2();
       DY70->Sumw2();
@@ -202,7 +241,7 @@
       WW->Sumw2();
       WZ->Sumw2();
       ZZ->Sumw2();
-      WJets180->Sumw2();
+      WJetsHT->Sumw2();
 
       float w_DY100     = ( 39.100*19702./12511326.);
       float w_DY70      = ( 62.900*19702./11764538.);
@@ -215,7 +254,7 @@
       float w_WW        = (57.1097*19702./10000431.);
       float w_WZ        = ( 33.210*19702./10000283.);
       float w_ZZ        = (  8.059*19702./9799908.0);
-      float w_WJets180  = ( 23.500*19702./9739464.0);
+      float w_WJetsHT   = ( 25.220*19702./4971847.0);
 
       TH1F *ERR = new TH1F("","",data->GetNbinsX(),data->GetXaxis()->GetXmin(),data->GetXaxis()->GetXmax());
       for(int m=1; m<ERR->GetNbinsX()+1; m++){
@@ -230,7 +269,7 @@
 			     w_WW        *  WW->GetBinContent(m)+
 			     w_WZ        *  WZ->GetBinContent(m)+
 			     w_ZZ        *  ZZ->GetBinContent(m)+
-			     w_WJets180  *  WJets180->GetBinContent(m)
+			     w_WJetsHT   *  WJetsHT->GetBinContent(m)
 			   ); 
 	ERR->SetBinError(m,sqrt(
 				w_DY100     *  w_DY100     *  DY100->GetBinContent(m)+
@@ -244,7 +283,7 @@
 				w_WW        *  w_WW        *  WW->GetBinContent(m)+
 				w_WZ        *  w_WZ        *  WZ->GetBinContent(m)+
 				w_ZZ        *  w_ZZ        *  ZZ->GetBinContent(m)+
-				w_WJets180  *  w_WJets180  *  WJets180->GetBinContent(m)
+				w_WJetsHT   *  w_WJetsHT   *  WJetsHT->GetBinContent(m)
 				)); 
       }
 
@@ -259,7 +298,7 @@
       WW->Scale(w_WW);
       WZ->Scale(w_WZ);
       ZZ->Scale(w_ZZ);
-      WJets180->Scale(w_WJets180);
+      WJetsHT->Scale(w_WJetsHT);
 
       DY100->Add(DY70);
       DY100->Add(DYM50_70);
@@ -274,12 +313,12 @@
       QCD1000->SetFillColor(kRed-2);
       WW->SetFillColor(kGreen+1);
       TT->SetFillColor(kBlue);
-      WJets180->SetFillColor(kMagenta-5);
+      WJetsHT->SetFillColor(kMagenta-5);
 
       //hnew1 = DY100->Rebin(N-1,"hnew1",xbins);
       //hnew2 = WW->Rebin(N-1,"hnew2",xbins);
       //hnew3 = TT->Rebin(N-1,"hnew3",xbins);
-      //hnew4 = WJets180->Rebin(N-1,"hnew4",xbins);
+      //hnew4 = WJetsHT->Rebin(N-1,"hnew4",xbins);
       //hnew5 = QCD1000->Rebin(N-1,"hnew5",xbins);
       //hnew6 = data->Rebin(N-1,"hnew6",xbins);
       //hnew7 = ERR->Rebin(N-1,"hnew7",xbins);
@@ -360,10 +399,11 @@
       hs->Add(DY100);
       hs->Add(WW);
       hs->Add(TT);
-      hs->Add(WJets180);
+      hs->Add(WJetsHT);
       hs->Add(QCD1000);
   
-      hs->Draw("histo");
+      data->Draw("E");
+      hs->Draw("histo same");
       hs->GetYaxis()->SetTitleSize(0.045);
       hs->GetXaxis()->SetTitleSize(0.045);
       hs->GetYaxis()->SetLabelSize(0.045);
@@ -399,10 +439,12 @@
       TLegendEntry *ple2 = pl2->AddEntry(DY100, "Drell-Yan",  "F");
       ple2 = pl2->AddEntry(WW, "Diboson",  "F");
       ple2 = pl2->AddEntry(TT, "ttbar",  "F");
-      ple2 = pl2->AddEntry(WJets180, "WJets (pt180)",  "F");
+      ple2 = pl2->AddEntry(WJetsHT, "WJets",  "F");
       ple2 = pl2->AddEntry(QCD1000, "QCD",  "F");
       ple2 = pl2->AddEntry(data, "data",  "LP");
       pl2->Draw();
+      if(save) c1->SaveAs("DataMC_"+CHANNEL+"_"+name+"_NOLog.pdf");
+      if(save) c1->SaveAs("DataMC_"+CHANNEL+"_"+name+"_NOLog.png");
 
       if(log) {
 	hs->SetMinimum(0.5);

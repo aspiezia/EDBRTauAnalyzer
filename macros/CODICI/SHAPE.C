@@ -48,7 +48,7 @@
     TH1F *QCD250 = new TH1F("","",bin,min,max);
     TH1F *QCD500 = new TH1F("","",bin,min,max);
     TH1F *TT = new TH1F("","",bin,min,max);
-    TH1F *WJets180 = new TH1F("","",bin,min,max);
+    TH1F *WJetsHT = new TH1F("","",bin,min,max);
     TH1F *WW = new TH1F("","",bin,min,max);
     TH1F *WZ = new TH1F("","",bin,min,max);
     TH1F *ZZ = new TH1F("","",bin,min,max);
@@ -65,7 +65,7 @@
     TFile *file07 = TFile::Open("../../RISULTATI/analyzer_290514/QCD250.root");
     TFile *file08 = TFile::Open("../../RISULTATI/analyzer_290514/QCD500.root");
     TFile *file09 = TFile::Open("../../RISULTATI/analyzer_290514/TT.root");
-    TFile *file10 = TFile::Open("../../RISULTATI/analyzer_290514/WJets180.root");
+    TFile *file10 = TFile::Open("../../RISULTATI/analyzer_290514/WJetsHT.root");
     TFile *file11 = TFile::Open("../../RISULTATI/analyzer_290514/WW.root");
     TFile *file12 = TFile::Open("../../RISULTATI/analyzer_290514/WZ.root");
     TFile *file13 = TFile::Open("../../RISULTATI/analyzer_290514/ZZ.root");
@@ -110,7 +110,7 @@
     Tree07->Draw(input07,CUT); if(Tree07->Draw(input07,CUT)) {QCD250->Add(h07);}
     Tree08->Draw(input08,CUT); if(Tree08->Draw(input08,CUT)) {QCD500->Add(h08);}
     Tree09->Draw(input09,CUT); if(Tree09->Draw(input09,CUT)) {TT->Add(h09);}
-    Tree10->Draw(input10,CUT); if(Tree10->Draw(input10,CUT)) {WJets180->Add(h10);}
+    Tree10->Draw(input10,CUT); if(Tree10->Draw(input10,CUT)) {WJetsHT->Add(h10);}
     Tree11->Draw(input11,CUT); if(Tree11->Draw(input11,CUT)) {WW->Add(h11);}
     Tree12->Draw(input12,CUT); if(Tree12->Draw(input12,CUT)) {WZ->Add(h12);}
     Tree13->Draw(input13,CUT); if(Tree13->Draw(input13,CUT)) {ZZ->Add(h13);}
@@ -149,7 +149,7 @@
       Tree07SB2->Draw(input07SB2,CUTSB2); if(Tree07SB2->Draw(input07SB2,CUTSB2)) {QCD250->Add(h07SB2);}
       Tree08SB2->Draw(input08SB2,CUTSB2); if(Tree08SB2->Draw(input08SB2,CUTSB2)) {QCD500->Add(h08SB2);}
       Tree09SB2->Draw(input09SB2,CUTSB2); if(Tree09SB2->Draw(input09SB2,CUTSB2)) {TT->Add(h09SB2);}
-      Tree10SB2->Draw(input10SB2,CUTSB2); if(Tree10SB2->Draw(input10SB2,CUTSB2)) {WJets180->Add(h10SB2);}
+      Tree10SB2->Draw(input10SB2,CUTSB2); if(Tree10SB2->Draw(input10SB2,CUTSB2)) {WJetsHT->Add(h10SB2);}
       Tree11SB2->Draw(input11SB2,CUTSB2); if(Tree11SB2->Draw(input11SB2,CUTSB2)) {WW->Add(h11SB2);}
       Tree12SB2->Draw(input12SB2,CUTSB2); if(Tree12SB2->Draw(input12SB2,CUTSB2)) {WZ->Add(h12SB2);}
       Tree13SB2->Draw(input13SB2,CUTSB2); if(Tree13SB2->Draw(input13SB2,CUTSB2)) {ZZ->Add(h13SB2);}
@@ -174,7 +174,7 @@
     WW->Sumw2();
     WZ->Sumw2();
     ZZ->Sumw2();
-    WJets180->Sumw2();
+    WJetsHT->Sumw2();
       
     float w_DY100     = ( 39.100*19702./12511326.);
     float w_DY70      = ( 62.900*19702./11764538.);
@@ -187,7 +187,7 @@
     float w_WW        = (57.1097*19702./10000431.);
     float w_WZ        = ( 33.210*19702./10000283.);
     float w_ZZ        = (  8.059*19702./9799908.0);
-    float w_WJets180  = ( 23.500*19702./9739464.0);
+    float w_WJetsHT   = ( 25.220*19702./4971847.0);
       
     DY100->Scale(w_DY100);
     DY70->Scale(w_DY70);
@@ -200,7 +200,7 @@
     WW->Scale(w_WW);
     WZ->Scale(w_WZ);
     ZZ->Scale(w_ZZ);
-    WJets180->Scale(w_WJets180);
+    WJetsHT->Scale(w_WJetsHT);
       
     DY100->Add(DY70);
     DY100->Add(DYM50_70);
@@ -215,7 +215,7 @@
     QCD1000->SetFillColor(kRed-2);
     WW->SetFillColor(kGreen+1);
     TT->SetFillColor(kBlue);
-    WJets180->SetFillColor(kMagenta-5);
+    WJetsHT->SetFillColor(kMagenta-5);
     ZH1000->SetLineColor(1);
     ZH1500->SetLineColor(2);
     ZH2000->SetLineColor(4);
@@ -238,7 +238,7 @@
     hs->Add(DY100);
     hs->Add(WW);
     hs->Add(TT);
-    hs->Add(WJets180);
+    hs->Add(WJetsHT);
     hs->Add(QCD1000);
       
     hs->Draw("histo");
@@ -267,7 +267,7 @@
     TLegendEntry *ple2 = pl2->AddEntry(DY100, "Drell-Yan",  "F");
     ple2 = pl2->AddEntry(WW, "Diboson",  "F");
     ple2 = pl2->AddEntry(TT, "ttbar",  "F");
-    ple2 = pl2->AddEntry(WJets180, "WJets (pt180)",  "F");
+    ple2 = pl2->AddEntry(WJetsHT, "WJets",  "F");
     ple2 = pl2->AddEntry(QCD1000, "QCD",  "F"); 
     pl2->Draw();
       

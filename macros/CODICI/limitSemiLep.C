@@ -32,11 +32,11 @@ void limitSemiLep(bool only_leptonTAG=false, bool save_plots = false, float min=
 	
   //LIMIT - Breit-Wigner
   Double_t Limit_Obs[val]     = {0,0,0,0};
-  Double_t Limit_Exp_m2s[val] = {2.3, 1.2, 0.2, 0.2};
-  Double_t Limit_Exp_m1s[val] = {3.0, 1.6, 0.3, 0.4};
-  Double_t Limit_Exp[val]     = {4.3, 2.3, 0.6, 0.7};
-  Double_t Limit_Exp_p1s[val] = {6.2, 3.4, 1.2, 1.4};
-  Double_t Limit_Exp_p2s[val] = {8.7, 4.9, 1.9, 2.2};
+  Double_t Limit_Exp_m2s[val] = {1.8, 0.9, 0.2, 0.3};
+  Double_t Limit_Exp_m1s[val] = {2.5, 1.3, 0.4, 0.4};
+  Double_t Limit_Exp[val]     = {3.6, 1.9, 0.7, 0.8};
+  Double_t Limit_Exp_p1s[val] = {5.3, 2.9, 1.3, 1.5};
+  Double_t Limit_Exp_p2s[val] = {7.5, 4.3, 2.1, 2.4};
 
   Double_t XSEC[val] = {1.54, 0.22, 0.03, 0.01};
 	

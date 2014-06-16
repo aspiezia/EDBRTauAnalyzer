@@ -48,6 +48,10 @@ Implementation:
 #include "Math/GenVector/LorentzVector.h"
 #include "TLorentzVector.h"
 #include "CMGTools/External/interface/PileupJetIdentifier.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
+#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
+#include <TFormula.h>
 
 //
 // class declaration
@@ -73,7 +77,8 @@ private:
 
   //FUNCTION
   void SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets, edm::Handle<pat::JetCollection> CA8JetsPruned, bool & foundJet,
-                 pat::JetCollection::const_iterator & SelectedJet, float & prunedMass, float massMin, float massMax, bool tau21DOWN);
+                 pat::JetCollection::const_iterator & SelectedJet, float & prunedMass, float & ptZ, float massMin, float massMax, bool tau21DOWN, float rho,
+		 edm::Handle<reco::VertexCollection> vertices, const edm::Event& iEvent);
   void SelectTau(edm::Handle<pat::TauCollection> tauHandle, pat::JetCollection::const_iterator SelectedJet, 
 		 std::vector<pat::TauCollection::const_iterator> & SelectedTau, bool foundJet);
   void SelectMuon(edm::Handle<pat::MuonCollection> muoH, pat::JetCollection::const_iterator SelectedJet,
@@ -110,13 +115,19 @@ private:
   void BtagVeto(int & njet1, int & nbtagsL1, int & nbtagsM1, int & nbtagsT1, int & njet2, int & nbtagsL2, int & nbtagsM2, int & nbtagsT2,
 		int & njet3, int & nbtagsL3, int & nbtagsM3, int & nbtagsT3, int & njet4, int & nbtagsL4, int & nbtagsM4, int & nbtagsT4,
 		pat::JetCollection::const_iterator SelectedJet, math::PtEtaPhiELorentzVector lep1, math::PtEtaPhiELorentzVector lep2, const edm::Event& iEvent);
+  void CorrectedMet(const edm::Event& iEvent, float & px, float & py, float & Et);
+  double GetJEC(pat::JetCollection::const_iterator ijet, reco::Candidate::LorentzVector & uncorrJet, float rho, edm::Handle<reco::VertexCollection> vertices, 
+		std::vector<std::string> jecPayloadNames);
+  void AddTypeICorr(edm::Handle<pat::JetCollection> jetCands, float rho, edm::Handle<reco::VertexCollection> vertices, edm::Handle<pat::MuonCollection> recMuons, 
+		    std::map<std::string,double> & TypeICorrMap); 
+  void AddSysShiftCorr(std::map<std::string,double> & SysShiftCorrMap, edm::Handle<reco::VertexCollection> vertices);
   void FillTree(int category, TTree *Tree, pat::JetCollection::const_iterator SelectedJet, pat::TauCollection::const_iterator SelectedTau,
 		pat::MuonCollection::const_iterator SelectedMuo, pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2,
 		std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo,
 		pat::ElectronCollection::const_iterator SelectedEle, pat::ElectronCollection::const_iterator SelectedEle1, 
 		pat::ElectronCollection::const_iterator SelectedEle2, edm::Handle<reco::VertexCollection> vertices,
 		edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, edm::Handle<pat::METCollection> uncorrmet,
-		float prunedMass, bool isFired_HLT, bool isFired_HLT_PFJet320, bool isFired_HLT_HT650,
+		float prunedMass, float jetPt, bool isFired_HLT, bool isFired_HLT_PFJet320, bool isFired_HLT_HT650,
 		double MyWeight, float genEvent, float rho, int EleMuo, int MuoMuo, int EleEle, int MuoTau, int EleTau, const edm::Event& iEvent);
   
   TH1D* Nevents;
@@ -235,6 +246,21 @@ private:
   edm::InputTag metRawColl_;
   edm::InputTag uncorrmetColl_;
   edm::InputTag ak5JetColl_;
+  edm::InputTag ak5CHSJetColl_;
+  std::vector<std::string> jecPayloadNames_;
+  std::string              jecUncName_;
+  boost::shared_ptr<JetCorrectionUncertainty> jecUnc_;
+  boost::shared_ptr<FactorizedJetCorrector> jec_;
+  std::vector<std::string> jecPayloadNamesAK5_;
+  std::string              jecUncNameAK5_;
+  boost::shared_ptr<JetCorrectionUncertainty> jecUncAK5_;
+  boost::shared_ptr<FactorizedJetCorrector> jecAK5_;
+  std::vector<std::string> jecPayloadNamesAK5CHS_;
+  std::string              jecUncNameAK5CHS_;
+  boost::shared_ptr<JetCorrectionUncertainty> jecUncAK5CHS_;
+  boost::shared_ptr<FactorizedJetCorrector> jecAK5CHS_;
+  std::vector<std::string> corrFormulas_;  
+  std::vector<std::string> jecPayloadNamesOffSetCorrAK5_;
   int NeventsTOT_;
   double xsec_;
   double lumi_;
@@ -273,11 +299,18 @@ Analyzer::Analyzer(const edm::ParameterSet& iConfig)
   metColl_ = iConfig.getParameter<edm::InputTag>("metColl"); 
   metRawColl_ = iConfig.getParameter<edm::InputTag>("metRawColl");
   uncorrmetColl_ = iConfig.getParameter<edm::InputTag>("uncorrmetColl");  
+  ak5CHSJetColl_ = iConfig.getParameter<edm::InputTag>("ak5CHSJetColl"); 
   ak5JetColl_ = iConfig.getParameter<edm::InputTag>("ak5JetColl"); 
   NeventsTOT_ = iConfig.getParameter<int>( "NeventsTOT" );
   xsec_= iConfig.getParameter<double>( "xsec" );
   lumi_= iConfig.getParameter<double>( "lumi" );
-
+  jecPayloadNames_ = iConfig.getParameter<std::vector<std::string> >("jecPayloadNames");             // JEC level payloads
+  jecUncName_ = iConfig.getParameter<std::string>("jecUncName");                                     // JEC uncertainties
+  jecPayloadNamesAK5_ = iConfig.getParameter<std::vector<std::string> >("jecPayloadNamesAK5");       // JEC level payloads
+  jecUncNameAK5_ = iConfig.getParameter<std::string>("jecUncNameAK5");                               // JEC uncertainties
+  jecPayloadNamesAK5CHS_ = iConfig.getParameter<std::vector<std::string> >("jecPayloadNamesAK5CHS"); // JEC level payloads
+  jecUncNameAK5CHS_ = iConfig.getParameter<std::string>("jecUncNameAK5CHS");                         // JEC uncertainties
+  corrFormulas_ = iConfig.getParameter<std::vector<std::string> >("corrFormulas");
 
   // True number of interaction for data produced as in: https://twiki.cern.ch/twiki/bin/view/CMS/PileupJSONFileforData
   TFile *da_=new TFile ("/data06/users/spiezia/EXO/CMSSW_5_3_13/src/Analyzer/EDBRTauAnalyzer/data/MyDataPileupHistogram_True.root");
@@ -297,6 +330,43 @@ Analyzer::Analyzer(const edm::ParameterSet& iConfig)
     dataNum.push_back(d); 
   }
   LumiWeights_=edm::LumiReWeighting(mcNum, dataNum);
+  
+  //AK7
+  //Get the factorized jet corrector parameters. 
+  std::vector<JetCorrectorParameters> vPar;
+  for ( std::vector<std::string>::const_iterator payloadBegin = jecPayloadNames_.begin(),
+	  payloadEnd = jecPayloadNames_.end(), ipayload = payloadBegin; ipayload != payloadEnd; ++ipayload ) {
+    JetCorrectorParameters pars(*ipayload);
+    vPar.push_back(pars);
+  }
+  // Make the FactorizedJetCorrector and Uncertainty
+  jec_ = boost::shared_ptr<FactorizedJetCorrector> ( new FactorizedJetCorrector(vPar) );
+  jecUnc_ = boost::shared_ptr<JetCorrectionUncertainty>( new JetCorrectionUncertainty(jecUncName_) );
+  
+  //AK5
+  //Get the factorized jet corrector parameters. 
+  std::vector<JetCorrectorParameters> vParAK5;
+  for ( std::vector<std::string>::const_iterator payloadBegin = jecPayloadNamesAK5_.begin(),
+	  payloadEnd = jecPayloadNamesAK5_.end(), ipayload = payloadBegin; ipayload != payloadEnd; ++ipayload ) {
+    JetCorrectorParameters pars(*ipayload);
+    vParAK5.push_back(pars);
+  }
+  // Make the FactorizedJetCorrector and Uncertainty
+  jecAK5_ = boost::shared_ptr<FactorizedJetCorrector> ( new FactorizedJetCorrector(vParAK5) );
+  jecUncAK5_ = boost::shared_ptr<JetCorrectionUncertainty>( new JetCorrectionUncertainty(jecUncNameAK5_) );
+  jecPayloadNamesOffSetCorrAK5_.push_back(jecPayloadNamesAK5_[0]);
+  
+  //AK5CHS
+  //Get the factorized jet corrector parameters. 
+  std::vector<JetCorrectorParameters> vParAK5CHS;
+  for ( std::vector<std::string>::const_iterator payloadBegin = jecPayloadNamesAK5CHS_.begin(),
+	  payloadEnd = jecPayloadNamesAK5CHS_.end(), ipayload = payloadBegin; ipayload != payloadEnd; ++ipayload ) {
+    JetCorrectorParameters pars(*ipayload);
+    vParAK5CHS.push_back(pars);
+  }
+  // Make the FactorizedJetCorrector and Uncertainty
+  jecAK5CHS_ = boost::shared_ptr<FactorizedJetCorrector> ( new FactorizedJetCorrector(vParAK5CHS) );
+  jecUncAK5CHS_ = boost::shared_ptr<JetCorrectionUncertainty>( new JetCorrectionUncertainty(jecUncNameAK5CHS_) );  
 }
 
 
@@ -327,6 +397,9 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByLabel(jetColl_, CA8JetswithQjets);
   edm::Handle<pat::JetCollection> CA8JetsPruned;
   iEvent.getByLabel(jetPrunedColl_, CA8JetsPruned);
+  
+  edm::Handle<pat::JetCollection> ak5jetCands;
+  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
 
   edm::Handle<pat::MuonCollection> muoH;
   iEvent.getByLabel(muonColl_, muoH);
@@ -429,14 +502,14 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   pat::JetCollection::const_iterator SelectedSB1Jet;
   pat::JetCollection::const_iterator SelectedSB2Jet;
   pat::JetCollection::const_iterator SelectedSB3Jet;
-  float prunedMass   =-9999; bool foundJet   =false;   
-  float prunedMassSB1=-9999; bool foundSB1Jet=false;
-  float prunedMassSB2=-9999; bool foundSB2Jet=false;
-  float prunedMassSB3=-9999; bool foundSB3Jet=false;
-  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundJet,    SelectedJet,    prunedMass,    70,  110,   true);
-  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB1Jet, SelectedSB1Jet, prunedMassSB1, 20,  70,    true);
-  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB2Jet, SelectedSB2Jet, prunedMassSB2, 110, 99999, true);
-  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB3Jet, SelectedSB3Jet, prunedMassSB3, 20,  99999, false);
+  float prunedMass   =-9999; float jetPt   =-9999; bool foundJet   =false;   
+  float prunedMassSB1=-9999; float jetPtSB1=-9999; bool foundSB1Jet=false;
+  float prunedMassSB2=-9999; float jetPtSB2=-9999; bool foundSB2Jet=false;
+  float prunedMassSB3=-9999; float jetPtSB3=-9999; bool foundSB3Jet=false;
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundJet,    SelectedJet,    prunedMass,    jetPt   , 70,  110,   true , rho, vertices, iEvent);
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB1Jet, SelectedSB1Jet, prunedMassSB1, jetPtSB1, 20,  70,    true , rho, vertices, iEvent);
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB2Jet, SelectedSB2Jet, prunedMassSB2, jetPtSB2, 110, 99999, true , rho, vertices, iEvent);
+  SelectJet(CA8JetswithQjets, CA8JetsPruned, foundSB3Jet, SelectedSB3Jet, prunedMassSB3, jetPtSB3, 20,  99999, false, rho, vertices, iEvent);
 
   //TAU SELECTION
   std::vector<pat::TauCollection::const_iterator> SelectedTausMT;
@@ -600,7 +673,39 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   pat::TauCollection::const_iterator SelectedSB3TauET;
   bool foundSB3ET=false;
   SelectET(SelectedSB3ElectronET, SelectedSB3TauET, foundSB3ET, SelectedSB3ElectronsET, SelectedSB3TausET);
-
+  
+  //CORRECTION OF THE MET
+  TLorentzVector MET; 
+  if(!isData){
+    double metRaw_px = (*metRaw)[0].px();
+    double metRaw_py = (*metRaw)[0].py();
+    //double metRaw_sumet = (*metRaw)[0].sumEt();
+    std::map<std::string,double> SysShiftCorrMap;
+    std::map<std::string,double> TypeICorrMap;
+    AddTypeICorr(ak5jetCands, rho, vertices, muoH, TypeICorrMap);
+    AddSysShiftCorr(SysShiftCorrMap, vertices);
+    double pxcorr = metRaw_px + TypeICorrMap["corrEx"] + SysShiftCorrMap["corrEx"];
+    double pycorr = metRaw_py + TypeICorrMap["corrEy"] + SysShiftCorrMap["corrEy"];
+    //double sumetcorr = metRaw_sumet + TypeICorrMap["corrSumEt"];
+    float met_ = TMath::Sqrt(pxcorr*pxcorr+pycorr*pycorr); 
+    MET.SetPxPyPzE(pxcorr,pycorr,0.,met_);
+  } else {
+    MET.SetPxPyPzE(met->begin()->px(),met->begin()->py(),met->begin()->pz(),met->begin()->energy());
+  }
+  
+  math::PtEtaPhiELorentzVector UncorrMET; UncorrMET = met->begin()->p4();
+  //runNumber:LumiSection:eventNumber
+  cout<<"OLD corrected MET (px,py,pt,E) for event RUN:LUMI:EVENT="<<iEvent.id().run()<<":"<<iEvent.id().luminosityBlock()<<":"<<iEvent.id().event()<<" -> "<<
+    UncorrMET.Px()<<" "<<
+    UncorrMET.Py()<<" "<<
+    UncorrMET.Pt()<<" "<<
+    UncorrMET.E()<<" "<<endl;
+  TLorentzVector CorrMET; CorrMET.SetPxPyPzE(MET.Px(),MET.Py(),MET.Pz(),MET.E());
+  cout<<"NEW corrected MET (px,py,pt,E) for event RUN:LUMI:EVENT="<<iEvent.id().run()<<":"<<iEvent.id().luminosityBlock()<<":"<<iEvent.id().event()<<" -> "<<
+    CorrMET.Px()<<" "<<
+    CorrMET.Py()<<" "<<
+    CorrMET.Pt()<<" "<<
+    CorrMET.E()<<" "<<endl;
 
   //--------------------------------------------- FILL TREES ---------------------------------------------//
   pat::TauCollection::const_iterator      SelectedTauFake;
@@ -620,41 +725,41 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //ELE-MUO ANALYSIS - SR
   if(foundJet && foundEM){
     cout<<"EleMuo "<<iEvent.id().event()<<"; muon pt "<<SelectedMuonEM->pt()<<"; ele pt "<<SelectedElectronEM->pt()<<
-      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+      "; jet pt "<<jetPt<<"; jet mass "<<prunedMass<<"; met "<<MET.Pt()<<endl;
     FillTree(0,TreeEleMuo,SelectedJet,SelectedTauFake,SelectedMuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronEM,SelectedElectron1Fake,
-	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, jetPt, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent);
   }
   //MUO-MUO ANALYSIS - SR
   if(foundJet && foundMM){
     cout<<"MuoMuo "<<iEvent.id().event()<<"; muon1 pt "<<SelectedMuon1MM->pt()<<"; muon2 pt "<<SelectedMuon2MM->pt()<<
-      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+      "; jet pt "<<jetPt<<"; jet mass "<<prunedMass<<"; met "<<MET.Pt()<<endl;
     FillTree(1,TreeMuoMuo,SelectedJet,SelectedTauFake,SelectedMuonFake,SelectedMuon1MM,SelectedMuon2MM,SelectedTrackerMuo,SelectedElectronFake,SelectedElectron1Fake,
-	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, jetPt, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent);
   }
   //ELE-ELE ANALYSIS - SR
   if(foundJet && foundEE){
     cout<<"EleEle "<<iEvent.id().event()<<"; ele1 pt "<<SelectedElectron1EE->pt()<<"; ele2 pt "<<SelectedElectron2EE->pt()<<
-      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+      "; jet pt "<<jetPt<<"; jet mass "<<prunedMass<<"; met "<<MET.Pt()<<endl;
     FillTree(2,TreeEleEle,SelectedJet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,SelectedElectron1EE,
-	     SelectedElectron2EE, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron2EE, vertices, metRaw, met, uncorrmet, prunedMass, jetPt, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent);
   }
   //MUO-TAU ANALYSIS - SR
   if(foundJet && foundMT){
     cout<<"MuoTau "<<iEvent.id().event()<<"; tau pt "<<SelectedTauMT->pt()<<"; muon pt "<<SelectedMuonMT->pt()<<
-      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+      "; jet pt "<<jetPt<<"; jet mass "<<prunedMass<<"; met "<<MET.Pt()<<endl;
     FillTree(3,TreeMuoTau,SelectedJet,SelectedTauMT,SelectedMuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,SelectedElectron1Fake,
-	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, jetPt, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent);
   }
   //ELE-TAU ANALYSIS - SR
   if(foundJet && foundET){
     cout<<"EleTau "<<iEvent.id().event()<<"; tau pt "<<SelectedTauET->pt()<<"; electron pt "<<SelectedElectronET->pt()<<
-      "; jet pt "<<SelectedJet->pt()<<"; jet mass "<<prunedMass<<"; met "<<met->begin()->pt()<<endl;
+      "; jet pt "<<jetPt<<"; jet mass "<<prunedMass<<"; met "<<MET.Pt()<<endl;
     FillTree(4,TreeEleTau,SelectedJet,SelectedTauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronET,SelectedElectron1Fake,
-	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMass, jetPt, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuo, MuoMuo, EleEle, MuoTau, EleTau, iEvent);
   }
 
@@ -667,31 +772,31 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //ELE-MUO ANALYSIS - SB1
   if(foundSB1Jet && foundSB1EM){
     FillTree(0,TreeSB1EleMuo,SelectedSB1Jet,SelectedTauFake,SelectedSB1MuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedSB1ElectronEM,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, jetPtSB1, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent);
   }
   //MUO-MUO ANALYSIS - SB1
   if(foundSB1Jet && foundSB1MM){
     FillTree(1,TreeSB1MuoMuo,SelectedSB1Jet,SelectedTauFake,SelectedMuonFake,SelectedSB1Muon1MM,SelectedSB1Muon2MM,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, jetPtSB1, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent);
   }
   //ELE-ELE ANALYSIS - SB1
   if(foundSB1Jet && foundSB1EE){
     FillTree(2,TreeSB1EleEle,SelectedSB1Jet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedSB1Electron1EE,SelectedSB1Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedSB1Electron1EE,SelectedSB1Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB1, jetPtSB1, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent);
   }
   //MUO-TAU ANALYSIS - SB1
   if(foundSB1Jet && foundSB1MT){
     FillTree(3,TreeSB1MuoTau,SelectedSB1Jet,SelectedSB1TauMT,SelectedSB1MuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, jetPtSB1, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent);
   }
   //ELE-TAU ANALYSIS - SB1
   if(foundSB1Jet && foundSB1ET){
     FillTree(4,TreeSB1EleTau,SelectedSB1Jet,SelectedSB1TauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedSB1ElectronET,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB1, jetPtSB1, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB1, MuoMuoSB1, EleEleSB1, MuoTauSB1, EleTauSB1, iEvent);
   }
 
@@ -704,31 +809,31 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //ELE-MUO ANALYSIS - SB2
   if(foundSB2Jet && foundSB2EM){
     FillTree(0,TreeSB2EleMuo,SelectedSB2Jet,SelectedTauFake,SelectedSB2MuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedSB2ElectronEM,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, jetPtSB2, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent);
   }
   //MUO-MUO ANALYSIS - SB2
   if(foundSB2Jet && foundSB2MM){
     FillTree(1,TreeSB2MuoMuo,SelectedSB2Jet,SelectedTauFake,SelectedMuonFake,SelectedSB2Muon1MM,SelectedSB2Muon2MM,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, jetPtSB2, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent);
   }
   //ELE-ELE ANALYSIS - SB2
   if(foundSB2Jet && foundSB2EE){
     FillTree(2,TreeSB2EleEle,SelectedSB2Jet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedSB2Electron1EE,SelectedSB2Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedSB2Electron1EE,SelectedSB2Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB2, jetPtSB2, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent);
   }
   //MUO-TAU ANALYSIS - SB2
   if(foundSB2Jet && foundSB2MT){
     FillTree(3,TreeSB2MuoTau,SelectedSB2Jet,SelectedSB2TauMT,SelectedSB2MuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, jetPtSB2, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent);
   }
   //ELE-TAU ANALYSIS - SB2
   if(foundSB2Jet && foundSB2ET){
     FillTree(4,TreeSB2EleTau,SelectedSB2Jet,SelectedSB2TauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedSB2ElectronET,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB2, jetPtSB2, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB2, MuoMuoSB2, EleEleSB2, MuoTauSB2, EleTauSB2, iEvent);
   }
   
@@ -741,31 +846,31 @@ Analyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //ELE-MUO ANALYSIS - SB3
   if(foundSB3Jet && foundSB3EM){
     FillTree(0,TreeSB3EleMuo,SelectedSB3Jet,SelectedTauFake,SelectedSB3MuonEM,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedSB3ElectronEM,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, jetPtSB3, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB3, MuoMuoSB3, EleEleSB3, MuoTauSB3, EleTauSB3, iEvent);
   }
   //MUO-MUO ANALYSIS - SB3
   if(foundSB3Jet && foundSB3MM){
     FillTree(1,TreeSB3MuoMuo,SelectedSB3Jet,SelectedTauFake,SelectedMuonFake,SelectedSB3Muon1MM,SelectedSB3Muon2MM,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, jetPtSB3, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB3, MuoMuoSB3, EleEleSB3, MuoTauSB3, EleTauSB3, iEvent);
   }
   //ELE-ELE ANALYSIS - SB3
   if(foundSB3Jet && foundSB3EE){
     FillTree(2,TreeSB3EleEle,SelectedSB3Jet,SelectedTauFake,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedSB3Electron1EE,SelectedSB3Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB3, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedSB3Electron1EE,SelectedSB3Electron2EE, vertices, metRaw, met, uncorrmet, prunedMassSB3, jetPtSB3, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB3, MuoMuoSB3, EleEleSB3, MuoTauSB3, EleTauSB3, iEvent);
   }
   //MUO-TAU ANALYSIS - SB3
   if(foundSB3Jet && foundSB3MT){
     FillTree(3,TreeSB3MuoTau,SelectedSB3Jet,SelectedSB3TauMT,SelectedSB3MuonMT,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedElectronFake,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, jetPtSB3, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB3, MuoMuoSB3, EleEleSB3, MuoTauSB3, EleTauSB3, iEvent);
   }
   //ELE-TAU ANALYSIS - SB3
   if(foundSB3Jet && foundSB3ET){
     FillTree(4,TreeSB3EleTau,SelectedSB3Jet,SelectedSB3TauET,SelectedMuonFake,SelectedMuon1Fake,SelectedMuon2Fake,SelectedTrackerMuo,SelectedSB3ElectronET,
-	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, isFired_HLT, isFired_HLT_PFJet320, 
+	     SelectedElectron1Fake,SelectedElectron2Fake, vertices, metRaw, met, uncorrmet, prunedMassSB3, jetPtSB3, isFired_HLT, isFired_HLT_PFJet320, 
 	     isFired_HLT_HT650, MyWeight, genEvent, rho, EleMuoSB3, MuoMuoSB3, EleEleSB3, MuoTauSB3, EleTauSB3, iEvent);
   }
 
@@ -787,7 +892,7 @@ Analyzer::beginJob()
 {
   Service<TFileService> fs;
   Nevents = fs->make<TH1D>("Nevents", "Nevents", 3, -0.5, 2.5);
-
+  
   TreeSignalEff = fs->make<TTree>("TreeSignalEff", "TreeSignalEff");
   TreeSignalEff->Branch("genEvent", &m_genEvent, "genEvent/f");
 
@@ -2415,18 +2520,45 @@ Analyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 void Analyzer::SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets,
 			 edm::Handle<pat::JetCollection> CA8JetsPruned,
 			 bool & foundJet, pat::JetCollection::const_iterator & SelectedJet,
-			 float & prunedMass, float massMin, float massMax, bool tau21DOWN){
+			 float & prunedMass, float & ptZ, float massMin, float massMax, bool tau21DOWN, float rho,
+			 edm::Handle<reco::VertexCollection> vertices, const edm::Event& iEvent){
 
-  float ptZ=-99;
+  ptZ=-99;
   for(pat::JetCollection::const_iterator jet = CA8JetswithQjets->begin(); jet != CA8JetswithQjets->end(); ++jet) {
+
+    //JEC CORRECTION
+    double corr    = 1;
+    float correctedJetPt = jet->pt();
+    if(!isData){
+      reco::Candidate::LorentzVector uncorrJet = jet->correctedP4(0);
+      jec_->setJetEta( uncorrJet.eta()          );
+      jec_->setJetPt ( uncorrJet.pt()           );
+      jec_->setJetE  ( uncorrJet.energy()       );
+      jec_->setJetA  ( jet->jetArea()           );
+      jec_->setRho   ( rho                      );
+      jec_->setNPV   ( vertices->size()         );
+      corr = jec_->getCorrection();
+      correctedJetPt = corr*uncorrJet.pt();
+    }
+    
+    //if(iEvent.id().event()==19979159 || iEvent.id().event()==17790828 || iEvent.id().event()==5808224 || iEvent.id().event()==1888874 || 
+    //iEvent.id().event()==7122996 || iEvent.id().event()==8137359) 
+
     float dRmin = 9999.; float mass = 0.;
     for(pat::JetCollection::const_iterator jetPruned = CA8JetsPruned->begin(); jetPruned != CA8JetsPruned->end(); ++jetPruned) {
       float dRtmp = ROOT::Math::VectorUtil::DeltaR(jet->p4(),jetPruned->p4());
       if(dRtmp<dRmin && dRtmp<0.8 ){//matching failed if greater than jet radius
+	reco::Candidate::LorentzVector uncorrJetPruned = jetPruned->correctedP4(0);
         dRmin=dRtmp;
-        mass=jetPruned->mass();
+        mass=corr*uncorrJetPruned.mass();
       }
     }
+    
+    if(massMin==70){
+      cout<<"OLD CA8 JET -> jet eta:"<<jet->eta()<<"    jet phi:"<<jet->phi()<<"    jet pt:"<<jet->pt()     <<"    jet mass:"<<mass/corr<<endl;
+      cout<<"NEW CA8 JET -> jet eta:"<<jet->eta()<<"    jet phi:"<<jet->phi()<<"    jet pt:"<<correctedJetPt<<"    jet mass:"<<mass<<endl;
+    }
+
     if(jet->muonEnergyFraction()>=0.99) continue;
     if(jet->photonEnergyFraction()>=0.99) continue;
     if(jet->chargedEmEnergyFraction()>=0.99) continue;
@@ -2434,15 +2566,15 @@ void Analyzer::SelectJet(edm::Handle<pat::JetCollection> CA8JetswithQjets,
     if(jet->chargedHadronEnergyFraction()<=0.00) continue;
     if(fabs(jet->eta())>1.0 && fabs(jet->eta())<1.5 && jet->neutralMultiplicity()!=0){ if(jet->chargedMultiplicity()/jet->neutralMultiplicity()>2) continue;}
     if(jet->nConstituents()<=1) continue;
-    if(jet->pt()<400) continue;
+    if(correctedJetPt<400) continue;
     if(fabs(jet->eta())>2.4) continue;
     if(!(mass>massMin && mass<massMax))  continue;
     if(tau21DOWN){  if(jet->userFloat("tau2")/jet->userFloat("tau1")>0.75) continue;}
     if(!tau21DOWN){ if(jet->userFloat("tau2")/jet->userFloat("tau1")<0.75) continue;}
     foundJet=true;
-    if(jet->pt()>ptZ){
+    if(correctedJetPt>ptZ){
       prunedMass=mass;
-      ptZ=jet->pt();
+      ptZ=correctedJetPt;
       SelectedJet=jet;
     }
   }
@@ -2778,16 +2910,38 @@ void Analyzer::BtagVeto(int & njet1, int & nbtagsL1, int & nbtagsM1, int & nbtag
 
   //edm::Handle<pat::JetCollection> ak5jetCands;
   edm::Handle<edm::View<pat::Jet> > ak5jetCands;
-  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
+  iEvent.getByLabel(ak5CHSJetColl_,ak5jetCands);
   edm::Handle<ValueMap<float> > puJetIdMVA;
   iEvent.getByLabel("puJetMvaAK5CHS","fullDiscriminant", puJetIdMVA);
   edm::Handle<ValueMap<int> > puJetIdFlag;
   iEvent.getByLabel("puJetMvaAK5CHS","fullId", puJetIdFlag);
 
+  edm::Handle<reco::VertexCollection> vertices;
+  iEvent.getByLabel(vtxColl_, vertices);
+  edm::Handle<double> rhoHandle;
+  iEvent.getByLabel("kt6PFJets", "rho", rhoHandle);
+  float rho = *(rhoHandle.product());
+
   for ( unsigned int i=0; i<ak5jetCands->size(); ++i ) {
     const pat::Jet & ak5 = ak5jetCands->at(i);
+
+    //JEC CORRECTION
+    double corr = 1;
+    float correctedJetPt = ak5.pt();
+    if(!isData){
+      reco::Candidate::LorentzVector uncorrJet = ak5.correctedP4(0);
+      jecAK5CHS_->setJetEta( uncorrJet.eta()          );
+      jecAK5CHS_->setJetPt ( uncorrJet.pt()           );
+      jecAK5CHS_->setJetE  ( uncorrJet.energy()       );
+      jecAK5CHS_->setJetA  ( ak5.jetArea()           );
+      jecAK5CHS_->setRho   ( rho                      );
+      jecAK5CHS_->setNPV   ( vertices->size()        );
+      corr = jecAK5CHS_->getCorrection();
+      correctedJetPt = corr*uncorrJet.pt();
+    }
+
     //for(pat::JetCollection::const_iterator ak5 = ak5jetCands->begin(); ak5 != ak5jetCands->end(); ++ak5) {
-    if(ak5.pt()<20) continue;
+    if(correctedJetPt<20) continue;
     if(fabs(ak5.eta())>2.4) continue;
     if(ROOT::Math::VectorUtil::DeltaR(ak5.p4(),SelectedJet->p4())<0.8) continue;
     if(ROOT::Math::VectorUtil::DeltaR(ak5.p4(),lep1)<0.5) continue;
@@ -2873,14 +3027,189 @@ void Analyzer::svfit(edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::ME
   }
 }
 
+void Analyzer::CorrectedMet(const edm::Event& iEvent, float & px, float & py, float & Et){
+  bool skipEM_ = true; 
+  double skipEMfractionThreshold_ = 0.9;
+  bool skipMuons_ = true;
+  double type1JetPtThreshold_ = 10.0;
+  
+  double corrEx    = 0;
+  double corrEy    = 0;
+  double corrSumEt = 0;
+  
+  edm::Handle<edm::View<pat::Jet> > ak5jetCands;
+  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
+
+  edm::Handle<pat::MuonCollection> muoH;
+  iEvent.getByLabel(muonColl_, muoH);
+
+  edm::Handle<reco::VertexCollection> vertices;
+  iEvent.getByLabel(vtxColl_, vertices);
+  edm::Handle<double> rhoHandle;
+  iEvent.getByLabel("kt6PFJets", "rho", rhoHandle);
+  float rho = *(rhoHandle.product());
+
+  for ( unsigned int i=0; i<ak5jetCands->size(); ++i ) {
+    const pat::Jet & jet = ak5jetCands->at(i);
+    reco::Candidate::LorentzVector uncorrJet = jet.correctedP4(0); 
+    reco::Candidate::LorentzVector OldJetP4  = jet.p4();  
+
+    //JEC CORRECTION
+    double corr = 1;
+    if(!isData){
+      jecAK5_->setJetEta( uncorrJet.eta()          );
+      jecAK5_->setJetPt ( uncorrJet.pt()           );
+      jecAK5_->setJetE  ( uncorrJet.energy()       );
+      jecAK5_->setJetA  ( jet.jetArea()           );
+      jecAK5_->setRho   ( rho                      );
+      jecAK5_->setNPV   ( vertices->size()        );
+      corr = jecAK5_->getCorrection();
+    }
+    reco::Candidate::LorentzVector corrJetP4 = corr*uncorrJet; 
+
+    //DO NOT COUNT JET WITH emEnergyFraction<0.9 AND REMOVE MUONS FROM JETS
+    double emEnergyFraction = jet.chargedEmEnergyFraction() + jet.neutralEmEnergyFraction();
+    if ( skipEM_ && emEnergyFraction > skipEMfractionThreshold_ ) continue; 
+    if ( skipMuons_ && jet.muonMultiplicity() != 0 ) {
+      int nMuons=0;
+      for( unsigned int muonIndex = 0; muonIndex < muoH->size(); ++muonIndex ){
+	const pat::Muon& muon = muoH->at(muonIndex);
+	if( !muon.isGlobalMuon() && !muon.isStandAloneMuon() ) continue; 
+	TLorentzVector muonV; muonV.SetPtEtaPhiE(muon.p4().pt(),muon.p4().eta(),muon.p4().phi(),muon.p4().e());
+	TLorentzVector jetV; jetV.SetPtEtaPhiE(jet.p4().pt(),jet.p4().eta(),jet.p4().phi(),jet.p4().e());
+	if( muonV.DeltaR(jetV) < 0.5 ){
+	  nMuons++;
+	  reco::Candidate::LorentzVector muonP4 = muon.p4();
+	  uncorrJet -= muonP4;
+	  OldJetP4  -= muonP4;
+	  corrJetP4 -= muonP4;
+	}
+      }
+    }    
+    if ( corrJetP4.pt() > type1JetPtThreshold_ ) {
+      corrEx    -= (corrJetP4.px() - OldJetP4.px());
+      corrEy    -= (corrJetP4.py() - OldJetP4.py());
+      corrSumEt += (corrJetP4.Et() - OldJetP4.Et());
+      
+    }
+  }
+  px=corrEx;
+  py=corrEy;
+  Et=corrSumEt;
+}
+
+double Analyzer::GetJEC(pat::JetCollection::const_iterator ijet, reco::Candidate::LorentzVector & uncorrJet, float rho, 
+			edm::Handle<reco::VertexCollection> vertices, std::vector<std::string> jecPayloadNames){
+  double jetCorrEtaMax = 9.9;
+  std::vector<JetCorrectorParameters> vPar;
+  for ( std::vector<std::string>::const_iterator payloadBegin = jecPayloadNames.begin(), payloadEnd = jecPayloadNames.end(), 
+	  ipayload = payloadBegin; ipayload != payloadEnd; ++ipayload ) {
+    JetCorrectorParameters pars(*ipayload);
+    vPar.push_back(pars);
+  } 
+  boost::shared_ptr<FactorizedJetCorrector> jec = boost::shared_ptr<FactorizedJetCorrector> ( new FactorizedJetCorrector(vPar) );
+ 
+  pat::Jet const * pJet = dynamic_cast<pat::Jet const *>( &*ijet );
+  if ( pJet != 0 ) { //The pat::Jet "knows" if it has been corrected, so here we can "uncorrect" the entire jet to apply the corrections we want here. 
+    uncorrJet = pJet->correctedP4(0);
+  } else {           //Otherwise, if we do not have pat::Jets on input, we just assume the user has not corrected them upstream and use it as raw. 
+    uncorrJet = ijet->p4();
+  }
+  
+  double corr = 1.0;
+  if( fabs(uncorrJet.eta()) < jetCorrEtaMax ){ //Get the correction itself. This needs the jet area, the rho value, and the number of primary vertices to run the correction.
+    jec->setJetEta( uncorrJet.eta() );
+    jec->setJetPt ( uncorrJet.pt() );
+    jec->setJetE  ( uncorrJet.energy() );
+    jec->setJetA  ( ijet->jetArea() );
+    jec->setRho   ( rho );
+    jec->setNPV   ( vertices->size() );
+    corr = jec->getCorrection();
+  }
+  return corr;
+}
+
+
+void Analyzer::AddTypeICorr(edm::Handle<pat::JetCollection> jetCands, float rho, edm::Handle<reco::VertexCollection> vertices, 
+			    edm::Handle<pat::MuonCollection> recMuons, std::map<std::string,double> & TypeICorrMap){
+  bool skipEM = true; 
+  double skipEMfractionThreshold = 0.9;
+  bool skipMuons = true;
+  double type1JetPtThreshold = 10.0;
+  double corrEx    = 0;
+  double corrEy    = 0;
+  double corrSumEt = 0;
+  
+  for(pat::JetCollection::const_iterator ijet = jetCands->begin(); ijet != jetCands->end(); ++ijet){ 
+    double emEnergyFraction = ijet->chargedEmEnergyFraction() + ijet->neutralEmEnergyFraction();
+    if ( skipEM && emEnergyFraction > skipEMfractionThreshold ) continue;
+    reco::Candidate::LorentzVector uncorrJet;
+    double corr = GetJEC(ijet, uncorrJet, rho, vertices, jecPayloadNamesAK5_);  
+    if ( skipMuons && ijet->muonMultiplicity() != 0 ) {
+      int nMuons=0;
+      for( unsigned int muonIndex = 0; muonIndex < recMuons->size(); ++muonIndex ){
+	const pat::Muon& muon = recMuons->at(muonIndex);
+	if( !muon.isGlobalMuon() && !muon.isStandAloneMuon() ) continue; 
+	TLorentzVector muonV; muonV.SetPtEtaPhiE((muon.p4()).pt(),(muon.p4()).eta(),(muon.p4()).phi(),(muon.p4()).e());
+	TLorentzVector jetV; jetV.SetPtEtaPhiE((ijet->p4()).pt(),(ijet->p4()).eta(),(ijet->p4()).phi(),(ijet->p4()).e());
+	if( muonV.DeltaR(jetV) < 0.5 ){
+	  nMuons++;
+	  reco::Candidate::LorentzVector muonP4 = muon.p4();
+	  uncorrJet -= muonP4;
+	}
+      }
+    }
+    
+    reco::Candidate::LorentzVector corrJetP4 = corr*uncorrJet;     
+    if ( corrJetP4.pt() > type1JetPtThreshold ) {
+      reco::Candidate::LorentzVector tmpP4;
+      corr = GetJEC(ijet, tmpP4, rho, vertices, jecPayloadNamesOffSetCorrAK5_); 
+      reco::Candidate::LorentzVector rawJetP4offsetCorr = corr*uncorrJet;
+      corrEx    -= (corrJetP4.px() - rawJetP4offsetCorr.px());
+      corrEy    -= (corrJetP4.py() - rawJetP4offsetCorr.py());
+      corrSumEt += (corrJetP4.Et() - rawJetP4offsetCorr.Et());
+      
+    }
+  }
+  
+  TypeICorrMap["corrEx"]    = corrEx;
+  TypeICorrMap["corrEy"]    = corrEy;
+  TypeICorrMap["corrSumEt"] = corrSumEt; 
+}
+
+void Analyzer::AddSysShiftCorr(std::map<std::string,double> & SysShiftCorrMap, edm::Handle<reco::VertexCollection> vertices){
+  size_t Nvtx = vertices->size();
+  TString corrPxFormula = corrFormulas_[0];
+  TString corrPyFormula = corrFormulas_[1]; 
+  corrPxFormula.ReplaceAll("sumEt", "x");
+  corrPxFormula.ReplaceAll("Nvtx", "y"); 
+  std::string corrPxName = "METxyCorr_x";
+  TFormula* corrPx = new TFormula(corrPxName.data(), corrPxFormula.Data());
+  corrPyFormula.ReplaceAll("sumEt", "x");
+  corrPyFormula.ReplaceAll("Nvtx", "y");
+  std::string corrPyName = "METxyCorr_y";         
+  TFormula* corrPy = new TFormula(corrPyName.data(), corrPyFormula.Data());
+  double sumEt = 1.;
+  double corrEx = -corrPx->Eval(sumEt, Nvtx);
+  double corrEy = -corrPy->Eval(sumEt, Nvtx);
+  SysShiftCorrMap["corrEx"] = corrEx;
+  SysShiftCorrMap["corrEy"] = corrEy; 
+}
+
+
 void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_iterator SelectedJet, pat::TauCollection::const_iterator SelectedTau,
 			pat::MuonCollection::const_iterator SelectedMuo, pat::MuonCollection::const_iterator SelectedMuo1, pat::MuonCollection::const_iterator SelectedMuo2,
 			std::vector<pat::MuonCollection::const_iterator> SelectedTrackerMuo,
 			pat::ElectronCollection::const_iterator SelectedEle, pat::ElectronCollection::const_iterator SelectedEle1, 
 			pat::ElectronCollection::const_iterator SelectedEle2, edm::Handle<reco::VertexCollection> vertices,
 			edm::Handle<pat::METCollection> metRaw, edm::Handle<pat::METCollection> met, edm::Handle<pat::METCollection> uncorrmet,
-			float prunedMass, bool isFired_HLT, bool isFired_HLT_PFJet320, bool isFired_HLT_HT650,
+			float prunedMass, float jetPt, bool isFired_HLT, bool isFired_HLT_PFJet320, bool isFired_HLT_HT650,
 			double MyWeight, float genEvent, float rho, int EleMuo, int MuoMuo, int EleEle, int MuoTau, int EleTau, const edm::Event& iEvent){
+  
+  edm::Handle<pat::JetCollection> ak5jetCands;
+  iEvent.getByLabel(ak5JetColl_,ak5jetCands);
+  edm::Handle<pat::MuonCollection> muoH;
+  iEvent.getByLabel(muonColl_, muoH);
   
   math::PtEtaPhiELorentzVector lep1;
   math::PtEtaPhiELorentzVector lep2;
@@ -2955,9 +3284,33 @@ void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_ite
   int njet3=0; int nbtagsL3=0; int nbtagsM3=0; int nbtagsT3=0; int njet4=0; int nbtagsL4=0; int nbtagsM4=0; int nbtagsT4=0;
   BtagVeto(njet1, nbtagsL1, nbtagsM1, nbtagsT1, njet2, nbtagsL2, nbtagsM2, nbtagsT2, 
 	   njet3, nbtagsL3, nbtagsM3, nbtagsT3, njet4, nbtagsL4, nbtagsM4, nbtagsT4, SelectedJet, lep1, lep2, iEvent);
+  
+  //CORRECTION OF THE MET
+  TLorentzVector MET; 
+  if(!isData){
+    double metRaw_px = (*metRaw)[0].px();
+    double metRaw_py = (*metRaw)[0].py();
+    //double metRaw_sumet = (*metRaw)[0].sumEt();
+    std::map<std::string,double> SysShiftCorrMap;
+    std::map<std::string,double> TypeICorrMap;
+    AddTypeICorr(ak5jetCands, rho, vertices, muoH, TypeICorrMap);
+    AddSysShiftCorr(SysShiftCorrMap, vertices);
+    double pxcorr = metRaw_px + TypeICorrMap["corrEx"] + SysShiftCorrMap["corrEx"];
+    double pycorr = metRaw_py + TypeICorrMap["corrEy"] + SysShiftCorrMap["corrEy"];
+    //double sumetcorr = metRaw_sumet + TypeICorrMap["corrSumEt"];
+    float met_ = TMath::Sqrt(pxcorr*pxcorr+pycorr*pycorr); 
+    MET.SetPxPyPzE(pxcorr,pycorr,0.,met_);
+  } else {
+    MET.SetPxPyPzE(met->begin()->px(),met->begin()->py(),met->begin()->pz(),met->begin()->energy());
+  }
+
+  //CORRECTION OF THE MET
+  //float METpx=0; float METpy=0; float METEt=0;
+  //CorrectedMet(iEvent, METpx, METpy, METEt);
+  //float METpt = sqrt((met->begin()->px()+METpx)*(met->begin()->px()+METpx) + (met->begin()->py()+METpy)*(met->begin()->py()+METpy));
 
   //SVFIT
-  math::PtEtaPhiMLorentzVector PrunedJet_prov(SelectedJet->pt(),SelectedJet->eta(),SelectedJet->phi(),prunedMass);
+  math::PtEtaPhiMLorentzVector PrunedJet_prov(jetPt,SelectedJet->eta(),SelectedJet->phi(),prunedMass);
   TLorentzVector PrunedJet; PrunedJet.SetPxPyPzE(PrunedJet_prov.px(),PrunedJet_prov.py(),PrunedJet_prov.pz(),PrunedJet_prov.E());
   float MassSVFit = -1;
   float XMassSVFit = -1;
@@ -2966,9 +3319,9 @@ void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_ite
   svfit(metRaw, met, lep1SVFit, lep2SVFit, PrunedJet, MassSVFit, XMassSVFit, dRJetZSVFit, ptSVFit, SelectedJet, category);
   //COLLINEAR APPROXIMATION
   TLorentzVector CATauTau; bool CA = false;
-  float a = (lep1.py()*met->begin()->px()-lep1.px()*met->begin()->py())/
+  float a = (lep1.py()*MET.Px()-lep1.px()*MET.Py())/
     (lep2.px()*lep1.py()-lep2.py()*lep1.px());
-  float b = (lep2.py()*met->begin()->px()-lep2.px()*met->begin()->py())/
+  float b = (lep2.py()*MET.Px()-lep2.px()*MET.Py())/
     (lep1.px()*lep2.py()-lep1.py()*lep2.px());
   if(((1+a)*(1+b))>0 && ((1+a)*(1+b))<9999999999) {
     CATauTau.SetPxPyPzE((1+a)*lep2.px()+(1+b)*lep1.px(),
@@ -2987,10 +3340,11 @@ void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_ite
     dRJetZCA = ROOT::Math::VectorUtil::DeltaR(CATauTau,PrunedJet);
   }
   //VISIBLE AND EFFECTIVE
+  math::PtEtaPhiELorentzVector METP4(MET.Pt(),MET.Eta(),MET.Phi(),MET.E());
   math::PtEtaPhiELorentzVector dilep; dilep = lep1+lep2;
-  math::PtEtaPhiELorentzVector dilepmet; dilepmet = lep1+lep2+met->begin()->p4();
+  math::PtEtaPhiELorentzVector dilepmet; dilepmet = lep1+lep2+METP4;
   math::PtEtaPhiELorentzVector dilepjet; dilepjet = lep1+lep2+PrunedJet_prov;
-  math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = lep1+lep2+met->begin()->p4()+PrunedJet_prov;
+  math::PtEtaPhiELorentzVector dilepmetjet; dilepmetjet = lep1+lep2+METP4+PrunedJet_prov;
 
   if(prunedMass>70 && prunedMass<110){
     //if(category==0) cout<<"EleMuo "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
@@ -3000,7 +3354,7 @@ void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_ite
     //if(category==4) cout<<"EleTau "<<iEvent.id().event()<<"; MassSVFit "<<MassSVFit<<"; ptSVFit "<<ptSVFit<<"; XMassSVFit "<<XMassSVFit<<endl;
   }
 
-  m_jetPt=SelectedJet->pt();
+  m_jetPt=jetPt;
   m_jetEta=SelectedJet->eta();
   m_jetMass=prunedMass;
   m_jetSubjettiness=SelectedJet->userFloat("tau2")/SelectedJet->userFloat("tau1");
@@ -3030,7 +3384,7 @@ void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_ite
   m_dRZZSvFit=dRJetZSVFit;
   m_dRZZCA=dRJetZCA;
   m_charge=lep1Charge*lep2Charge;
-  m_met=met->begin()->pt();
+  m_met=MET.Pt();
   m_metPhi=met->begin()->phi();
   m_uncorrmet=uncorrmet->begin()->pt();
   m_uncorrmetPhi=uncorrmet->begin()->phi();
@@ -3065,8 +3419,8 @@ void Analyzer::FillTree(int category, TTree *Tree, pat::JetCollection::const_ite
   m_sideband=(int)(prunedMass<70);
   m_NVertices=vertices->size();
   m_PUWeight=MyWeight;
-  m_metPx=met->begin()->px();
-  m_metPy=met->begin()->py();
+  m_metPx=MET.Px();
+  m_metPy=MET.Py();
   m_NeventsTOT=NeventsTOT_;
   m_xsec=xsec_;
   m_lumi=lumi_;

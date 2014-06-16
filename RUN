@@ -29,6 +29,13 @@ cp $CMSSW_BASE/src/Analyzer/EDBRTauAnalyzer/runOnQueue.sh .
 ./runOnQueue.sh QCD1000 250 cms-medium analyzer QCD1000 PERUGIA MC $folder
 #./runOnQueue.sh WJets 250 cms-medium analyzer WJets180 PERUGIA MC $folder
 ./runOnQueue.sh WJetsHT 250 cms-medium analyzer WJetsHT PERUGIA MC $folder
+./runOnQueue.sh WJetsHT300 250 cms-medium analyzer WJetsHT300 PERUGIA MC $folder
+./runOnQueue.sh SingleTop1 100 cms-medium analyzer SingleTop1 PERUGIA MC $folder
+./runOnQueue.sh SingleTop2 100 cms-medium analyzer SingleTop2 PERUGIA MC $folder
+./runOnQueue.sh SingleTop3 100 cms-medium analyzer SingleTop3 PERUGIA MC $folder
+./runOnQueue.sh SingleTop4 100 cms-medium analyzer SingleTop4 PERUGIA MC $folder
+./runOnQueue.sh SingleTop5 100 cms-medium analyzer SingleTop5 PERUGIA MC $folder
+./runOnQueue.sh SingleTop6 100 cms-medium analyzer SingleTop6 PERUGIA MC $folder
 qstat | grep spiezia | wc -l
 
 ### tauMC ###
